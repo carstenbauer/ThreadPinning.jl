@@ -30,6 +30,7 @@ For more information see `uv_thread_setaffinity`.
 pinthread(cpuid::Integer) = uv_thread_setaffinity(cpuid)
 
 """
+    pinthreads(cpuids::AbstractVector{<:Integer})
 Pins the first `1:length(cpuids)` Julia threads to the CPUs with ids `cpuids`.
 Note that `length(cpuids)` may not be larger than `Threads.nthreads()`.
 
@@ -42,4 +43,19 @@ function pinthreads(cpuids::AbstractVector{<:Integer})
         pinthread(cpuids[tid])
     end
     return nothing
+end
+
+"""
+    pinthreads(strategy::Symbol)
+Pin all Julia threads according to the given pinning `strategy`.
+
+Allowed strategies:
+* `:compact`: pins to the first 1:nthreads() cores
+"""
+function pinthreads(strategy::Symbol)
+    if strategy == :compact
+        return pinthreads(1:nthreads())
+    else
+        throw(ArgumentError("Unknown pinning strategy."))
+    end
 end
