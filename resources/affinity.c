@@ -24,8 +24,6 @@
  *
  * =======================================================================================
  */
-// #ifdef __linux__
-// #ifdef _OPENMP
 #include <stdlib.h>
 #include <stdio.h>
 #include <sched.h>
@@ -79,5 +77,3 @@ void affinity_pinProcess(int processorId)
     CPU_SET(processorId, &cpuset);
     sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 }
-// #endif /*_OPENMP*/
-// #endif /*__linux__*/
