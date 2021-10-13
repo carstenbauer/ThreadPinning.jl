@@ -38,3 +38,19 @@ function callonthreads(fn)
     end
     return res
 end
+
+"""
+[1,2,3,4], [5,6,7,8] -> [1,5,2,6,3,7,4,8]
+"""
+function interweave(arrays::Vector{T}...) where T
+    # interweaving the arrays (i.e. in alternating fashion)
+    lengths = length.(arrays)
+    length(unique(lengths)) == 1 || throw(ArgumentError("Only same length inputs supported."))
+    narrays = length(arrays)
+    nelements = sum(lengths)
+    res = zeros(T, nelements)
+    for (i, elements) in enumerate(arrays)
+        res[i:narrays:end] .= elements
+    end
+    return res
+end

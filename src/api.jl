@@ -54,8 +54,13 @@ Allowed strategies:
 """
 function pinthreads(strategy::Symbol)
     if strategy == :compact
-        return pinthreads(1:nthreads())
+        return _pin_compact()
+    elseif strategy in (:scatter, :spread)
+        return _pin_scatter()
     else
         throw(ArgumentError("Unknown pinning strategy."))
     end
 end
+
+_pin_compact() = pinthreads(1:nthreads())
+_pin_scatter() = error("This pinning strategy is only available if Hwloc.jl is loaded as well (i.e. using Hwloc).")

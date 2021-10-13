@@ -1,13 +1,18 @@
-name = "Pinning"
+name = "ThreadPinning"
 uuid = "811555cd-349b-4f26-b7bc-1f208b848042"
 authors = ["Carsten Bauer <crstnbr@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+Requires = "ae029012-a4dd-5104-9daa-d747884805df"
+
 [compat]
+Requires = "1"
 julia = "1"
 
 [extras]
+Hwloc = "0e44f5e4-bd66-52a0-8798-143a42290a1d"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["Test", "Hwloc"]
