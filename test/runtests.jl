@@ -51,20 +51,29 @@ end
     end
 
     @testset "Thread Pinning (scatter)" begin
-        # default, i.e. nsockets == 2 and hyperthreading == false
+        # no hyperthreads
+        # default, i.e. nsockets == 2 and hyperthreads == false
         @test isnothing(pinthreads(:scatter))
         cpuids_after = getcpuids()
         @test check_compact_within_socket(cpuids_after; nsockets=2)
-        # single-socket, no hyperthreading
+        # single-socket, no hyperthreads
         @test isnothing(pinthreads(:scatter; nsockets=1))
         cpuids_after = getcpuids()
         @test cpuids_after == 1:nthreads()
         @test check_compact_within_socket(cpuids_after; nsockets=1) # same as above, but why not :)
-        # single-socket, hyperthreading
-        # @test isnothing(pinthreads(:scatter; nsockets=1, hyperthreading=true))
-        # cpuids_after = getcpuids()
-        # @test cpuids_after == 1:nthreads()
-        # @test check_compact_within_socket(cpuids_after; nsockets=1) # same as above, but why not :)
+
+        # hyperthreads
+        # fresh setup agin
+        cpuids_before = reverse(1:nthreads())
+        pinthreads(cpuids_before)
+        @assert getcpuids() == cpuids_before
+        # single-socket + hyperthreads
+        @test isnothing(pinthreads(:scatter; nsockets=1, hyperthreads=true))
+        cpuids_after = getcpuids()
+        @test cpuids_after == 1:nthreads()
+        @test check_compact_within_socket(cpuids_after; nsockets=1) # same as above, but why not :)
+        # dual-socket + hyperthreads
+        # TODO: how to test this properly?
     end
 
     @testset "Hwloc support" begin

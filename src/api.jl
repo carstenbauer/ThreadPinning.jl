@@ -71,7 +71,12 @@ function _pin_scatter(nthreads; hyperthreading=false, nsockets=2, verbose=false,
     if !hyperthreading
         cpuids_per_socket = Iterators.partition(1:ncpus, ncpus÷nsockets)
         cpuids = interweave(cpuids_per_socket...)
-        pinthreads(@view cpuids[1:nthreads])
+    else
+        # alternate between sockets but use hyperthreads (i.e. 2 threads per core) only if necessary
+        cpuids_per_socket_and_hyper = collect.(Iterators.partition(1:ncpus, (ncpus÷2)÷nsockets))
+        cpuids_per_socket = [reduce(vcat, cpuids_per_socket_and_hyper[s:nsockets:end]) for s in 1:nsockets]
+        cpuids = interweave(cpuids_per_socket...)
     end
+    pinthreads(@view cpuids[1:nthreads])
     return nothing
 end
