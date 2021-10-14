@@ -5,7 +5,7 @@ is currently executing.
 
 See `sched_getcpu` for more information.
 """
-getcpuid() = sched_getcpu()
+getcpuid() = Int(sched_getcpu())
 
 """
 Returns the ID of the CPUs on which the Julia threads
@@ -46,21 +46,32 @@ function pinthreads(cpuids::AbstractVector{<:Integer})
 end
 
 """
-    pinthreads(strategy::Symbol)
-Pin all Julia threads according to the given pinning `strategy`.
+    pinthreads(strategy::Symbol[; nthreads, kwargs...])
+Pin the first `1:nthreads` Julia threads according to the given pinning `strategy`.
+Per default, `nthreads == Threads.nthreads()`
 
 Allowed strategies:
-* `:compact`: pins to the first 1:nthreads() cores
+* `:compact`: pins to the first `1:nthreads` cores
+* `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion. To function automatically, Hwloc.jl should be loaded (i.e. `using Hwloc`). Otherwise, we the keyword arguments `nsockets` (default: `2`) and `hyperthreads` (default: `false`) can be used to indicate whether hyperthreads are available on the system (i.e. whether `Sys.CPU_THREADS == 2 * nphysicalcores`).
 """
-function pinthreads(strategy::Symbol)
+function pinthreads(strategy::Symbol; nthreads=Threads.nthreads(), kwargs...)
     if strategy == :compact
-        return _pin_compact()
+        return _pin_compact(nthreads)
     elseif strategy in (:scatter, :spread)
-        return _pin_scatter()
+        return _pin_scatter(nthreads; kwargs...)
     else
         throw(ArgumentError("Unknown pinning strategy."))
     end
 end
 
-_pin_compact() = pinthreads(1:nthreads())
-_pin_scatter() = error("This pinning strategy is only available if Hwloc.jl is loaded as well (i.e. using Hwloc).")
+_pin_compact(nthreads) = pinthreads(1:nthreads)
+function _pin_scatter(nthreads; hyperthreading=false, nsockets=2, verbose=false, kwargs...)
+    verbose && @info("Assuming $nsockets sockets and the ", hyperthreading ? "availability" : "absence", " of hyperthreads.")
+    ncpus = Sys.CPU_THREADS
+    if !hyperthreading
+        cpuids_per_socket = Iterators.partition(1:ncpus, ncpus÷nsockets)
+        cpuids = interweave(cpuids_per_socket...)
+        pinthreads(@view cpuids[1:nthreads])
+    end
+    return nothing
+end

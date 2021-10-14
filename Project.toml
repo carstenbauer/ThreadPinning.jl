@@ -12,7 +12,8 @@ julia = "1"
 
 [extras]
 Hwloc = "0e44f5e4-bd66-52a0-8798-143a42290a1d"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Hwloc"]
+test = ["Test", "Hwloc", "Random"]
