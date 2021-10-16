@@ -4,8 +4,10 @@
 
 ## Installation
 
+**Note: Only Linux is supported!**
+
 The package is currently not registered. Hence, you need to
-```julia
+```
 ] add https://github.com/carstenbauer/ThreadPinning.jl
 ```
 to add the package to your Julia environment.
