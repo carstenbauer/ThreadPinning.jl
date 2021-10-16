@@ -2,6 +2,13 @@
 
 *Interactively pin Julia threads to specific cores at runtime*
 
+## Why pin Julia threads?
+
+Because
+* [it effects performance (MFlops/s), in particular on HPC clusters](https://github.com/JuliaPerf/BandwidthBenchmark.jl#flopsscaling)
+* [it allows you to measure hardware-performance counters in a reliable way](https://juliaperf.github.io/LIKWID.jl/stable/marker/)
+* ...
+
 ## Installation
 
 **Note: Only Linux is supported!**
