@@ -32,7 +32,7 @@ end
     @testset "Thread Pining (explicit)" begin
         cpuid_before = getcpuid()
         cpuid_new = cpuid_before != 1 ? 1 : 0
-        @test pinthread(1)
+        @test pinthread(cpuid_new)
         @test getcpuid() == cpuid_new
         cpuids_new = shuffle(1:nthreads())
         @test isnothing(pinthreads(cpuids_new))
