@@ -1,5 +1,12 @@
 # ThreadPinning.jl
 
+<!-- [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaperf.github.io/LIKWID.jl/stable/) -->
+<!-- [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaperf.github.io/LIKWID.jl/dev/) -->
+<!-- [![Build Status](https://github.com/JuliaPerf/LIKWID.jl/workflows/CI/badge.svg)](https://github.com/JuliaPerf/LIKWID.jl/actions) -->
+[![Build Status](https://git.uni-paderborn.de/pc2/julia/ThreadPinning.jl/badges/main/pipeline.svg?key_text=NHR@PC2&key_width=70)](https://git.uni-paderborn.de/pc2/julia/ThreadPinning.jl/-/pipelines)
+[![codecov](https://codecov.io/gh/carstenbauer/ThreadPinning.jl/branch/main/graph/badge.svg?token=Ze61CbGoO5)](https://codecov.io/gh/carstenbauer/ThreadPinning.jl)
+![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)
+
 *Interactively pin Julia threads to specific cores at runtime*
 
 ## Why pin Julia threads?
