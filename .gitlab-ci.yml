@@ -5,8 +5,6 @@ stages:
 # + generates and submits code coverage to codecov.io
 julia/1.6:
   stage: test
-  tags:
-    - noctua
   variables:
     SCHEDULER_PARAMETERS: "-A pc2-mitarbeiter -p short"
   rules:
