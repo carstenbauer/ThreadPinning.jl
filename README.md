@@ -69,3 +69,9 @@ julia> getcpuids()
   4
  24
 ```
+
+## Noteworthy Alternatives
+
+* Setting `JULIA_EXCLUSIVE=1` will make julia use compact pinning automatically (no external tool needed!)
+* `pinthread` / `pinthreads` or `likwid-pin` (CLI tool) from [LIKWID.jl](https://github.com/JuliaPerf/LIKWID.jl)
+* [This discourse thread](https://discourse.julialang.org/t/thread-affinitization-pinning-julia-threads-to-cores/58069/5) discusses issues with alternatives like `numactl`
