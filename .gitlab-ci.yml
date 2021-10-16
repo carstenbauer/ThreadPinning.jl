@@ -17,7 +17,6 @@ julia/1.6:
     - when: on_success
   script:
     - export JULIA_NUM_THREADS=20
-    - set | grep TERM
     # - wget https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.2-linux-x86_64.tar.gz
     # - tar --strip-components=1 -xf julia-1.6.2-linux-x86_64.tar.gz
     # - bin/julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
