@@ -65,7 +65,7 @@ julia/1.7-rc1:
 #     - bin/julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
 #     - bin/julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
 #     - bin/julia --color=yes --project=test/coverage test/coverage/coverage.jl
-#     allow_failure: true
+#   allow_failure: true
 
 
 # # This job tests the ThreadPinning.jl with Julia 1.6 (noctua module)
@@ -89,4 +89,4 @@ julia/1.6-noctua:
     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
     - julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
     - julia --color=yes --project=test/coverage test/coverage/coverage.jl
-    allow_failure: true
+  allow_failure: true
