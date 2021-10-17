@@ -8,20 +8,20 @@ julia/1.6:
   variables:
     SCHEDULER_PARAMETERS: "-A pc2-mitarbeiter -p short"
   rules:
-    # - changes:
-    #   - "README.md"
+    - changes:
+      - "README.md"
     #   - "docs/**/*.md"
     #   - "docs/make.jl"
     #   - "docs/build_docs.jl"
     #   when: never
     - when: on_success
   script:
-    - export JULIA_NUM_THREADS=20
+    - export JULIA_NUM_THREADS=8
     - wget https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.2-linux-x86_64.tar.gz
     - tar --strip-components=1 -xf julia-1.6.2-linux-x86_64.tar.gz
     - bin/julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
-    # - bin/julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
-    # - bin/julia --color=yes --project=test/coverage test/coverage/coverage.jl
+    - bin/julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
+    - bin/julia --color=yes --project=test/coverage test/coverage/coverage.jl
     # - bash -l
     # - module load lang/Julia/1.6.2-linux-x86_64
     # - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
