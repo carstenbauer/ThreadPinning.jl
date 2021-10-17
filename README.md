@@ -31,7 +31,7 @@ to add the package to your Julia environment.
 (Dual-socket system with 20 cores per socket, `JULIA_NUM_THREADS=8`)
 
 ```julia
-ulia> using ThreadPinning
+julia> using ThreadPinning
 
 julia> getcpuids()
 8-element Vector{Int64}:
