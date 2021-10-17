@@ -17,11 +17,11 @@ julia/1.6:
     - when: on_success
   script:
     - export JULIA_NUM_THREADS=8
-    - wget https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.2-linux-x86_64.tar.gz
-    - tar --strip-components=1 -xf julia-1.6.2-linux-x86_64.tar.gz
-    - bin/julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
-    - bin/julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
-    - bin/julia --color=yes --project=test/coverage test/coverage/coverage.jl
+    - /bin/bash -l
+    - module load lang/Julia/1.6.2-linux-x86_64
+    - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
+    - julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
+    - julia --color=yes --project=test/coverage test/coverage/coverage.jl
     # - bash -l
     # - module load lang/Julia/1.6.2-linux-x86_64
     # - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
@@ -44,6 +44,7 @@ julia/1.7-rc1:
     - wget https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.0-rc1-linux-x86_64.tar.gz
     - tar --strip-components=1 -xf julia-1.7.0-rc1-linux-x86_64.tar.gz
     - bin/julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
+  allow_failure: true
 
 # # This job tests the ThreadPinning.jl with Julia nightly
 # julia/nightly:
@@ -66,27 +67,3 @@ julia/1.7-rc1:
 #     - bin/julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
 #     - bin/julia --color=yes --project=test/coverage test/coverage/coverage.jl
 #   allow_failure: true
-
-
-# # This job tests the ThreadPinning.jl with Julia 1.6 (noctua module)
-julia/1.6-noctua:
-  stage: test
-  variables:
-    SCHEDULER_PARAMETERS: "-A pc2-mitarbeiter -p short"
-  rules:
-    - changes:
-      - "README.md"
-    #   - "docs/**/*.md"
-    #   - "docs/make.jl"
-    #   - "docs/build_docs.jl"
-    #   when: never
-    - when: on_success
-  script:
-    - export JULIA_NUM_THREADS=8
-    - /bin/bash -l
-    - module load lang/Julia/1.6.2-linux-x86_64
-    - printenv | grep Julia
-    - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
-    - julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
-    - julia --color=yes --project=test/coverage test/coverage/coverage.jl
-  allow_failure: true
