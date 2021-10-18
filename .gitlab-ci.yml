@@ -5,6 +5,8 @@ stages:
 # + generates and submits code coverage to codecov.io
 julia/1.6:
   stage: test
+  tags:
+    - bauerc-noctua
   variables:
     SCHEDULER_PARAMETERS: "-A pc2-mitarbeiter -p short"
   rules:
@@ -29,6 +31,8 @@ julia/1.6:
 # This job tests the ThreadPinning.jl with Julia 1.7-rc1
 julia/1.7-rc1:
   stage: test
+  tags:
+    - bauerc-noctua
   variables:
     SCHEDULER_PARAMETERS: "-A pc2-mitarbeiter -p short"
   rules:
@@ -49,6 +53,8 @@ julia/1.7-rc1:
 # # This job tests the ThreadPinning.jl with Julia nightly
 # julia/nightly:
 #   stage: test
+#   tags:
+#     - bauerc-noctua
 #   variables:
 #     SCHEDULER_PARAMETERS: "-A pc2-mitarbeiter -p short"
 #   rules:
