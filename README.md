@@ -1,4 +1,4 @@
-<img align="right" src="https://github.com/carstenbauer/ThreadPinning.jl/blob/main/docs/src/assets/logo.png" width=200px>
+<img align="right" src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/assets/logo.png" width=200px>
 
 # ThreadPinning.jl
 
