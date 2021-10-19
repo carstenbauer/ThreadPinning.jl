@@ -1,6 +1,6 @@
-# ThreadPinning.jl
-
 <img align="right" src="https://github.com/carstenbauer/ThreadPinning.jl/blob/main/docs/src/assets/logo.png" width=200px>
+
+# ThreadPinning.jl
 
 <!-- [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaperf.github.io/LIKWID.jl/stable/) -->
 <!-- [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaperf.github.io/LIKWID.jl/dev/) -->
