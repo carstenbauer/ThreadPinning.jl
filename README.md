@@ -22,9 +22,9 @@ Because
 
 **Note: Only Linux is supported!**
 
-The package is currently not registered. Hence, you need to
+The package is registered. Hence, you can simply use
 ```
-] add https://github.com/carstenbauer/ThreadPinning.jl
+] add ThreadPinning
 ```
 to add the package to your Julia environment.
 
