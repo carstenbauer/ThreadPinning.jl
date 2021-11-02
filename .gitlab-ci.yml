@@ -24,11 +24,8 @@ julia/1.6:
     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
     - julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
     - julia --color=yes --project=test/coverage test/coverage/coverage.jl
-    # - bash -l
-    # - module load lang/Julia/1.6.2-linux-x86_64
-    # - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
 
-# This job tests the ThreadPinning.jl with Julia 1.7-rc1
+# This job tests the ThreadPinning.jl with Julia 1.7-rc1 if the 1.6 job has passed
 julia/1.7-rc1:
   stage: test
   tags:
@@ -38,38 +35,12 @@ julia/1.7-rc1:
   rules:
     - changes:
       - "README.md"
-    #   - "docs/**/*.md"
-    #   - "docs/make.jl"
-    #   - "docs/build_docs.jl"
-    #   when: never
     - when: on_success
+  needs:
+    job: julia/1.6
   script:
     - export JULIA_NUM_THREADS=8
     - wget https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.0-rc1-linux-x86_64.tar.gz
     - tar --strip-components=1 -xf julia-1.7.0-rc1-linux-x86_64.tar.gz
     - bin/julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
   allow_failure: true
-
-# # This job tests the ThreadPinning.jl with Julia nightly
-# julia/nightly:
-#   stage: test
-#   tags:
-#     - bauerc-noctua
-#   variables:
-#     SCHEDULER_PARAMETERS: "-A pc2-mitarbeiter -p short"
-#   rules:
-#     - changes:
-#       - "README.md"
-#     #   - "docs/**/*.md"
-#     #   - "docs/make.jl"
-#     #   - "docs/build_docs.jl"
-#     #   when: never
-#     - when: on_success
-#   script:
-#     - export JULIA_NUM_THREADS=8
-#     - wget https://julialangnightlies-s3.julialang.org/bin/linux/x64/julia-latest-linux64.tar.gz
-#     - tar --strip-components=1 -xf julia-latest-linux64.tar.gz
-#     - bin/julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
-#     - bin/julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
-#     - bin/julia --color=yes --project=test/coverage test/coverage/coverage.jl
-#   allow_failure: true
