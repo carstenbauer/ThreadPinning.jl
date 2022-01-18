@@ -30,13 +30,14 @@ For more information see `uv_thread_setaffinity`.
 pinthread(cpuid::Integer) = uv_thread_setaffinity(cpuid)
 
 """
-    pinthreads(cpuids::AbstractVector{<:Integer})
+    pinthreads(cpuids::AbstractVector{<:Integer}[; warn])
 Pins the first `1:length(cpuids)` Julia threads to the CPUs with ids `cpuids`.
 Note that `length(cpuids)` may not be larger than `Threads.nthreads()`.
 
 For more information see `pinthread`.
 """
-function pinthreads(cpuids::AbstractVector{<:Integer})
+function pinthreads(cpuids::AbstractVector{<:Integer}; warn::Bool = true)
+    warn && _check_environment()
     ncpuids = length(cpuids)
     ncpuids ≤ nthreads() || throw(ArgumentError("length(cpuids) must be ≤ Threads.nthreads()"))
     @threads :static for tid in 1:ncpuids
@@ -46,7 +47,7 @@ function pinthreads(cpuids::AbstractVector{<:Integer})
 end
 
 """
-    pinthreads(strategy::Symbol[; nthreads, kwargs...])
+    pinthreads(strategy::Symbol[; nthreads, warn, kwargs...])
 Pin the first `1:nthreads` Julia threads according to the given pinning `strategy`.
 Per default, `nthreads == Threads.nthreads()`
 
@@ -54,7 +55,8 @@ Allowed strategies:
 * `:compact`: pins to the first `1:nthreads` cores
 * `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion. To function automatically, Hwloc.jl should be loaded (i.e. `using Hwloc`). Otherwise, we the keyword arguments `nsockets` (default: `2`) and `hyperthreads` (default: `false`) can be used to indicate whether hyperthreads are available on the system (i.e. whether `Sys.CPU_THREADS == 2 * nphysicalcores`).
 """
-function pinthreads(strategy::Symbol; nthreads=Threads.nthreads(), kwargs...)
+function pinthreads(strategy::Symbol; nthreads = Threads.nthreads(), warn::Bool = true, kwargs...)
+    warn && _check_environment()
     if strategy == :compact
         return _pin_compact(nthreads)
     elseif strategy in (:scatter, :spread)
@@ -64,19 +66,19 @@ function pinthreads(strategy::Symbol; nthreads=Threads.nthreads(), kwargs...)
     end
 end
 
-_pin_compact(nthreads) = pinthreads(1:nthreads)
-function _pin_scatter(nthreads; hyperthreading=false, nsockets=2, verbose=false, kwargs...)
+_pin_compact(nthreads) = pinthreads(1:nthreads; warn = false)
+function _pin_scatter(nthreads; hyperthreading = false, nsockets = 2, verbose = false, kwargs...)
     verbose && @info("Assuming $nsockets sockets and the ", hyperthreading ? "availability" : "absence", " of hyperthreads.")
     ncpus = Sys.CPU_THREADS
     if !hyperthreading
-        cpuids_per_socket = Iterators.partition(1:ncpus, ncpus÷nsockets)
+        cpuids_per_socket = Iterators.partition(1:ncpus, ncpus ÷ nsockets)
         cpuids = interweave(cpuids_per_socket...)
     else
         # alternate between sockets but use hyperthreads (i.e. 2 threads per core) only if necessary
-        cpuids_per_socket_and_hyper = collect.(Iterators.partition(1:ncpus, (ncpus÷2)÷nsockets))
+        cpuids_per_socket_and_hyper = collect.(Iterators.partition(1:ncpus, (ncpus ÷ 2) ÷ nsockets))
         cpuids_per_socket = [reduce(vcat, cpuids_per_socket_and_hyper[s:nsockets:end]) for s in 1:nsockets]
         cpuids = interweave(cpuids_per_socket...)
     end
-    pinthreads(@view cpuids[1:nthreads])
+    pinthreads(@view cpuids[1:nthreads]; warn = false)
     return nothing
 end

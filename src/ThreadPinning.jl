@@ -2,6 +2,7 @@ module ThreadPinning
 
 # stdlibs
 using Base.Threads: @threads, nthreads
+using Libdl
 
 # packages
 using Requires

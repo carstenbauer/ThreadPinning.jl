@@ -42,7 +42,7 @@ end
 """
 [1,2,3,4], [5,6,7,8] -> [1,5,2,6,3,7,4,8]
 """
-function interweave(arrays::AbstractVector{T}...) where T
+function interweave(arrays::AbstractVector{T}...) where {T}
     # interweaving the arrays (i.e. in alternating fashion)
     lengths = length.(arrays)
     length(unique(lengths)) == 1 || throw(ArgumentError("Only same length inputs supported."))
@@ -53,4 +53,31 @@ function interweave(arrays::AbstractVector{T}...) where T
         res[i:narrays:end] .= elements
     end
     return res
+end
+
+"""
+Check if MKL library \"libmkl_rt.so\" is available in `Libdl.dllist()`
+(as is the case when loading MKL.jl or MKL_jll.jl).
+"""
+mkl_is_loaded() = any(endswith(lib, "libmkl_rt.$(Libdl.dlext)") for lib in Libdl.dllist())
+
+"Try to find \"libmkl_rt.so\" in `Libdl.dllist()`. Returns `nothing` if it can't be found."
+function find_mkl()
+    for lib in Libdl.dllist()
+        if endswith(lib, "libmkl_rt.$(Libdl.dlext)")
+            return lib
+        end
+    end
+    return nothing
+end
+
+"Call the MKL function `mkl_get_dynamic`."
+mkl_get_dynamic() = @ccall find_mkl().mkl_get_dynamic()::Cint
+
+"Potentially throw warnings if the environment is such that thread pinning might not work."
+function _check_environment()
+    if Threads.nthreads() > 1 && mkl_is_loaded() && mkl_get_dynamic() == 1
+        @warn("Found MKL_DYNAMIC == true. Be aware that calling an MKL function can spoil the pinning of Julia threads! See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
+    end
+    return nothing
 end
