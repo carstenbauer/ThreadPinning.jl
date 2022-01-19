@@ -74,10 +74,13 @@ end
 "Call the MKL function `mkl_get_dynamic`."
 mkl_get_dynamic() = @ccall find_mkl().mkl_get_dynamic()::Cint
 
+"Call the MKL function `mkl_set_dynamic`."
+mkl_set_dynamic(flag::Integer) = @ccall find_mkl().MKL_Set_Dynamic(flag::Cint)::Cvoid
+
 "Potentially throw warnings if the environment is such that thread pinning might not work."
 function _check_environment()
     if Threads.nthreads() > 1 && mkl_is_loaded() && mkl_get_dynamic() == 1
-        @warn("Found MKL_DYNAMIC == true. Be aware that calling an MKL function can spoil the pinning of Julia threads! See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
+        @warn("Found MKL_DYNAMIC == true. Be aware that calling an MKL function can spoil the pinning of Julia threads! Use `ThreadPinning.mkl_set_dynamic(0)` to be safe. See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
     end
     return nothing
 end
