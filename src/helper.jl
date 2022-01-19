@@ -41,16 +41,24 @@ end
 
 """
 [1,2,3,4], [5,6,7,8] -> [1,5,2,6,3,7,4,8]
+1:4, 5:8, 9:12 == [1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12]
 """
 function interweave(arrays::AbstractVector{T}...) where {T}
-    # interweaving the arrays (i.e. in alternating fashion)
-    lengths = length.(arrays)
-    length(unique(lengths)) == 1 || throw(ArgumentError("Only same length inputs supported."))
+    # check input args
     narrays = length(arrays)
-    nelements = sum(lengths)
-    res = zeros(T, nelements)
-    for (i, elements) in enumerate(arrays)
-        res[i:narrays:end] .= elements
+    narrays > 0 || throw(ArgumentError("No input arguments provided."))
+    len = length(first(arrays))
+    for a in arrays
+        length(a) == len || throw(ArgumentError("Only same length inputs supported."))
+    end
+    # interweave
+    res = zeros(T, len * narrays)
+    c = 1
+    for i in eachindex(first(arrays))
+        for a in arrays
+            @inbounds res[c] = a[i]
+            c += 1
+        end
     end
     return res
 end

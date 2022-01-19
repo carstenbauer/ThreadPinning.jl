@@ -17,13 +17,14 @@ end
 
 @testset "ThreadPinning.jl" begin
     @testset "Helper" begin
-        @test ThreadPinning.interweave([1,2,3,4], [5,6,7,8]) == [1,5,2,6,3,7,4,8]
-        @test ThreadPinning.interweave(1:4, 5:8) == [1,5,2,6,3,7,4,8]
+        @test ThreadPinning.interweave([1, 2, 3, 4], [5, 6, 7, 8]) == [1, 5, 2, 6, 3, 7, 4, 8]
+        @test ThreadPinning.interweave(1:4, 5:8) == [1, 5, 2, 6, 3, 7, 4, 8]
+        @test ThreadPinning.interweave(1:4, 5:8, 9:12) == [1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12]
         # different size inputs
-        @test_throws ArgumentError ThreadPinning.interweave([1,2,3,4], [5,6,7,8,9])
+        @test_throws ArgumentError ThreadPinning.interweave([1, 2, 3, 4], [5, 6, 7, 8, 9])
     end
 
-    
+
     @testset "Querying CPU IDs" begin
         @test typeof(getcpuid()) == Int
         @test typeof(getcpuids()) == Vector{Int}
@@ -41,10 +42,10 @@ end
         @test isnothing(pinthreads(cpuids_new))
         @test getcpuids() == cpuids_new
     end
-    
+
     @testset "Thread Pinning (compact)" begin
         @assert getcpuids() != 1:nthreads()
-        @test isnothing(pinthreads(:compact; nthreads=2))
+        @test isnothing(pinthreads(:compact; nthreads = 2))
         @test getcpuids()[1:2] == 1:2
         @test isnothing(pinthreads(:compact))
         @test getcpuids() == 1:nthreads()
@@ -55,12 +56,12 @@ end
         # default, i.e. nsockets == 2 and hyperthreads == false
         @test isnothing(pinthreads(:scatter))
         cpuids_after = getcpuids()
-        @test check_compact_within_socket(cpuids_after; nsockets=2)
+        @test check_compact_within_socket(cpuids_after; nsockets = 2)
         # single-socket, no hyperthreads
-        @test isnothing(pinthreads(:scatter; nsockets=1))
+        @test isnothing(pinthreads(:scatter; nsockets = 1))
         cpuids_after = getcpuids()
         @test cpuids_after == 1:nthreads()
-        @test check_compact_within_socket(cpuids_after; nsockets=1) # same as above, but why not :)
+        @test check_compact_within_socket(cpuids_after; nsockets = 1) # same as above, but why not :)
 
         # hyperthreads
         # fresh setup agin
@@ -68,10 +69,10 @@ end
         pinthreads(cpuids_before)
         @assert getcpuids() == cpuids_before
         # single-socket + hyperthreads
-        @test isnothing(pinthreads(:scatter; nsockets=1, hyperthreads=true))
+        @test isnothing(pinthreads(:scatter; nsockets = 1, hyperthreads = true))
         cpuids_after = getcpuids()
         @test cpuids_after == 1:nthreads()
-        @test check_compact_within_socket(cpuids_after; nsockets=1) # same as above, but why not :)
+        @test check_compact_within_socket(cpuids_after; nsockets = 1) # same as above, but why not :)
         # dual-socket + hyperthreads
         # TODO: how to test this properly?
     end
@@ -89,6 +90,6 @@ end
         @test cpuids_after != cpuids_before
         # check "compact" pinning within each package
         npackages = Hwloc.num_packages()
-        @test check_compact_within_socket(cpuids_after; nsockets=npackages)
+        @test check_compact_within_socket(cpuids_after; nsockets = npackages)
     end
 end

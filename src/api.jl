@@ -27,7 +27,7 @@ Pin the calling Julia thread to the CPU with id `cpuid`.
 
 For more information see `uv_thread_setaffinity`.
 """
-function pinthread(cpuid::Integer; warn::Bool=true)
+function pinthread(cpuid::Integer; warn::Bool = true)
     warn && _check_environment()
     uv_thread_setaffinity(cpuid)
 end
@@ -44,7 +44,7 @@ function pinthreads(cpuids::AbstractVector{<:Integer}; warn::Bool = true)
     ncpuids = length(cpuids)
     ncpuids ≤ nthreads() || throw(ArgumentError("length(cpuids) must be ≤ Threads.nthreads()"))
     @threads :static for tid in 1:ncpuids
-        pinthread(cpuids[tid]; warn=false)
+        pinthread(cpuids[tid]; warn = false)
     end
     return nothing
 end

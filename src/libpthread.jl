@@ -9,7 +9,7 @@ const __ULONGWORD_TYPE = __t_uscalar_t
 const __CPU_MASK_TYPE = __ULONGWORD_TYPE
 const __cpu_mask = __CPU_MASK_TYPE
 
-const __CPU_SETSIZE	= 1024
+const __CPU_SETSIZE = 1024
 const __NCPUBITS = (8 * sizeof(__cpu_mask))
 
 "Data structure to describe CPU mask.
@@ -17,7 +17,7 @@ const __NCPUBITS = (8 * sizeof(__cpu_mask))
 https://github.com/lattera/glibc/blob/master/posix/bits/cpu-set.h
 "
 struct cpu_set_t
-    __bits::NTuple{16, __cpu_mask}
+    __bits::NTuple{16,__cpu_mask}
 end
 
 """
