@@ -67,6 +67,12 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
         printstyled("#", bold = true)
     end
     print(" = Julia thread, ")
+    if ht
+        printstyled("#", color = :light_black)
+        print(" = HT, ")
+        printstyled("#", bold = true, color = :magenta)
+        print(" = Julia thread on HT, ")
+    end
     printstyled("|", bold = true)
     print(" = Package seperator")
     println("\n")
