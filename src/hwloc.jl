@@ -29,7 +29,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids())
     for pkg in package_puids
         for puid in pkg
             if puid in thread_cpuids
-                printstyled(puid, bold = true, underline = false, color = :red)
+                printstyled(puid, bold = true, color = :red)
             else
                 print(puid)
             end
@@ -41,7 +41,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids())
     println()
     # legend
     println()
-    printstyled("#", bold = true, underline = false, color = :red)
+    printstyled("#", bold = true, color = :red)
     print(" = Julia thread, ")
     printstyled("|", bold = true)
     print(" = Package seperator")

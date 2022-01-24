@@ -116,7 +116,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids())
     print(" ")
     for puid in 0:Sys.CPU_THREADS-1
         if puid in thread_cpuids
-            printstyled(puid, bold = true, underline = false, color = :red)
+            printstyled(puid, bold = true, color = :red)
         else
             print(puid)
         end
@@ -125,7 +125,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids())
     println()
     # legend
     println()
-    printstyled("#", bold = true, underline = false, color = :red)
+    printstyled("#", bold = true, color = :red)
     print(" = Julia thread")
     println("\n")
     return nothing
