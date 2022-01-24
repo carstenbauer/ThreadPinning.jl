@@ -23,25 +23,49 @@ function _pin_scatter(nthreads; kwargs...)
     return nothing
 end
 
-function _visualize_affinity(; thread_cpuids = getcpuids())
+function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, color = true)
     package_puids = _hwloc_package_puids()
+    nvcores = Hwloc.num_virtual_cores()
     printstyled("| ", bold = true)
-    for pkg in package_puids
-        for puid in pkg
-            if puid in thread_cpuids
-                printstyled(puid, bold = true, color = :red)
+    for (i, pkg) in pairs(package_puids)
+        for (k, puid) in pairs(pkg)
+            if color
+                if puid in thread_cpuids
+                    printstyled(puid, bold = true, color = :red)
+                else
+                    print(puid)
+                end
             else
-                print(puid)
+                if puid in thread_cpuids
+                    printstyled(puid, bold = true)
+                else
+                    print("_")
+                end
             end
-            !(puid == last(pkg)) && print(",")
+            if !(puid == last(pkg))
+                print(",")
+                mod(k, blocksize) == 0 && print("\n  ")
+            end
         end
         # print(" | ")
-        printstyled(" | ", bold = true)
+        if nvcores > 20
+            printstyled(" |", bold = true)
+            if !(i == length(package_puids))
+                println()
+                printstyled("| ", bold = true)
+            end
+        else
+            printstyled(" | ", bold = true)
+        end
     end
     println()
     # legend
     println()
-    printstyled("#", bold = true, color = :red)
+    if color
+        printstyled("#", bold = true, color = :red)
+    else
+        printstyled("#", bold = true)
+    end
     print(" = Julia thread, ")
     printstyled("|", bold = true)
     print(" = Package seperator")

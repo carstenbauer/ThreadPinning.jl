@@ -91,17 +91,21 @@ Print information about Julia threads, e.g. on which CPU-cores they are running.
 
 By default, the visualization will be based on `Sys.CPU_THREADS` only.
 If you also load Hwloc.jl (via `using Hwloc`) it will show more detailed information.
+
+Keyword arguments:
+* `color` (default=`true`): If true, used cores are highlighted in red. If false, unused cores are indicated by an underscore to make the used cores stand out. 
+* `blocksize (default=32)`: Wrap to a new line after `blocksize` many cores.
 """
-function threadinfo()
+function threadinfo(; kwargs...)
     # general info
     thread_cpuids = getcpuids()
     # visualize current pinning
     println()
-    _visualize_affinity(; thread_cpuids)
+    _visualize_affinity(; thread_cpuids, kwargs...)
     println("Julia threads: ", Threads.nthreads())
     println("Occupied cores: ", length(unique(thread_cpuids)))
     println("Thread-Core mapping:")
-    for (tid, core) in enumerate(thread_cpuids)
+    for (tid, core) in pairs(thread_cpuids)
         print("  $tid => $core,")
         if tid == 10
             print("  ...")
@@ -112,20 +116,34 @@ function threadinfo()
     return nothing
 end
 
-function _visualize_affinity(; thread_cpuids = getcpuids())
+function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, color = true)
     print(" ")
-    for puid in 0:Sys.CPU_THREADS-1
-        if puid in thread_cpuids
-            printstyled(puid, bold = true, color = :red)
+    nvcores = Sys.CPU_THREADS
+    for (i, puid) in pairs(0:nvcores-1)
+        if color
+            if puid in thread_cpuids
+                printstyled(puid, bold = true, color = :red)
+            else
+                print(puid)
+            end
         else
-            print(puid)
+            if puid in thread_cpuids
+                printstyled(puid, bold = true)
+            else
+                print("_")
+            end
         end
-        !(puid == Sys.CPU_THREADS - 1) && print(",")
+        !(puid == nvcores - 1) && print(",")
+        mod(i, blocksize) == 0 && print("\n ")
     end
     println()
     # legend
     println()
-    printstyled("#", bold = true, color = :red)
+    if color
+        printstyled("#", bold = true, color = :red)
+    else
+        printstyled("#", bold = true)
+    end
     print(" = Julia thread")
     println("\n")
     return nothing

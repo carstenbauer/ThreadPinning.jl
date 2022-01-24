@@ -40,30 +40,50 @@ The most important functions are [`pinthreads`](#pinthreads) and [`threadinfo`](
 
 <img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/assets/threadinfo.png" width=900px>
 
-To programmatically query the CPU-core IDs associated with the Julia threads, you can use [`getcpuids`](#getcpuids--getcpuid).
+### Without color support
 
 ```julia
-# julia -t 5
+julia> using ThreadPinning, Hwloc # Hwloc is optional
 
-julia> using ThreadPinning
+julia> threadinfo(color=false)
 
-julia> getcpuids()
-5-element Vector{Int64}:
- 18
- 12
- 13
- 14
- 15
+| 0,_,_,_,_,_,_,_,_,_,_,11,12,13,_,_,_,_,_,_ |
+| 20,21,22,23,24,25,26,27,28,_,30,31,32,33,34,35,_,37,_,_ |
+
+# = Julia thread, | = Package seperator
+
+Julia threads: 20
+Occupied cores: 20
+Thread-Core mapping:
+  1 => 0,  2 => 26,  3 => 28,  4 => 12,  5 => 20,  6 => 21,  7 => 22,  8 => 23,  9 => 24,  10 => 25,  ...
 
 julia> pinthreads(:compact)
 
-julia> getcpuids()
-5-element Vector{Int64}:
- 0
- 1
- 2
- 3
- 4
+julia> threadinfo(color=false)
+
+| 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19 |
+| _,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_ |
+
+# = Julia thread, | = Package seperator
+
+Julia threads: 20
+Occupied cores: 20
+Thread-Core mapping:
+  1 => 0,  2 => 1,  3 => 2,  4 => 3,  5 => 4,  6 => 5,  7 => 6,  8 => 7,  9 => 8,  10 => 9,  ...
+
+julia> pinthreads(:scatter)
+
+julia> threadinfo(color=false)
+
+| 0,1,2,3,4,5,6,7,8,9,_,_,_,_,_,_,_,_,_,_ |
+| 20,21,22,23,24,25,26,27,28,29,_,_,_,_,_,_,_,_,_,_ |
+
+# = Julia thread, | = Package seperator
+
+Julia threads: 20
+Occupied cores: 20
+Thread-Core mapping:
+  1 => 0,  2 => 20,  3 => 1,  4 => 21,  5 => 2,  6 => 22,  7 => 3,  8 => 23,  9 => 4,  10 => 24,  ...
 ```
 
 ## Documentation
@@ -85,6 +105,10 @@ julia> getcpuids()
 > 
 > By default, the visualization will be based on `Sys.CPU_THREADS` only.
 > If you also load Hwloc.jl (via `using Hwloc`) it will show more detailed information.
+> 
+> Keyword arguments:
+> * `color` (default=`true`): If true, used cores are highlighted in red. If false, unused cores are indicated by an underscore to make the used cores stand out. 
+> * `blocksize (default=32)`: Wrap to a new line after `blocksize` many cores.
 
 #### `getcpuids` / `getcpuid`
 
