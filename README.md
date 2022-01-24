@@ -38,7 +38,7 @@ The most important functions are `pinthreads` and `threadinfo`.
 
 (Dual-socket system with 20 cores per socket, `julia -t 20`)
 
-<img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/assets/threadinfo.png" width=500px>
+<img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/assets/threadinfo.png" width=900px>
 
 ## Documentation
 
