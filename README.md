@@ -24,7 +24,7 @@ Because
 
 ## Installation
 
-**Note: Only Linux is supported!**
+**Note: Only Linux is supported!** (macOS doesn't support thread pinning. Windows might or might not work.)
 
 The package is registered. Hence, you can simply use
 ```
@@ -40,18 +40,60 @@ The most important functions are `pinthreads` and `threadinfo`.
 
 <img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/assets/threadinfo.png" width=900px>
 
+To programmatically get the CPU-core IDs associated with the Julia threads, you can use `getcpuids`.
+
+```julia
+# julia -t 5
+
+julia> using ThreadPinning
+
+julia> getcpuids()
+5-element Vector{Int64}:
+ 18
+ 12
+ 13
+ 14
+ 15
+
+julia> pinthreads(:compact)
+
+julia> getcpuids()
+5-element Vector{Int64}:
+ 0
+ 1
+ 2
+ 3
+ 4
+```
+
 ## Documentation
 
-### `pinthreads`
+#### `pinthreads`
 
-`pinthreads(strategy::Symbol[; nthreads, warn, kwargs...])`
+> `pinthreads(strategy::Symbol[; nthreads, warn, kwargs...])`
+> 
+> Pin the first `1:nthreads` Julia threads according to the given pinning `strategy`.
+> Per default, `nthreads == Threads.nthreads()`
+> 
+> Allowed strategies:
+> * `:compact`: pins to the first `1:nthreads` cores
+> * `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion. To function automatically, Hwloc.jl should be loaded (i.e. `using Hwloc`). Otherwise, we the keyword arguments `nsockets` (default: `2`) and `hyperthreads` (default: `false`) can be used to indicate whether hyperthreads are available on the system (i.e. whether `Sys.CPU_THREADS == 2 * nphysicalcores`).
 
-Pin the first `1:nthreads` Julia threads according to the given pinning `strategy`.
-Per default, `nthreads == Threads.nthreads()`
+#### `threadinfo`
 
-Allowed strategies:
-* `:compact`: pins to the first `1:nthreads` cores
-* `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion. To function automatically, Hwloc.jl should be loaded (i.e. `using Hwloc`). Otherwise, we the keyword arguments `nsockets` (default: `2`) and `hyperthreads` (default: `false`) can be used to indicate whether hyperthreads are available on the system (i.e. whether `Sys.CPU_THREADS == 2 * nphysicalcores`).
+> Print information about Julia threads, e.g. on which CPU-cores they are running.
+> 
+> By default, the visualization will be based on `Sys.CPU_THREADS` only.
+> If you also load Hwloc.jl (via `using Hwloc`) it will show more detailed information.
+
+#### `getcpuids` / `getcpuid`
+
+> Returns the IDs of the CPUs on which the Julia threads
+> are currently running.
+
+## Explanation
+
+We use libc's [sched_getcpu](https://man7.org/linux/man-pages/man3/sched_getcpu.3.html) to query the CPU-core ID for a thread and libuv's [uv_thread_setaffinity](https://github.com/clibs/uv/blob/master/docs/src/threading.rst) to set the affinity of a thread.
 
 
 ## Noteworthy Alternatives
