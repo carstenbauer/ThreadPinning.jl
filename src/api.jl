@@ -93,8 +93,9 @@ By default, the visualization will be based on `Sys.CPU_THREADS` only.
 If you also load Hwloc.jl (via `using Hwloc`) it will show more detailed information.
 
 Keyword arguments:
-* `color` (default=`true`): If true, used cores are highlighted in red. If false, unused cores are indicated by an underscore to make the used cores stand out. 
-* `blocksize (default=32)`: Wrap to a new line after `blocksize` many cores.
+* `color` (default: `true`): If true, used cores are highlighted in red. If false, unused cores are indicated by an underscore to make the used cores stand out. 
+* `blocksize (default: 32)`: Wrap to a new line after `blocksize` many cores.
+* `ht`: If true, we highlight virtual cores associated with hyperthreads in the `color=true` output. By default, we try to automatically figure out whether hypterthreading is enabled.
 """
 function threadinfo(; kwargs...)
     # general info

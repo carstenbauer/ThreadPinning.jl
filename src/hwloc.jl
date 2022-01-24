@@ -23,7 +23,7 @@ function _pin_scatter(nthreads; kwargs...)
     return nothing
 end
 
-function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, color = true)
+function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, color = true, ht = hyperthreading_is_enabled())
     package_puids = _hwloc_package_puids()
     nvcores = Hwloc.num_virtual_cores()
     printstyled("| ", bold = true)
@@ -31,9 +31,9 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
         for (k, puid) in pairs(pkg)
             if color
                 if puid in thread_cpuids
-                    printstyled(puid, bold = true, color = :red)
+                    printstyled(puid, bold = true, color = (ht && isodd(puid)) ? :magenta : :red)
                 else
-                    print(puid)
+                    printstyled(puid, color = (ht && isodd(puid)) ? :black : :default)
                 end
             else
                 if puid in thread_cpuids
@@ -72,3 +72,5 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
     println("\n")
     return nothing
 end
+
+hyperthreading_is_enabled() = !(Hwloc.num_virtual_cores() == Hwloc.num_physical_cores())
