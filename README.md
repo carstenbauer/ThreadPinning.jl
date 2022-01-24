@@ -34,7 +34,7 @@ to add the package to your Julia environment.
 
 ## Example
 
-The most important functions are `pinthreads` and `threadinfo`.
+The most important functions are [`pinthreads`](#pinthreads) and [`threadinfo`](#threadinfo).
 
 (Dual-socket system with 20 cores per socket, `julia -t 20`)
 
