@@ -107,7 +107,7 @@ function threadinfo(; kwargs...)
     println("Thread-Core mapping:")
     for (tid, core) in pairs(thread_cpuids)
         print("  $tid => $core,")
-        if tid == 10
+        if tid == 5
             print("  ...")
             break
         end

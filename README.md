@@ -55,7 +55,7 @@ julia> threadinfo(color=false)
 Julia threads: 20
 Occupied cores: 20
 Thread-Core mapping:
-  1 => 0,  2 => 26,  3 => 28,  4 => 12,  5 => 20,  6 => 21,  7 => 22,  8 => 23,  9 => 24,  10 => 25,  ...
+  1 => 0,  2 => 26,  3 => 28,  4 => 12,  5 => 20,  ...
 
 julia> pinthreads(:compact)
 
@@ -69,7 +69,7 @@ julia> threadinfo(color=false)
 Julia threads: 20
 Occupied cores: 20
 Thread-Core mapping:
-  1 => 0,  2 => 1,  3 => 2,  4 => 3,  5 => 4,  6 => 5,  7 => 6,  8 => 7,  9 => 8,  10 => 9,  ...
+  1 => 0,  2 => 1,  3 => 2,  4 => 3,  5 => 4,  ...
 
 julia> pinthreads(:scatter)
 
@@ -83,7 +83,7 @@ julia> threadinfo(color=false)
 Julia threads: 20
 Occupied cores: 20
 Thread-Core mapping:
-  1 => 0,  2 => 20,  3 => 1,  4 => 21,  5 => 2,  6 => 22,  7 => 3,  8 => 23,  9 => 4,  10 => 24,  ...
+  1 => 0,  2 => 20,  3 => 1,  4 => 21,  5 => 2,  ...
 ```
 
 ## Documentation
