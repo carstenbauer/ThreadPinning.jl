@@ -18,7 +18,7 @@ julia/1.6:
     #   when: never
     - when: on_success
   script:
-    - export JULIA_NUM_THREADS=8
+    - export JULIA_NUM_THREADS=20
     - /bin/bash -l
     - module load lang/Julia/1.6.5-linux-x86_64
     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
@@ -39,7 +39,7 @@ julia/1.7:
   needs:
     job: julia/1.6
   script:
-    - export JULIA_NUM_THREADS=8
+    - export JULIA_NUM_THREADS=20
     - /bin/bash -l
     - module load lang/Julia/1.7.1-linux-x86_64
     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'

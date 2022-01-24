@@ -13,7 +13,7 @@ include("libc.jl")
 include("libuv.jl")
 include("libpthread.jl")
 include("api.jl")
-export getcpuid, getcpuids, pinthread, pinthreads
+export getcpuid, getcpuids, pinthread, pinthreads, threadinfo
 
 function __init__()
     @require Hwloc = "0e44f5e4-bd66-52a0-8798-143a42290a1d" include("hwloc.jl")

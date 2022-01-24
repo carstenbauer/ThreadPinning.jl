@@ -34,61 +34,25 @@ to add the package to your Julia environment.
 
 ## Example
 
-(Dual-socket system with 20 cores per socket, `JULIA_NUM_THREADS=8`)
+The most important functions are `pinthreads` and `threadinfo`.
 
-```julia
-julia> using ThreadPinning
+(Dual-socket system with 20 cores per socket, `julia -t 20`)
 
-julia> getcpuids()
-8-element Vector{Int64}:
- 39
- 25
- 26
-  2
- 28
-  3
- 29
-  4
+<img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/assets/threadinfo.png" width=500px>
 
-julia> pinthreads(:compact)
+## Documentation
 
-julia> getcpuids()
-8-element Vector{Int64}:
- 1
- 2
- 3
- 4
- 5
- 6
- 7
- 8
+### `pinthreads`
 
-julia> pinthreads([1,3,5,7,2,4,6,8])
+`pinthreads(strategy::Symbol[; nthreads, warn, kwargs...])`
 
-julia> getcpuids()
-8-element Vector{Int64}:
- 1
- 3
- 5
- 7
- 2
- 4
- 6
- 8
+Pin the first `1:nthreads` Julia threads according to the given pinning `strategy`.
+Per default, `nthreads == Threads.nthreads()`
 
-julia> pinthreads(:scatter)
+Allowed strategies:
+* `:compact`: pins to the first `1:nthreads` cores
+* `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion. To function automatically, Hwloc.jl should be loaded (i.e. `using Hwloc`). Otherwise, we the keyword arguments `nsockets` (default: `2`) and `hyperthreads` (default: `false`) can be used to indicate whether hyperthreads are available on the system (i.e. whether `Sys.CPU_THREADS == 2 * nphysicalcores`).
 
-julia> getcpuids()
-8-element Vector{Int64}:
-  1
- 21
-  2
- 22
-  3
- 23
-  4
- 24
-```
 
 ## Noteworthy Alternatives
 

@@ -24,10 +24,13 @@ end
         @test_throws ArgumentError ThreadPinning.interweave([1, 2, 3, 4], [5, 6, 7, 8, 9])
     end
 
-
     @testset "Querying CPU IDs" begin
         @test typeof(getcpuid()) == Int
         @test typeof(getcpuids()) == Vector{Int}
+    end
+
+    @testset "threadinfo()" begin
+        @test isnothing(threadinfo())
     end
 
     @testset "Thread Pining (explicit)" begin
@@ -35,20 +38,20 @@ end
         cpuid_new = cpuid_before != 1 ? 1 : 0
         @test pinthread(cpuid_new)
         @test getcpuid() == cpuid_new
-        cpuids_new = shuffle(1:nthreads())
+        cpuids_new = shuffle(0:nthreads()-1)
         @test isnothing(pinthreads(cpuids_new))
         @test getcpuids() == cpuids_new
-        cpuids_new = reverse(1:nthreads())
+        cpuids_new = reverse(0:nthreads()-1)
         @test isnothing(pinthreads(cpuids_new))
         @test getcpuids() == cpuids_new
     end
 
     @testset "Thread Pinning (compact)" begin
-        @assert getcpuids() != 1:nthreads()
+        @assert getcpuids() != 0:nthreads()-1
         @test isnothing(pinthreads(:compact; nthreads = 2))
-        @test getcpuids()[1:2] == 1:2
+        @test getcpuids()[1:2] == 0:1
         @test isnothing(pinthreads(:compact))
-        @test getcpuids() == 1:nthreads()
+        @test getcpuids() == 0:nthreads()-1
     end
 
     @testset "Thread Pinning (scatter)" begin
@@ -60,18 +63,18 @@ end
         # single-socket, no hyperthreads
         @test isnothing(pinthreads(:scatter; nsockets = 1))
         cpuids_after = getcpuids()
-        @test cpuids_after == 1:nthreads()
+        @test cpuids_after == 0:nthreads()-1
         @test check_compact_within_socket(cpuids_after; nsockets = 1) # same as above, but why not :)
 
         # hyperthreads
         # fresh setup agin
-        cpuids_before = reverse(1:nthreads())
+        cpuids_before = reverse(0:nthreads()-1)
         pinthreads(cpuids_before)
         @assert getcpuids() == cpuids_before
         # single-socket + hyperthreads
         @test isnothing(pinthreads(:scatter; nsockets = 1, hyperthreads = true))
         cpuids_after = getcpuids()
-        @test cpuids_after == 1:nthreads()
+        @test cpuids_after == 0:nthreads()-1
         @test check_compact_within_socket(cpuids_after; nsockets = 1) # same as above, but why not :)
         # dual-socket + hyperthreads
         # TODO: how to test this properly?
@@ -79,12 +82,13 @@ end
 
     @testset "Hwloc support" begin
         # setup
-        cpuids_before = reverse(1:nthreads())
+        cpuids_before = reverse(0:nthreads()-1)
         pinthreads(cpuids_before)
         @assert getcpuids() == cpuids_before
 
-        # scatter pinning
         using Hwloc
+        @test isnothing(threadinfo())
+        # scatter pinning
         @test isnothing(pinthreads(:scatter))
         cpuids_after = getcpuids()
         @test cpuids_after != cpuids_before
