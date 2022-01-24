@@ -40,7 +40,7 @@ The most important functions are [`pinthreads`](#pinthreads) and [`threadinfo`](
 
 <img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/assets/threadinfo.png" width=900px>
 
-To programmatically get the CPU-core IDs associated with the Julia threads, you can use `getcpuids`.
+To programmatically query the CPU-core IDs associated with the Julia threads, you can use [`getcpuids`](#getcpuids--getcpuid).
 
 ```julia
 # julia -t 5
