@@ -97,14 +97,14 @@ function threadinfo()
     thread_cpuids = getcpuids()
     # visualize current pinning
     println()
-    println("Julia threads: ", Threads.nthreads())
-    println("Occupied cores: ", length(unique(thread_cpuids)), "\n")
     _visualize_affinity(; thread_cpuids)
+    println("Julia threads: ", Threads.nthreads())
+    println("Occupied cores: ", length(unique(thread_cpuids)))
     println("Thread-Core mapping:")
     for (tid, core) in enumerate(thread_cpuids)
-        println("  $tid => $core")
+        print("  $tid => $core,")
         if tid == 10
-            println("  ...")
+            print("  ...")
             break
         end
     end
