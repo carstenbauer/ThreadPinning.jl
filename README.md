@@ -96,8 +96,10 @@ Thread-Core mapping:
 > Per default, `nthreads == Threads.nthreads()`
 > 
 > Allowed strategies:
-> * `:compact`: pins to the first `1:nthreads` cores
+> * `:compact`: pins to the first `0:nthreads-1` cores
 > * `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion. To function automatically, Hwloc.jl should be loaded (i.e. `using Hwloc`). Otherwise, we the keyword arguments `nsockets` (default: `2`) and `hyperthreads` (default: `false`) can be used to indicate whether hyperthreads are available on the system (i.e. whether `Sys.CPU_THREADS == 2 * nphysicalcores`).
+> * `:random` or `:rand`: pins threads to random cores (ensures that no core is double occupied).
+> * `:halfcompact`: pins to the first `0:2:nthreads-1` cores
 
 #### `threadinfo`
 
@@ -107,9 +109,11 @@ Thread-Core mapping:
 > If you also load Hwloc.jl (via `using Hwloc`) it will show more detailed information.
 > 
 > Keyword arguments:
-> * `color` (default=`true`): If true, used cores are highlighted in red. If false, unused cores are indicated by an underscore to make the used cores stand out. 
-> * `blocksize (default=32)`: Wrap to a new line after `blocksize` many cores.
-> * `ht`: If true, we highlight virtual cores associated with hyperthreads in the `color=true` output. By default, we try to automatically figure out whether hypterthreading is enabled. Note that this keyword is only available if Hwloc.jl is loaded.
+> * `color` (default: `true`): Toggle between colored and black-and-white output.
+> * `blocksize (default: 32)`: Wrap to a new line after `blocksize` many cores.
+> * `ht`: If true, we highlight virtual cores associated with hyperthreads in the `color=true` output. By default, we try to automatically figure out whether hypterthreading is enabled.
+> * `blas` (default: false): Show information about BLAS threads as well.
+> * `hints` (default: false): Give some hints about how to improve the threading related settings.
 
 #### `getcpuids` / `getcpuid`
 

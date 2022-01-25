@@ -92,3 +92,85 @@ function _check_environment()
     end
     return nothing
 end
+
+"Returns the name of the loaded BLAS library (the first, if multiple are loaded)"
+BLAS_lib() = basename(first(BLAS.get_config().loaded_libs).libname)
+
+function _color_mkl_num_threads(; hints = false)
+    jlthreads = Threads.nthreads()
+    cores = Sys.CPU_THREADS
+    cores_per_jlthread = floor(Int, cores / jlthreads)
+    blasthreads_per_jlthread = BLAS.get_num_threads()
+    if blasthreads_per_jlthread == 1
+        if jlthreads < Sys.CPU_THREADS
+            hints && @info("blasthreads_per_jlthread == 1 && jlthreads < cores. You should set BLAS.set_num_threads($cores_per_jlthread) or try to increase the number of Julia threads to $cores.")
+            return :yellow
+        elseif jlthreads == cores
+            return :green
+        else
+            hints && @warn("jlthreads > cores. You should decrease the number of Julia threads to $cores.")
+            return :red
+        end
+    elseif blasthreads_per_jlthread < cores_per_jlthread
+        hints && @info("blasthreads_per_jlthread < cores_per_jlthread. You should increase the number of MKL threads, i.e. BLAS.set_num_threads($cores_per_jlthread).")
+        return :yellow
+    elseif blasthreads_per_jlthread == cores_per_jlthread
+        return :green
+    else
+        hints && @warn("blasthreads_per_jlthread > cores_per_jlthread. You should decrease the number of MKL threads, i.e. BLAS.set_num_threads($cores_per_jlthread).")
+        return :red
+    end
+end
+
+function _color_openblas_num_threads(; hints = false)
+    # BLAS uses `blasthreads` many threads in total
+    cores = Sys.CPU_THREADS
+    blasthreads = BLAS.get_num_threads()
+    jlthreads = Threads.nthreads()
+    if jlthreads != 1
+        if blasthreads == 1
+            return :green
+        else
+            # Not sure about this case...
+            if blasthreads < jlthreads
+                hints && @warn("jlthreads != 1 && blasthreads < jlthreads. You should set BLAS.set_num_threads(1).")
+                return :red
+            elseif blasthreads < cores
+                hints && @info("jlthreads != 1 && blasthreads < cores. You should either set BLAS.set_num_threads(1) (recommended!) or at least BLAS.set_num_threads($cores).")
+                return :yellow
+            elseif blasthreads == cores
+                hints && @info("For jlthreads != 1 we strongly recommend to set BLAS.set_num_threads(1).")
+                return :green
+            else
+                hints && @warn("jlthreads != 1 && blasthreads > cores. You should set BLAS.set_num_threads(1) (recommended!) or at least BLAS.set_num_threads($cores).")
+                return :red
+            end
+        end
+    else
+        # single Julia thread
+        if blasthreads < cores
+            hints && @info("blasthreads < cores. You should increase the number of OpenBLAS threads, i.e. BLAS.set_num_threads($cores).")
+            return :yellow
+        elseif blasthreads == cores
+            return :green
+        else
+            hints && @warn("blasthreads > cores. You should decrease the number of OpenBLAS threads, i.e. BLAS.set_num_threads($corse).")
+            return :red
+        end
+    end
+end
+
+function _general_hints()
+    jlthreads = Threads.nthreads()
+    cores = Sys.CPU_THREADS
+    thread_cpuids = getcpuids()
+    if jlthreads > cores
+        @warn("jlthreads > cores. You should decrease the number of Julia threads to $cores.")
+    elseif jlthreads < cores
+        @info("jlthreads < cores. Perhaps increase number of Julia threads to $cores?")
+    end
+    if length(unique(thread_cpuids)) < jlthreads
+        @warn("Overlap: Some Julia threads are running on the same core!")
+    end
+    return nothing
+end

@@ -3,6 +3,8 @@ module ThreadPinning
 # stdlibs
 using Base.Threads: @threads, nthreads
 using Libdl
+using LinearAlgebra
+using Random
 
 # packages
 using Requires

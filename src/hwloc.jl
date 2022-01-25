@@ -31,7 +31,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
         for (k, puid) in pairs(pkg)
             if color
                 if puid in thread_cpuids
-                    printstyled(puid, bold = true, color = (ht && isodd(puid)) ? :magenta : :red)
+                    printstyled(puid, bold = true, color = (ht && isodd(puid)) ? :red : :light_magenta)
                 else
                     printstyled(puid, color = (ht && isodd(puid)) ? :light_black : :default)
                 end
@@ -48,7 +48,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
             end
         end
         # print(" | ")
-        if nvcores > 20
+        if nvcores > 32
             printstyled(" |", bold = true)
             if !(i == length(package_puids))
                 println()
@@ -62,7 +62,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
     # legend
     println()
     if color
-        printstyled("#", bold = true, color = :red)
+        printstyled("#", bold = true, color = :light_magenta)
     else
         printstyled("#", bold = true)
     end
@@ -70,7 +70,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
     if ht
         printstyled("#", color = :light_black)
         print(" = HT, ")
-        printstyled("#", bold = true, color = :magenta)
+        printstyled("#", bold = true, color = :red)
         print(" = Julia thread on HT, ")
     end
     printstyled("|", bold = true)

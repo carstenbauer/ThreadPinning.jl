@@ -55,8 +55,10 @@ Pin the first `1:nthreads` Julia threads according to the given pinning `strateg
 Per default, `nthreads == Threads.nthreads()`
 
 Allowed strategies:
-* `:compact`: pins to the first `1:nthreads` cores
+* `:compact`: pins to the first `0:nthreads-1` cores
 * `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion. To function automatically, Hwloc.jl should be loaded (i.e. `using Hwloc`). Otherwise, we the keyword arguments `nsockets` (default: `2`) and `hyperthreads` (default: `false`) can be used to indicate whether hyperthreads are available on the system (i.e. whether `Sys.CPU_THREADS == 2 * nphysicalcores`).
+* `:random` or `:rand`: pins threads to random cores (ensures that no core is double occupied).
+* `:halfcompact`: pins to the first `0:2:nthreads-1` cores
 """
 function pinthreads(strategy::Symbol; nthreads = Threads.nthreads(), warn::Bool = true, kwargs...)
     warn && _check_environment()
@@ -64,12 +66,21 @@ function pinthreads(strategy::Symbol; nthreads = Threads.nthreads(), warn::Bool 
         return _pin_compact(nthreads)
     elseif strategy in (:scatter, :spread)
         return _pin_scatter(nthreads; kwargs...)
+    elseif strategy in (:rand, :random)
+        return _pin_random(nthreads)
+    elseif strategy == :halfcompact
+        return _pin_halfcompact(nthreads)
     else
         throw(ArgumentError("Unknown pinning strategy."))
     end
 end
 
+function _pin_random(nthreads)
+    cpuids = shuffle!(collect(1:Sys.CPU_THREADS))
+    pinthreads(@view(cpuids[1:nthreads]); warn=false)
+end
 _pin_compact(nthreads) = pinthreads(0:nthreads-1; warn = false)
+_pin_halfcompact(nthreads) = pinthreads(0:2:2*nthreads-1; warn = false)
 function _pin_scatter(nthreads; hyperthreading = false, nsockets = 2, verbose = false, kwargs...)
     verbose && @info("Assuming $nsockets sockets and the ", hyperthreading ? "availability" : "absence", " of hyperthreads.")
     ncpus = Sys.CPU_THREADS
@@ -93,27 +104,68 @@ By default, the visualization will be based on `Sys.CPU_THREADS` only.
 If you also load Hwloc.jl (via `using Hwloc`) it will show more detailed information.
 
 Keyword arguments:
-* `color` (default: `true`): If true, used cores are highlighted in red. If false, unused cores are indicated by an underscore to make the used cores stand out. 
+* `color` (default: `true`): Toggle between colored and black-and-white output.
 * `blocksize (default: 32)`: Wrap to a new line after `blocksize` many cores.
 * `ht`: If true, we highlight virtual cores associated with hyperthreads in the `color=true` output. By default, we try to automatically figure out whether hypterthreading is enabled.
+* `blas` (default: false): Show information about BLAS threads as well.
+* `hints` (default: false): Give some hints about how to improve the threading related settings.
 """
-function threadinfo(; kwargs...)
+function threadinfo(; blas = false, hints = false, color = true, kwargs...)
     # general info
+    jlthreads = Threads.nthreads()
     thread_cpuids = getcpuids()
+    occupied_cores = length(unique(thread_cpuids))
+    cores = Sys.CPU_THREADS
     # visualize current pinning
     println()
-    _visualize_affinity(; thread_cpuids, kwargs...)
-    println("Julia threads: ", Threads.nthreads())
-    println("Occupied cores: ", length(unique(thread_cpuids)))
-    println("Thread-Core mapping:")
+    _visualize_affinity(; thread_cpuids, color, kwargs...)
+    print("Julia threads: ")
+    if color
+        printstyled(jlthreads, "\n", color = jlthreads > cores ? :red : :green)
+    else
+        printstyled(jlthreads, jlthreads > cores ? "(!)" : "", "\n")
+    end
+    print("├ Occupied cores: ")
+    if color
+        printstyled(occupied_cores, "\n", color = occupied_cores < jlthreads ? :red : :green)
+    else
+        printstyled(occupied_cores, occupied_cores < jlthreads ? "(!)" : "", "\n")
+    end
+    print("└ Thread-Core mapping:")
+    # print("   ")
     for (tid, core) in pairs(thread_cpuids)
-        print("  $tid => $core,")
+        print(" $tid => $core,")
         if tid == 5
-            print("  ...")
+            print(" ...")
             break
         end
     end
-    println()
+    println("\n")
+    if blas
+        libblas = BLAS_lib()
+        println("BLAS: ", libblas)
+        if contains(libblas, "openblas")
+            print("└ openblas_get_num_threads: ")
+            if color
+                printstyled(BLAS.get_num_threads(), "\n", color = _color_openblas_num_threads())
+            else
+                printstyled(BLAS.get_num_threads(), _color_openblas_num_threads() == :red ? "(!)" : "", "\n")
+            end
+            println()
+            _color_openblas_num_threads(; hints)
+        elseif contains(libblas, "mkl")
+            print("├ mkl_get_num_threads: ")
+            if color
+                printstyled(BLAS.get_num_threads(), "\n", color = _color_mkl_num_threads())
+            else
+                printstyled(BLAS.get_num_threads(), _color_mkl_num_threads() == :red ? "(!)" : "", "\n")
+            end
+            println("└ mkl_get_dynamic: ", Bool(mkl_get_dynamic()))
+            println()
+            _color_mkl_num_threads(; hints)
+        end
+    end
+    hints && _general_hints()
     return nothing
 end
 
@@ -123,7 +175,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
     for (i, puid) in pairs(0:nvcores-1)
         if color
             if puid in thread_cpuids
-                printstyled(puid, bold = true, color = :red)
+                printstyled(puid, bold = true, color = :yellow)
             else
                 print(puid)
             end
@@ -141,7 +193,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
     # legend
     println()
     if color
-        printstyled("#", bold = true, color = :red)
+        printstyled("#", bold = true, color = :yellow)
     else
         printstyled("#", bold = true)
     end
