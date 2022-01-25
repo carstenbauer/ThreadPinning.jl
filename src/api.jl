@@ -105,10 +105,10 @@ If you also load Hwloc.jl (via `using Hwloc`) it will show more detailed informa
 
 Keyword arguments:
 * `color` (default: `true`): Toggle between colored and black-and-white output.
-* `blocksize (default: 32)`: Wrap to a new line after `blocksize` many cores.
+* `blocksize` (default: `32`): Wrap to a new line after `blocksize` many cores.
 * `ht`: If true, we highlight virtual cores associated with hyperthreads in the `color=true` output. By default, we try to automatically figure out whether hypterthreading is enabled.
-* `blas` (default: false): Show information about BLAS threads as well.
-* `hints` (default: false): Give some hints about how to improve the threading related settings.
+* `blas` (default: `false`): Show information about BLAS threads as well.
+* `hints` (default: `false`): Give some hints about how to improve the threading related settings.
 """
 function threadinfo(; blas = false, hints = false, color = true, kwargs...)
     # general info
