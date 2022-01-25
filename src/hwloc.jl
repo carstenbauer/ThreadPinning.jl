@@ -31,7 +31,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
         for (k, puid) in pairs(pkg)
             if color
                 if puid in thread_cpuids
-                    printstyled(puid, bold = true, color = (ht && isodd(puid)) ? :red : :light_magenta)
+                    printstyled(puid, bold = true, color = (ht && isodd(puid)) ? :red : :yellow)
                 else
                     printstyled(puid, color = (ht && isodd(puid)) ? :light_black : :default)
                 end
@@ -62,7 +62,7 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
     # legend
     println()
     if color
-        printstyled("#", bold = true, color = :light_magenta)
+        printstyled("#", bold = true, color = :yellow)
     else
         printstyled("#", bold = true)
     end
