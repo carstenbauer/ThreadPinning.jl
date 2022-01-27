@@ -15,7 +15,7 @@ include("libc.jl")
 include("libuv.jl")
 include("libpthread.jl")
 include("api.jl")
-export getcpuid, getcpuids, pinthread, pinthreads, threadinfo, tspawnat
+export getcpuid, getcpuids, pinthread, pinthreads, threadinfo, @tspawnat
 
 include("Core2CoreLatency/Core2CoreLatency.jl")
 using .Core2CoreLatency

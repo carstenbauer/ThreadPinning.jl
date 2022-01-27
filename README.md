@@ -101,6 +101,16 @@ Thread-Core mapping:
 > * `:random` or `:rand`: pins threads to random cores (ensures that no core is double occupied).
 > * `:halfcompact`: pins to the first `0:2:2*nthreads-1` cores
 
+#### `pinthread`
+
+>     pinthread(cpuid::Integer; warn::Bool = true)
+> 
+> Pin the calling Julia thread to the CPU with id `cpuid`.
+> 
+>     pinthread(threadid::Integer, cpuid::Integer; kwargs...)
+>   
+> Pin the given Julia thread (`threadid`) to the CPU with ID `cpuid`.
+
 #### `threadinfo`
 
 > Print information about Julia threads, e.g. on which CPU-cores they are running.
@@ -115,10 +125,19 @@ Thread-Core mapping:
 > * `blas` (default: `false`): Show information about BLAS threads as well.
 > * `hints` (default: `false`): Give some hints about how to improve the threading related settings.
 
-#### `getcpuids` / `getcpuid`
+#### `getcpuids`
 
-> Returns the IDs of the CPUs on which the Julia threads
-> are currently running.
+> Returns the ID of the CPUs on which the Julia threads are currently running.
+
+#### `getcpuid`
+
+>     getcpuid()
+> 
+> Returns the ID of the CPU on which the calling thread is currently executing.
+> 
+>     getcpuid(threadid:Integer)
+> 
+> Returns the ID of the CPU on which the given Julia thread (`threadid`) is currently executing.
 
 ## Explanation
 

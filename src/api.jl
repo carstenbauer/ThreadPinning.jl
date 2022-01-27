@@ -8,6 +8,12 @@ See `sched_getcpu` for more information.
 getcpuid() = Int(sched_getcpu())
 
 """
+Returns the ID of the CPU on which the given Julia thread
+(`threadid`) is currently executing.
+"""
+getcpuid(threadid::Integer) = fetch(@tspawnat threadid getcpuid())
+
+"""
 Returns the ID of the CPUs on which the Julia threads
 are currently running.
 
@@ -23,13 +29,23 @@ function getcpuids()
 end
 
 """
-Pin the calling Julia thread to the CPU with id `cpuid`.
+    pinthread(cpuid::Integer; warn::Bool = true)
 
-For more information see `uv_thread_setaffinity`.
+Pin the calling Julia thread to the CPU with id `cpuid`.
 """
 function pinthread(cpuid::Integer; warn::Bool = true)
     warn && _check_environment()
     uv_thread_setaffinity(cpuid)
+end
+
+"""
+    pinthread(threadid::Integer, cpuid::Integer; kwargs...)
+
+Pin the given Julia thread (`threadid`) to the CPU with ID `cpuid`.
+"""
+function pinthread(threadid::Integer, cpuid::Integer; kwargs...)
+    fetch(@tspawnat threadid pinthread(cpuid; kwargs...))
+    return nothing
 end
 
 """
@@ -77,7 +93,7 @@ end
 
 function _pin_random(nthreads)
     cpuids = shuffle!(collect(1:Sys.CPU_THREADS))
-    pinthreads(@view(cpuids[1:nthreads]); warn=false)
+    pinthreads(@view(cpuids[1:nthreads]); warn = false)
 end
 _pin_compact(nthreads) = pinthreads(0:nthreads-1; warn = false)
 _pin_halfcompact(nthreads) = pinthreads(0:2:2*nthreads-1; warn = false)

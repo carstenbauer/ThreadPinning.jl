@@ -27,6 +27,7 @@ end
     @testset "Querying CPU IDs" begin
         @test typeof(getcpuid()) == Int
         @test typeof(getcpuids()) == Vector{Int}
+        @test getcpuids() == getcpuid.(1:Threads.nthreads())
     end
 
     @testset "threadinfo()" begin
@@ -44,6 +45,12 @@ end
         cpuids_new = reverse(0:nthreads()-1)
         @test isnothing(pinthreads(cpuids_new))
         @test getcpuids() == cpuids_new
+
+        rand_thread = rand(1:Threads.nthreads())
+        for cpuid in rand(0:Sys.CPU_THREADS-1, 5)
+            @test isnothing(pinthread(rand_thread, cpuid))
+            @test getcpuid(rand_thread) == cpuid
+        end
     end
 
     @testset "Thread Pinning (compact)" begin
