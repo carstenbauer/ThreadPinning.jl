@@ -174,3 +174,39 @@ function _general_hints()
     end
     return nothing
 end
+
+"""
+    @tspawnat tid -> task
+Mimics `Base.Threads.@spawn`, but assigns the task to thread `tid`.
+# Example
+```julia
+julia> t = @tspawnat 4 Threads.threadid()
+Task (runnable) @0x0000000010743c70
+julia> fetch(t)
+4
+```
+"""
+macro tspawnat(thrdid, expr)
+    # Copied from ThreadPools.jl
+    # https://github.com/tro3/ThreadPools.jl/blob/c2c99a260277c918e2a9289819106dd38625f418/src/macros.jl#L244
+    letargs = Base._lift_one_interp!(expr)
+
+    thunk = esc(:(() -> ($expr)))
+    var = esc(Base.sync_varname)
+    tid = esc(thrdid)
+    quote
+        if $tid < 1 || $tid > Threads.nthreads()
+            throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
+        end
+        let $(letargs...)
+            local task = Task($thunk)
+            task.sticky = false
+            ccall(:jl_set_task_tid, Cvoid, (Any, Cint), task, $tid - 1)
+            if $(Expr(:islocal, var))
+                put!($var, task)
+            end
+            schedule(task)
+            task
+        end
+    end
+end

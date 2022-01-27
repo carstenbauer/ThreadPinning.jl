@@ -15,7 +15,11 @@ include("libc.jl")
 include("libuv.jl")
 include("libpthread.jl")
 include("api.jl")
-export getcpuid, getcpuids, pinthread, pinthreads, threadinfo
+export getcpuid, getcpuids, pinthread, pinthreads, threadinfo, tspawnat
+
+include("Core2CoreLatency/Core2CoreLatency.jl")
+using .Core2CoreLatency
+include("latency.jl")
 
 function __init__()
     @require Hwloc = "0e44f5e4-bd66-52a0-8798-143a42290a1d" include("hwloc.jl")
