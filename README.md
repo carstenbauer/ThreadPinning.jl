@@ -10,7 +10,7 @@
 <!-- [![Build Status](https://github.com/JuliaPerf/LIKWID.jl/workflows/CI/badge.svg)](https://github.com/JuliaPerf/LIKWID.jl/actions) -->
 [![CI@PC2](https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/badges/main/pipeline.svg?key_text=CI@PC2)](https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/-/pipelines)
 [![codecov](https://codecov.io/gh/carstenbauer/ThreadPinning.jl/branch/main/graph/badge.svg?token=Ze61CbGoO5)](https://codecov.io/gh/carstenbauer/ThreadPinning.jl)
-![lifecycle](https://img.shields.io/badge/lifecycle-stable-green.svg)
+![lifecycle](https://img.shields.io/badge/lifecycle-stable-black.svg)
 [![][code-style-img]][code-style-url]
 
 *Interactively pin Julia threads to specific cores at runtime*
@@ -99,7 +99,7 @@ Thread-Core mapping:
 > * `:compact`: pins to the first `0:nthreads-1` cores
 > * `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion. To function automatically, Hwloc.jl should be loaded (i.e. `using Hwloc`). Otherwise, we the keyword arguments `nsockets` (default: `2`) and `hyperthreads` (default: `false`) can be used to indicate whether hyperthreads are available on the system (i.e. whether `Sys.CPU_THREADS == 2 * nphysicalcores`).
 > * `:random` or `:rand`: pins threads to random cores (ensures that no core is double occupied).
-> * `:halfcompact`: pins to the first `0:2:nthreads-1` cores
+> * `:halfcompact`: pins to the first `0:2:2*nthreads-1` cores
 
 #### `threadinfo`
 

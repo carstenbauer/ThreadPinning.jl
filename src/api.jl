@@ -58,7 +58,7 @@ Allowed strategies:
 * `:compact`: pins to the first `0:nthreads-1` cores
 * `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion. To function automatically, Hwloc.jl should be loaded (i.e. `using Hwloc`). Otherwise, we the keyword arguments `nsockets` (default: `2`) and `hyperthreads` (default: `false`) can be used to indicate whether hyperthreads are available on the system (i.e. whether `Sys.CPU_THREADS == 2 * nphysicalcores`).
 * `:random` or `:rand`: pins threads to random cores (ensures that no core is double occupied).
-* `:halfcompact`: pins to the first `0:2:nthreads-1` cores
+* `:halfcompact`: pins to the first `0:2:2*nthreads-1` cores
 """
 function pinthreads(strategy::Symbol; nthreads = Threads.nthreads(), warn::Bool = true, kwargs...)
     warn && _check_environment()
