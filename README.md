@@ -1,17 +1,4 @@
-<img align="right" src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/assets/logo.png" width=200px>
-
 # ThreadPinning.jl
-
-[code-style-img]: https://img.shields.io/badge/code%20style-blue-4495d1.svg
-[code-style-url]: https://github.com/invenia/BlueStyle
-
-<!-- [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaperf.github.io/LIKWID.jl/stable/) -->
-<!-- [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaperf.github.io/LIKWID.jl/dev/) -->
-<!-- [![Build Status](https://github.com/JuliaPerf/LIKWID.jl/workflows/CI/badge.svg)](https://github.com/JuliaPerf/LIKWID.jl/actions) -->
-[![CI@PC2](https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/badges/main/pipeline.svg?key_text=CI@PC2)](https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/-/pipelines)
-[![codecov](https://codecov.io/gh/carstenbauer/ThreadPinning.jl/branch/main/graph/badge.svg?token=Ze61CbGoO5)](https://codecov.io/gh/carstenbauer/ThreadPinning.jl)
-![lifecycle](https://img.shields.io/badge/lifecycle-stable-black.svg)
-[![][code-style-img]][code-style-url]
 
 *Interactively pin Julia threads to specific cores at runtime*
 
@@ -85,71 +72,6 @@ Occupied cores: 20
 Thread-Core mapping:
   1 => 0,  2 => 20,  3 => 1,  4 => 21,  5 => 2,  ...
 ```
-
-## Documentation
-
-#### `pinthreads`
-
-> `pinthreads(strategy::Symbol[; nthreads, warn, kwargs...])`
-> 
-> Pin the first `1:nthreads` Julia threads according to the given pinning `strategy`.
-> Per default, `nthreads == Threads.nthreads()`
-> 
-> Allowed strategies:
-> * `:compact`: pins to the first `0:nthreads-1` cores
-> * `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion. To function automatically, Hwloc.jl should be loaded (i.e. `using Hwloc`). Otherwise, we the keyword arguments `nsockets` (default: `2`) and `hyperthreads` (default: `false`) can be used to indicate whether hyperthreads are available on the system (i.e. whether `Sys.CPU_THREADS == 2 * nphysicalcores`).
-> * `:random` or `:rand`: pins threads to random cores (ensures that no core is double occupied).
-> * `:halfcompact`: pins to the first `0:2:2*nthreads-1` cores
-
-#### `pinthread`
-
->     pinthread(cpuid::Integer; warn::Bool = true)
-> 
-> Pin the calling Julia thread to the CPU with id `cpuid`.
-> 
->     pinthread(threadid::Integer, cpuid::Integer; kwargs...)
->   
-> Pin the given Julia thread (`threadid`) to the CPU with ID `cpuid`.
-
-#### `threadinfo`
-
-> Print information about Julia threads, e.g. on which CPU-cores they are running.
-> 
-> By default, the visualization will be based on `Sys.CPU_THREADS` only.
-> If you also load Hwloc.jl (via `using Hwloc`) it will show more detailed information.
-> 
-> Keyword arguments:
-> * `color` (default: `true`): Toggle between colored and black-and-white output.
-> * `blocksize` (default: `32`): Wrap to a new line after `blocksize` many cores.
-> * `ht`: If true, we highlight virtual cores associated with hyperthreads in the `color=true` output. By default, we try to automatically figure out whether hypterthreading is enabled.
-> * `blas` (default: `false`): Show information about BLAS threads as well.
-> * `hints` (default: `false`): Give some hints about how to improve the threading related settings.
-
-#### `getcpuids`
-
-> Returns the ID of the CPUs on which the Julia threads are currently running.
-
-#### `getcpuid`
-
->     getcpuid()
-> 
-> Returns the ID of the CPU on which the calling thread is currently executing.
-> 
->     getcpuid(threadid:Integer)
-> 
-> Returns the ID of the CPU on which the given Julia thread (`threadid`) is currently executing.
-
-#### `@tspawnat`
-
->     @tspawnat tid -> task
-> Mimics `Base.Threads.@spawn`, but assigns the task to thread `tid` (with `sticky = true`).
-> ##### Example
-> ```julia
-> julia> t = @tspawnat 4 Threads.threadid()
-> Task (runnable) @0x0000000010743c70
-> julia> fetch(t)
-> 4
-> ```
 
 ## Explanation
 
