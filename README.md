@@ -1,5 +1,3 @@
-<img align="right" src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/assets/logo.png" width=200px>
-
 # ThreadPinning.jl
 
 [code-style-img]: https://img.shields.io/badge/code%20style-blue-4495d1.svg
