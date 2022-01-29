@@ -1,16 +1,37 @@
 # ThreadPinning.jl
 
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-dev-url]: https://carstenbauer.github.io/ThreadPinning.jl/dev
+
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://carstenbauer.github.io/ThreadPinning.jl/stable
+
+[ci-img]: https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/badges/main/pipeline.svg?key_text=CI@PC2
+[ci-url]: https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/-/pipelines
+
+[cov-img]: https://codecov.io/gh/carstenbauer/ThreadPinning.jl/branch/main/graph/badge.svg?token=Ze61CbGoO5
+[cov-url]: https://codecov.io/gh/carstenbauer/ThreadPinning.jl
+
+[lifecycle-img]: https://img.shields.io/badge/lifecycle-stable-black.svg
+
 [code-style-img]: https://img.shields.io/badge/code%20style-blue-4495d1.svg
 [code-style-url]: https://github.com/invenia/BlueStyle
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://carstenbauer.github.io/ThreadPinning.jl/stable/)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://carstenbauer.github.io/ThreadPinning.jl/dev/)
-[![CI@PC2](https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/badges/main/pipeline.svg?key_text=CI@PC2)](https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/-/pipelines)
-[![codecov](https://codecov.io/gh/carstenbauer/ThreadPinning.jl/branch/main/graph/badge.svg?token=Ze61CbGoO5)](https://codecov.io/gh/carstenbauer/ThreadPinning.jl)
-![lifecycle](https://img.shields.io/badge/lifecycle-stable-black.svg)
-[![][code-style-img]][code-style-url]
+<!--
+![Lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)
+![Lifecycle](https://img.shields.io/badge/lifecycle-stable-green.svg)
+![Lifecycle](https://img.shields.io/badge/lifecycle-retired-orange.svg)
+![Lifecycle](https://img.shields.io/badge/lifecycle-archived-red.svg)
+![Lifecycle](https://img.shields.io/badge/lifecycle-dormant-blue.svg)
+![Lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)
+-->
 
 *Interactively pin Julia threads to specific cores at runtime*
+
+| **Documentation**                                                               | **Build Status**                                                                                |  **Quality**                                                                                |
+|:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
+| [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][cov-img]][cov-url] | ![][lifecycle-img] [![][code-style-img]][code-style-url] |
+
 
 ## Why pin Julia threads?
 
