@@ -5,9 +5,8 @@
 [code-style-img]: https://img.shields.io/badge/code%20style-blue-4495d1.svg
 [code-style-url]: https://github.com/invenia/BlueStyle
 
-<!-- [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaperf.github.io/LIKWID.jl/stable/) -->
-<!-- [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaperf.github.io/LIKWID.jl/dev/) -->
-<!-- [![Build Status](https://github.com/JuliaPerf/LIKWID.jl/workflows/CI/badge.svg)](https://github.com/JuliaPerf/LIKWID.jl/actions) -->
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://carstenbauer.github.io/ThreadPinning.jl/stable/)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://carstenbauer.github.io/ThreadPinning.jl/dev/)
 [![CI@PC2](https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/badges/main/pipeline.svg?key_text=CI@PC2)](https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/-/pipelines)
 [![codecov](https://codecov.io/gh/carstenbauer/ThreadPinning.jl/branch/main/graph/badge.svg?token=Ze61CbGoO5)](https://codecov.io/gh/carstenbauer/ThreadPinning.jl)
 ![lifecycle](https://img.shields.io/badge/lifecycle-stable-black.svg)
