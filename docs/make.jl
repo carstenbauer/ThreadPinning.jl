@@ -61,7 +61,7 @@ makedocs(;
 if ci
     @info "Deploying documentation to GitHub"
     deploydocs(;
-        repo = "github.com/carstenbauer/ThreadPinning.jl",
+        repo = "github.com/carstenbauer/ThreadPinning.jl.git",
         push_preview = true
         # target = "site",
     )
