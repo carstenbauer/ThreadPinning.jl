@@ -62,4 +62,4 @@ For more information, please find the [documentation](https://carstenbauer.githu
 
 ## Acknowledgements
 
-* CI infrastructure is provided by the [Paderborn Center for Parallel Computing (PC²)](https://pc2.uni-paderborn.de/)
+CI infrastructure is provided by the [Paderborn Center for Parallel Computing (PC²)](https://pc2.uni-paderborn.de/)
