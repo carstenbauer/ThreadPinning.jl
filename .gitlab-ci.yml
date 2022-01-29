@@ -56,9 +56,9 @@ build-and-deploy:
     JULIA_NUM_THREADS: "20"
   only:
     - main
-    # - pushes
-    # - tags
-    # - merge_requests
+    - pushes
+    - tags
+    - external_pull_requests
   needs:
     job: julia/1.7
   script:
