@@ -55,7 +55,7 @@ build-and-deploy:
     SCHEDULER_PARAMETERS: "-A pc2-mitarbeiter -p short"
     JULIA_NUM_THREADS: "20"
   only:
-    - master
+    - main
     # - pushes
     # - tags
     # - merge_requests
