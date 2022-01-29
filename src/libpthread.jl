@@ -33,8 +33,11 @@ pthread_self() = @ccall libpthread.pthread_self()::pthread_t
 """
 Ref: [docs](https://man7.org/linux/man-pages/man3/pthread_setaffinity_np.3.html)
 """
-pthread_setaffinity_np(thread, cpussetsize, cpuset) =
-    @ccall libpthread.pthread_setaffinity_np(thread::pthread_t, cpussetsize::Csize_t, cpuset::Ptr{cpu_set_t})::Cint
+function pthread_setaffinity_np(thread, cpussetsize, cpuset)
+    @ccall libpthread.pthread_setaffinity_np(
+        thread::pthread_t, cpussetsize::Csize_t, cpuset::Ptr{cpu_set_t}
+    )::Cint
+end
 
 # function pinthread(processorId::Integer)
 #     cpuset = cpu_set_t()

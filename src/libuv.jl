@@ -28,7 +28,11 @@ and must be greater-than-or-equal-to `uv_cpumask_size`.
 
 Ref: [docs](https://github.com/clibs/uv/blob/master/docs/src/threading.rst)
 """
-uv_thread_getaffinity(self_ref, cpumask, masksize) = @ccall uv_thread_getaffinity(self_ref::Ptr{uv_thread_t}, cpumask::Ptr{Cchar}, masksize::Cssize_t)::Cint
+function uv_thread_getaffinity(self_ref, cpumask, masksize)
+    @ccall uv_thread_getaffinity(
+        self_ref::Ptr{uv_thread_t}, cpumask::Ptr{Cchar}, masksize::Cssize_t
+    )::Cint
+end
 
 """
     uv_thread_getaffinity()
@@ -64,7 +68,14 @@ and must be greater-than-or-equal-to `uv_cpumask_size()`.
 
 Ref: [docs](https://github.com/clibs/uv/blob/master/docs/src/threading.rst)
 """
-uv_thread_setaffinity(self_ref, cpumask, oldmask, masksize) = @ccall uv_thread_setaffinity(self_ref::Ptr{uv_thread_t}, cpumask::Ptr{Cchar}, oldmask::Ptr{Cchar}, masksize::Csize_t)::Cint
+function uv_thread_setaffinity(self_ref, cpumask, oldmask, masksize)
+    @ccall uv_thread_setaffinity(
+        self_ref::Ptr{uv_thread_t},
+        cpumask::Ptr{Cchar},
+        oldmask::Ptr{Cchar},
+        masksize::Csize_t,
+    )::Cint
+end
 
 """
     uv_thread_setaffinity(procid::Integer) 
@@ -72,11 +83,12 @@ Set the calling thread's affinity to `procid`.
 """
 function uv_thread_setaffinity(procid::Integer)
     masksize = uv_cpumask_size()
-    0 ≤ procid ≤ masksize || throw(ArgumentError("Invalid procid. It must hold 0 ≤ procid ≤ masksize."))
+    0 ≤ procid ≤ masksize ||
+        throw(ArgumentError("Invalid procid. It must hold 0 ≤ procid ≤ masksize."))
     self = uv_thread_self()
     self_ref = Ref(self)
     cpumask = zeros(Cchar, masksize)
-    cpumask[procid+1] = 1
+    cpumask[procid + 1] = 1
     err = uv_thread_setaffinity(self_ref, cpumask, C_NULL, masksize)
     return err == 0
 end

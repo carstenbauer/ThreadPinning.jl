@@ -20,7 +20,11 @@ macro tspawnat(thrdid, expr)
     tid = esc(thrdid)
     quote
         if $tid < 1 || $tid > Threads.nthreads()
-            throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
+            throw(
+                AssertionError(
+                    "@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))",
+                ),
+            )
         end
         let $(letargs...)
             local task = Task($thunk)
@@ -69,12 +73,14 @@ end
 
 Pin the calling Julia thread to the CPU with id `cpuid`.
 """
-function pinthread(cpuid::Integer; warn::Bool = true)
+function pinthread(cpuid::Integer; warn::Bool=true)
     if warn
-        (0 ≤ cpuid ≤ Sys.CPU_THREADS - 1) || throw(ArgumentError("cpuid is out of bounds (0 ≤ cpuid ≤ Sys.CPU_THREADS - 1)."))
+        (0 ≤ cpuid ≤ Sys.CPU_THREADS - 1) || throw(
+            ArgumentError("cpuid is out of bounds (0 ≤ cpuid ≤ Sys.CPU_THREADS - 1).")
+        )
         _check_environment()
     end
-    uv_thread_setaffinity(cpuid)
+    return uv_thread_setaffinity(cpuid)
 end
 
 """
@@ -94,13 +100,15 @@ Note that `length(cpuids)` may not be larger than `Threads.nthreads()`.
 
 For more information see `pinthread`.
 """
-function pinthreads(cpuids::AbstractVector{<:Integer}; warn::Bool = true)
+function pinthreads(cpuids::AbstractVector{<:Integer}; warn::Bool=true)
     warn && _check_environment()
     ncpuids = length(cpuids)
-    ncpuids ≤ nthreads() || throw(ArgumentError("length(cpuids) must be ≤ Threads.nthreads()"))
-    (minimum(cpuids) ≥ 0 && maximum(cpuids) ≤ Sys.CPU_THREADS - 1) || throw(ArgumentError("All cpuids must be ≤ Sys.CPU_THREADS-1 and ≥ 0."))
+    ncpuids ≤ nthreads() ||
+        throw(ArgumentError("length(cpuids) must be ≤ Threads.nthreads()"))
+    (minimum(cpuids) ≥ 0 && maximum(cpuids) ≤ Sys.CPU_THREADS - 1) ||
+        throw(ArgumentError("All cpuids must be ≤ Sys.CPU_THREADS-1 and ≥ 0."))
     @threads :static for tid in 1:ncpuids
-        pinthread(cpuids[tid]; warn = false)
+        pinthread(cpuids[tid]; warn=false)
     end
     return nothing
 end
@@ -116,7 +124,9 @@ Allowed strategies:
 * `:random` or `:rand`: pins threads to random cores (ensures that no core is double occupied).
 * `:halfcompact`: pins to the first `0:2:2*nthreads-1` cores
 """
-function pinthreads(strategy::Symbol; nthreads = Threads.nthreads(), warn::Bool = true, kwargs...)
+function pinthreads(
+    strategy::Symbol; nthreads=Threads.nthreads(), warn::Bool=true, kwargs...
+)
     warn && _check_environment()
     if strategy == :compact
         return _pin_compact(nthreads)
@@ -132,24 +142,31 @@ function pinthreads(strategy::Symbol; nthreads = Threads.nthreads(), warn::Bool 
 end
 
 function _pin_random(nthreads)
-    cpuids = shuffle!(collect(1:Sys.CPU_THREADS))
-    pinthreads(@view(cpuids[1:nthreads]); warn = false)
+    cpuids = shuffle!(collect(1:(Sys.CPU_THREADS)))
+    return pinthreads(@view(cpuids[1:nthreads]); warn=false)
 end
-_pin_compact(nthreads) = pinthreads(0:nthreads-1; warn = false)
-_pin_halfcompact(nthreads) = pinthreads(0:2:2*nthreads-1; warn = false)
-function _pin_scatter(nthreads; hyperthreading = false, nsockets = 2, verbose = false, kwargs...)
-    verbose && @info("Assuming $nsockets sockets and the ", hyperthreading ? "availability" : "absence", " of hyperthreads.")
+_pin_compact(nthreads) = pinthreads(0:(nthreads - 1); warn=false)
+_pin_halfcompact(nthreads) = pinthreads(0:2:(2 * nthreads - 1); warn=false)
+function _pin_scatter(nthreads; hyperthreading=false, nsockets=2, verbose=false, kwargs...)
+    verbose && @info(
+        "Assuming $nsockets sockets and the ",
+        hyperthreading ? "availability" : "absence",
+        " of hyperthreads."
+    )
     ncpus = Sys.CPU_THREADS
     if !hyperthreading
-        cpuids_per_socket = Iterators.partition(0:ncpus-1, ncpus ÷ nsockets)
+        cpuids_per_socket = Iterators.partition(0:(ncpus - 1), ncpus ÷ nsockets)
         cpuids = interweave(cpuids_per_socket...)
     else
         # alternate between sockets but use hyperthreads (i.e. 2 threads per core) only if necessary
-        cpuids_per_socket_and_hyper = collect.(Iterators.partition(0:ncpus-1, (ncpus ÷ 2) ÷ nsockets))
-        cpuids_per_socket = [reduce(vcat, cpuids_per_socket_and_hyper[s:nsockets:end]) for s in 1:nsockets]
+        cpuids_per_socket_and_hyper =
+            collect.(Iterators.partition(0:(ncpus - 1), (ncpus ÷ 2) ÷ nsockets))
+        cpuids_per_socket = [
+            reduce(vcat, cpuids_per_socket_and_hyper[s:nsockets:end]) for s in 1:nsockets
+        ]
         cpuids = interweave(cpuids_per_socket...)
     end
-    pinthreads(@view cpuids[1:nthreads]; warn = false)
+    pinthreads(@view cpuids[1:nthreads]; warn=false)
     return nothing
 end
 
@@ -166,7 +183,7 @@ Keyword arguments:
 * `blas` (default: `false`): Show information about BLAS threads as well.
 * `hints` (default: `false`): Give some hints about how to improve the threading related settings.
 """
-function threadinfo(; blas = false, hints = false, color = true, kwargs...)
+function threadinfo(; blas=false, hints=false, color=true, kwargs...)
     # general info
     jlthreads = Threads.nthreads()
     thread_cpuids = getcpuids()
@@ -177,13 +194,13 @@ function threadinfo(; blas = false, hints = false, color = true, kwargs...)
     _visualize_affinity(; thread_cpuids, color, kwargs...)
     print("Julia threads: ")
     if color
-        printstyled(jlthreads, "\n", color = jlthreads > cores ? :red : :green)
+        printstyled(jlthreads, "\n"; color=jlthreads > cores ? :red : :green)
     else
         printstyled(jlthreads, jlthreads > cores ? "(!)" : "", "\n")
     end
     print("├ Occupied cores: ")
     if color
-        printstyled(occupied_cores, "\n", color = occupied_cores < jlthreads ? :red : :green)
+        printstyled(occupied_cores, "\n"; color=occupied_cores < jlthreads ? :red : :green)
     else
         printstyled(occupied_cores, occupied_cores < jlthreads ? "(!)" : "", "\n")
     end
@@ -203,18 +220,28 @@ function threadinfo(; blas = false, hints = false, color = true, kwargs...)
         if contains(libblas, "openblas")
             print("└ openblas_get_num_threads: ")
             if color
-                printstyled(BLAS.get_num_threads(), "\n", color = _color_openblas_num_threads())
+                printstyled(
+                    BLAS.get_num_threads(), "\n"; color=_color_openblas_num_threads()
+                )
             else
-                printstyled(BLAS.get_num_threads(), _color_openblas_num_threads() == :red ? "(!)" : "", "\n")
+                printstyled(
+                    BLAS.get_num_threads(),
+                    _color_openblas_num_threads() == :red ? "(!)" : "",
+                    "\n",
+                )
             end
             println()
             _color_openblas_num_threads(; hints)
         elseif contains(libblas, "mkl")
             print("├ mkl_get_num_threads: ")
             if color
-                printstyled(BLAS.get_num_threads(), "\n", color = _color_mkl_num_threads())
+                printstyled(BLAS.get_num_threads(), "\n"; color=_color_mkl_num_threads())
             else
-                printstyled(BLAS.get_num_threads(), _color_mkl_num_threads() == :red ? "(!)" : "", "\n")
+                printstyled(
+                    BLAS.get_num_threads(),
+                    _color_mkl_num_threads() == :red ? "(!)" : "",
+                    "\n",
+                )
             end
             println("└ mkl_get_dynamic: ", Bool(mkl_get_dynamic()))
             println()
@@ -225,19 +252,19 @@ function threadinfo(; blas = false, hints = false, color = true, kwargs...)
     return nothing
 end
 
-function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, color = true)
+function _visualize_affinity(; thread_cpuids=getcpuids(), blocksize=32, color=true)
     print(" ")
     nvcores = Sys.CPU_THREADS
-    for (i, puid) in pairs(0:nvcores-1)
+    for (i, puid) in pairs(0:(nvcores - 1))
         if color
             if puid in thread_cpuids
-                printstyled(puid, bold = true, color = :yellow)
+                printstyled(puid; bold=true, color=:yellow)
             else
                 print(puid)
             end
         else
             if puid in thread_cpuids
-                printstyled(puid, bold = true)
+                printstyled(puid; bold=true)
             else
                 print("_")
             end
@@ -249,9 +276,9 @@ function _visualize_affinity(; thread_cpuids = getcpuids(), blocksize = 32, colo
     # legend
     println()
     if color
-        printstyled("#", bold = true, color = :yellow)
+        printstyled("#"; bold=true, color=:yellow)
     else
-        printstyled("#", bold = true)
+        printstyled("#"; bold=true)
     end
     print(" = Julia thread")
     println("\n")

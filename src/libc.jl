@@ -26,7 +26,6 @@ Ref: [docs](https://man7.org/linux/man-pages/man2/gettid.2.html)
 """
 gettid() = @ccall gettid()::pid_t
 
-
 # ------------ sched.h ------------
 """
 Returns the number of the CPU on which the calling thread

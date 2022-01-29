@@ -1,4 +1,5 @@
-Threads.nthreads() == 20 || error("Doc build on Noctua should be run with 20 Julia threads!")
+Threads.nthreads() == 20 ||
+    error("Doc build on Noctua should be run with 20 Julia threads!")
 println("--- :julia: Instantiating project")
 using Pkg
 Pkg.activate("..")

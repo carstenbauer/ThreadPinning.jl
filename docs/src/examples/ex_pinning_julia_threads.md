@@ -46,7 +46,7 @@ suboptimal performance. For this reason, we provide `pinthreads(:halfcompact)` w
 Apart from the general pinning strategies like e.g. `:compact` or `:spread` you can use [`pinthreads(::AbstractVector{<:Integer})`](@ref) to pin Julia threads to specific cores.
 
 ```@repl ex_pinning
-pinthreads(5:5+Threads.nthreads())
+pinthreads(5:5+Threads.nthreads()-1)
 threadinfo(; color=false)
 ```
 

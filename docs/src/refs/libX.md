@@ -1,5 +1,8 @@
 # LibX
 
+!!! warning
+    This section isn't part of the official API. Things might change at any point without further notice.
+
 Wrappers around some functionality provided by libc, libpthread, and libuv.
 
 ## Index

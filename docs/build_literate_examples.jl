@@ -18,7 +18,7 @@ cd(@__DIR__) do
     Literate.markdown(
         "src/examples/ex_core2core_latency.jl",
         "src/examples/";
-        repo_root_url = "$src/blob/main/docs",
-        execute = true
+        repo_root_url="$src/blob/main/docs",
+        execute=true,
     )
 end

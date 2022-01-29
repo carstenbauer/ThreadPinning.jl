@@ -1,17 +1,13 @@
 # ThreadPinning.jl
 
-*Interactively pin Julia threads to specific cores at runtime*
+[ThreadPinning.jl](https://github.com/carstenbauer/ThreadPinning.jl/) allows you to (interactively) pin Julia threads to specific cores at runtime. This can be important for achieving optimal performance, in particular for HPC applications running on clusters, but also for reliable benchmarking and more (see [Why pin Julia threads?](@ref why)).
 
-## Why pin Julia threads?
-
-Because
-* [it effects performance (MFlops/s), in particular on HPC clusters with multiple NUMA domains](https://github.com/JuliaPerf/BandwidthBenchmark.jl#flopsscaling)
-* [it allows you to measure hardware-performance counters in a reliable way](https://juliaperf.github.io/LIKWID.jl/stable/marker/)
-* ...
+!!! note
+    Be aware that Julia implements task-based multithreading: `M` user tasks get scheduled onto `N` Julia threads.
+    While this package allows you to pin Julia threads to cores / "hardware threads" it is generally not
+    safe to assume that a computation (started with `Threads.@spawn`) will run on or even stay on a certain Julia thread (see [this discourse post](https://discourse.julialang.org/t/julia-1-7-says-it-can-switch-the-thread-your-task-is-on-how-often-does-that-happen-and-how-can-it-be-disabled/75373/4?u=carstenbauer) for more information). If you want this guarantee, you can use our [`@tspawnat`](@ref) macro.
 
 ## Installation
-
-**Note: Only Linux is supported!** (macOS doesn't support thread pinning. Windows might or might not work.)
 
 The package is registered. Hence, you can simply use
 ```
@@ -19,10 +15,7 @@ The package is registered. Hence, you can simply use
 ```
 to add the package to your Julia environment.
 
-## Explanation
-
-We use libc's [sched_getcpu](https://man7.org/linux/man-pages/man3/sched_getcpu.3.html) to query the CPU-core ID for a thread and libuv's [uv_thread_setaffinity](https://github.com/clibs/uv/blob/master/docs/src/threading.rst) to set the affinity of a thread.
-
+**Note: Only Linux is officially supported!** (macOS doesn't support thread pinning. Windows might or might not work.)
 
 ## Noteworthy Alternatives
 
