@@ -39,19 +39,17 @@ makedocs(;
     # doctest = ci,
     pages = [
         "ThreadPinning" => "index.md",
-        # "Examples" => [
-        #     "Matrix Inversion" => "examples/matrix_inv.md",
-        #     "Matrix Inversion (Distributed)" => "examples/matrix_inv_distributed.md",
-        #     "Matrix Inversion (MPI)" => "examples/matrix_inv_mpi.md",
-        # ],
+        "Examples" => [
+            "Pinning Julia Threads" => "examples/ex_pinning_julia_threads.md",
+            "Core-to-Core Latency" => "examples/ex_core2core_latency.md",
+        ],
         # "Explanations" => ["Submatrix Method" => "explanations/smmethod.md"],
-        # "References" => [
-        #     "API" => "refs/api.md",
-        #     "Launch Configurations" => "refs/lc.md",
-        #     "Core" => "refs/submatrix_core.md",
-        #     "IO" => "refs/io.md",
-        #     "Utility" => "refs/utility.md",
-        # ],
+        "References" => [
+            "API" => "refs/api.md",
+            "Latency" => "refs/latency.md",
+            "LibX" => "refs/libX.md",
+            "Utility" => "refs/utility.md",
+        ],
     ],
     # assets = ["assets/custom.css", "assets/custom.js"]
     # repo = "https://github.com/carstenbauer/ThreadPinning.jl/blob/{commit}{path}#{line}",

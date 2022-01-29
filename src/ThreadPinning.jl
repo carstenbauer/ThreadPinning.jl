@@ -10,7 +10,7 @@ using Random
 using Requires
 
 # includes
-include("helper.jl")
+include("utility.jl")
 include("libc.jl")
 include("libuv.jl")
 include("libpthread.jl")

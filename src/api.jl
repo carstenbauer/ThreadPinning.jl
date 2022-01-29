@@ -1,5 +1,41 @@
 # ----------- High-level API -----------
 """
+    @tspawnat tid -> task
+Mimics `Base.Threads.@spawn`, but assigns the task to thread `tid` (with `sticky = true`).
+# Example
+```julia
+julia> t = @tspawnat 4 Threads.threadid()
+Task (runnable) @0x0000000010743c70
+julia> fetch(t)
+4
+```
+"""
+macro tspawnat(thrdid, expr)
+    # Copied from ThreadPools.jl with the change task.sticky = false -> true
+    # https://github.com/tro3/ThreadPools.jl/blob/c2c99a260277c918e2a9289819106dd38625f418/src/macros.jl#L244
+    letargs = Base._lift_one_interp!(expr)
+
+    thunk = esc(:(() -> ($expr)))
+    var = esc(Base.sync_varname)
+    tid = esc(thrdid)
+    quote
+        if $tid < 1 || $tid > Threads.nthreads()
+            throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
+        end
+        let $(letargs...)
+            local task = Task($thunk)
+            task.sticky = true
+            ccall(:jl_set_task_tid, Cvoid, (Any, Cint), task, $tid - 1)
+            if $(Expr(:islocal, var))
+                put!($var, task)
+            end
+            schedule(task)
+            task
+        end
+    end
+end
+
+"""
 Returns the ID of the CPU on which the calling thread
 is currently executing.
 
@@ -34,7 +70,10 @@ end
 Pin the calling Julia thread to the CPU with id `cpuid`.
 """
 function pinthread(cpuid::Integer; warn::Bool = true)
-    warn && _check_environment()
+    if warn
+        (0 ≤ cpuid ≤ Sys.CPU_THREADS - 1) || throw(ArgumentError("cpuid is out of bounds (0 ≤ cpuid ≤ Sys.CPU_THREADS - 1)."))
+        _check_environment()
+    end
     uv_thread_setaffinity(cpuid)
 end
 
@@ -59,6 +98,7 @@ function pinthreads(cpuids::AbstractVector{<:Integer}; warn::Bool = true)
     warn && _check_environment()
     ncpuids = length(cpuids)
     ncpuids ≤ nthreads() || throw(ArgumentError("length(cpuids) must be ≤ Threads.nthreads()"))
+    (minimum(cpuids) ≥ 0 && maximum(cpuids) ≤ Sys.CPU_THREADS - 1) || throw(ArgumentError("All cpuids must be ≤ Sys.CPU_THREADS-1 and ≥ 0."))
     @threads :static for tid in 1:ncpuids
         pinthread(cpuids[tid]; warn = false)
     end

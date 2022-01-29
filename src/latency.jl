@@ -1,3 +1,13 @@
+"""
+    bench_core2core_latency([cpuids = 0:Sys.CPU_THREADS-1; nbench = 5, nsamples::Integer = 100, mode::Symbol = :min])
+A tool for measuring core-to-core latency (i.e. inter-core latency).
+
+The measured latencies correspond to a full roundtrip between two cores. Divide them by two to obtain an estimate for the time needed to fetch data from another core.
+
+**Important:** At least two Julia threads are required (`julia -t2`)!
+
+**Refs:** Largely inspired by [rigtorp/c2clat](https://github.com/rigtorp/c2clat) and [ajakubek/core-latency](https://github.com/ajakubek/core-latency).
+"""
 function bench_core2core_latency(cpuids = 0:Sys.CPU_THREADS-1; nbench = 5, kwargs...)
     # check validity of cpuids input
     for c in cpuids

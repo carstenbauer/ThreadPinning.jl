@@ -12,10 +12,11 @@ const __cpu_mask = __CPU_MASK_TYPE
 const __CPU_SETSIZE = 1024
 const __NCPUBITS = (8 * sizeof(__cpu_mask))
 
-"Data structure to describe CPU mask.
+"""
+Data structure to describe CPU mask.
 
-https://github.com/lattera/glibc/blob/master/posix/bits/cpu-set.h
-"
+Ref: [docs](https://github.com/lattera/glibc/blob/master/posix/bits/cpu-set.h)
+"""
 struct cpu_set_t
     __bits::NTuple{16,__cpu_mask}
 end
@@ -25,15 +26,13 @@ Returns the ID of the calling thread.
 This is the same value that is returned in `*thread` in the
 `pthread_create(3)`` call that created this thread.
 
-https://man7.org/linux/man-pages/man3/pthread_self.3.html
+Ref: [docs](https://man7.org/linux/man-pages/man3/pthread_self.3.html)
 """
 pthread_self() = @ccall libpthread.pthread_self()::pthread_t
 
 """
-https://man7.org/linux/man-pages/man3/pthread_setaffinity_np.3.html
+Ref: [docs](https://man7.org/linux/man-pages/man3/pthread_setaffinity_np.3.html)
 """
-function pthread_setaffinity_np end
-
 pthread_setaffinity_np(thread, cpussetsize, cpuset) =
     @ccall libpthread.pthread_setaffinity_np(thread::pthread_t, cpussetsize::Csize_t, cpuset::Ptr{cpu_set_t})::Cint
 
