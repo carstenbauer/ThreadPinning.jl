@@ -44,6 +44,7 @@ if ci
     @info "Deploying documentation to GitHub"
     deploydocs(;
         repo="github.com/carstenbauer/ThreadPinning.jl.git",
+        devbranch="main",
         # push_preview=true,
         # target = "site",
     )
