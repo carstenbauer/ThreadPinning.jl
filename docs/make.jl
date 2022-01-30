@@ -22,6 +22,7 @@ makedocs(;
         "ThreadPinning" => "index.md",
         "Examples" => [
             "Pinning Julia Threads" => "examples/ex_pinning_julia_threads.md",
+            "Julia Threads + BLAS Threads" => "examples/ex_blas.md",
             "Measuring Core-to-Core Latency" => "examples/ex_core2core_latency.md",
         ],
         "Explanations" => [
