@@ -22,11 +22,12 @@ makedocs(;
         "ThreadPinning" => "index.md",
         "Examples" => [
             "Pinning Julia Threads" => "examples/ex_pinning_julia_threads.md",
-            "Julia Threads + BLAS Threads" => "examples/ex_blas.md",
+            "Autochecking BLAS Thread Settings" => "examples/ex_blas.md",
             "Measuring Core-to-Core Latency" => "examples/ex_core2core_latency.md",
         ],
         "Explanations" => [
             "Why Pin Julia Threads?" => "explanations/why.md",
+            "Julia Threads + BLAS Threads" => "explanations/blas.md",
             "How It Works" => "explanations/how.md",
         ],
         "References" => [
@@ -37,7 +38,7 @@ makedocs(;
         ],
     ],
     # assets = ["assets/custom.css", "assets/custom.js"]
-    repo = "https://github.com/carstenbauer/ThreadPinning.jl/blob/{commit}{path}#{line}",
+    repo="https://github.com/carstenbauer/ThreadPinning.jl/blob/{commit}{path}#{line}",
     format=Documenter.HTML(; collapselevel=1),#, assets = ["assets/favicon.ico"])
 )
 
