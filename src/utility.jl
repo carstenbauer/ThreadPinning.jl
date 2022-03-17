@@ -239,7 +239,7 @@ function gather_sysinfo_lscpu()
     # if a coreid is seen for a second time
     # the corresponding cpuid is identified
     # as a hypterthread
-    fill!(ISHYPERTHREAD[], false)
+    ISHYPERTHREAD[] = fill(false, Sys.CPU_THREADS)
     seen_coreids = Set{Int}()
     for i in 2:size(table,1)
         cpuid = table[i, 1]

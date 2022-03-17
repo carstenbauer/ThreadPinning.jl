@@ -11,10 +11,10 @@ using DelimitedFiles
 using Requires
 
 # constants (with defaults)
-const HYPERTHREADING = Ref(false)
-const NSOCKETS = Ref(2)
-const CPUIDS = Ref(Vector{Int}[collect(0:Sys.CPU_THREADS-1)])
-const ISHYPERTHREAD = Ref(fill(false, Sys.CPU_THREADS))
+const HYPERTHREADING = Ref{Union{Nothing, Bool}}(nothing)
+const NSOCKETS = Ref{Union{Nothing, Int}}(nothing)
+const CPUIDS = Ref{Union{Nothing, Vector{Vector{Int}}}}(nothing)
+const ISHYPERTHREAD = Ref{Union{Nothing, Vector{Bool}}}(nothing)
 
 # includes
 include("utility.jl")
@@ -36,7 +36,13 @@ function __init__()
             "ThreadPinning.jl currently only supports Linux. Don't expect anything to work!"
         )
     else
-        gather_sysinfo_lscpu()
+        if !gather_sysinfo_lscpu()
+            # couldn't gather sysinfo -> use defaults
+            NSOCKETS[] = 1
+            HYPERTHREADING[] = false
+            CPUIDS[] = Vector{Int}[collect(0:Sys.CPU_THREADS-1)]
+            ISHYPERTHREAD[] = fill(false, Sys.CPU_THREADS)
+        end
     end
 end
 
