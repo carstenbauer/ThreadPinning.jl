@@ -119,10 +119,10 @@ Pin the first `1:nthreads` Julia threads according to the given pinning `strateg
 Per default, `nthreads == Threads.nthreads()`
 
 Allowed strategies:
-* `:compact`: pins to the first `0:nthreads-1` cores
+* `:compact`: pins to the first `0:nthreads-1` cpu threads
 * `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion.
-* `:random` or `:rand`: pins threads to random cores (ensures that no core is double occupied).
-* `:halfcompact`: pins to the first `0:2:2*nthreads-1` cores
+* `:random` or `:rand`: pins threads to random cpu threads (ensures that no cpu thread is double occupied).
+* `:halfcompact`: pins to the first `0:2:2*nthreads-1` cpu threads
 """
 function pinthreads(
     strategy::Symbol; nthreads=Threads.nthreads(), warn::Bool=true, kwargs...
@@ -147,37 +147,19 @@ function _pin_random(nthreads)
 end
 _pin_compact(nthreads) = pinthreads(0:(nthreads - 1); warn=false)
 _pin_halfcompact(nthreads) = pinthreads(0:2:(2 * nthreads - 1); warn=false)
-function _pin_scatter(nthreads; hyperthreading=hyperthreading_is_enabled(), nsockets=nsockets(), verbose=false, kwargs...)
-    verbose && @info(
-        "Assuming $nsockets sockets and the $(hyperthreading ? "availability" : "absence") of hyperthreads."
-    )
-    ncpus = Sys.CPU_THREADS
-    if !hyperthreading
-        cpuids_per_socket = Iterators.partition(0:(ncpus - 1), ncpus ÷ nsockets)
-        cpuids = interweave(cpuids_per_socket...)
-    else
-        # only use hyperthreads if necessary
-        cpuids_per_socket_and_hyper =
-            collect.(Iterators.partition(0:(ncpus - 1), (ncpus ÷ 2) ÷ nsockets))
-        cpuids_per_socket = [
-            reduce(vcat, cpuids_per_socket_and_hyper[s:nsockets:end]) for s in 1:nsockets
-        ]
-        cpuids = interweave(cpuids_per_socket...)
-    end
+function _pin_scatter(nthreads)
+    cpuids = interweave(cpuids_per_socket()...)
     pinthreads(@view cpuids[1:nthreads]; warn=false)
     return nothing
 end
 
 """
-Print information about Julia threads, e.g. on which CPU-cores they are running.
-
-By default, the visualization will be based on `Sys.CPU_THREADS` only.
-If you also load Hwloc.jl (via `using Hwloc`) it will show more detailed information.
+Print information about Julia threads, e.g. on which cpu threads (i.e. cores if hyperthreading is disabled) they are running.
 
 Keyword arguments:
 * `color` (default: `true`): Toggle between colored and black-and-white output.
-* `blocksize` (default: `32`): Wrap to a new line after `blocksize` many cores.
-* `ht`: If true, we highlight virtual cores associated with hyperthreads in the `color=true` output. By default, we try to automatically figure out whether hypterthreading is enabled.
+* `blocksize` (default: `32`): Wrap to a new line after `blocksize` many cpu threads.
+* `hyperthreading` (default: `true`): If `true`, we (try to) highlight cpu threads associated with hyperthreading in the `color=true` output.
 * `blas` (default: `false`): Show information about BLAS threads as well.
 * `hints` (default: `false`): Give some hints about how to improve the threading related settings.
 """
@@ -185,24 +167,26 @@ function threadinfo(; blas=false, hints=false, color=true, kwargs...)
     # general info
     jlthreads = Threads.nthreads()
     thread_cpuids = getcpuids()
-    occupied_cores = length(unique(thread_cpuids))
-    cores = Sys.CPU_THREADS
+    occupied_cputhreads = length(unique(thread_cpuids))
+    cputhreads = Sys.CPU_THREADS
     # visualize current pinning
     println()
     _visualize_affinity(; thread_cpuids, color, kwargs...)
     print("Julia threads: ")
     if color
-        printstyled(jlthreads, "\n"; color=jlthreads > cores ? :red : :green)
+        printstyled(jlthreads, "\n"; color=jlthreads > cputhreads ? :red : :green)
     else
-        printstyled(jlthreads, jlthreads > cores ? "(!)" : "", "\n")
+        printstyled(jlthreads, jlthreads > cputhreads ? "(!)" : "", "\n")
     end
-    print("├ Occupied cores: ")
+    print("├ Occupied CPU-threads: ")
     if color
-        printstyled(occupied_cores, "\n"; color=occupied_cores < jlthreads ? :red : :green)
+        printstyled(
+            occupied_cputhreads, "\n"; color=occupied_cputhreads < jlthreads ? :red : :green
+        )
     else
-        printstyled(occupied_cores, occupied_cores < jlthreads ? "(!)" : "", "\n")
+        printstyled(occupied_cputhreads, occupied_cputhreads < jlthreads ? "(!)" : "", "\n")
     end
-    print("└ Thread-Core mapping:")
+    print("└ Mapping (Thread => CPUID):")
     # print("   ")
     for (tid, core) in pairs(thread_cpuids)
         print(" $tid => $core,")
@@ -250,7 +234,12 @@ function threadinfo(; blas=false, hints=false, color=true, kwargs...)
     return nothing
 end
 
-function _visualize_affinity(; thread_cpuids=getcpuids(), blocksize=32, color=true)
+function _visualize_affinity(;
+    thread_cpuids=getcpuids(),
+    blocksize=32,
+    color=true,
+    hyperthreading=hyperthreading_is_enabled(),
+)
     ncpuids = Sys.CPU_THREADS
     cpuids_socket = cpuids_per_socket()
     printstyled("| "; bold=true)
@@ -259,10 +248,12 @@ function _visualize_affinity(; thread_cpuids=getcpuids(), blocksize=32, color=tr
             if color
                 if cpuid in thread_cpuids
                     printstyled(
-                        cpuid; bold=true, color=ishyperthread(cpuid) ? :light_magenta : :yellow
+                        cpuid;
+                        bold=true,
+                        color=(hyperthreading && ishyperthread(cpuid)) ? :light_magenta : :yellow,
                     )
                 else
-                    printstyled(cpuid; color=ishyperthread(cpuid) ? :light_black : :default)
+                    printstyled(cpuid; color=(hyperthreading && ishyperthread(cpuid)) ? :light_black : :default)
                 end
             else
                 if cpuid in thread_cpuids
@@ -296,7 +287,7 @@ function _visualize_affinity(; thread_cpuids=getcpuids(), blocksize=32, color=tr
         printstyled("#"; bold=true)
     end
     print(" = Julia thread, ")
-    if hyperthreading_is_enabled()
+    if hyperthreading
         printstyled("#"; color=:light_black)
         print(" = HT, ")
         printstyled("#"; bold=true, color=:light_magenta)
@@ -307,3 +298,8 @@ function _visualize_affinity(; thread_cpuids=getcpuids(), blocksize=32, color=tr
     println("\n")
     return nothing
 end
+
+hyperthreading_is_enabled() = HYPERTHREADING[]
+ishyperthread(cpuid::Integer) = ISHYPERTHREAD[][cpuid + 1]
+nsockets() = NSOCKETS[]
+cpuids_per_socket() = CPUIDS[]

@@ -254,8 +254,3 @@ function gather_sysinfo_lscpu()
 end
 
 hasduplicates(xs::AbstractVector) = length(xs) != length(Set(xs))
-
-hyperthreading_is_enabled() = HYPERTHREADING[]
-ishyperthread(cpuid::Integer) = ISHYPERTHREAD[][cpuid+1]
-nsockets() = NSOCKETS[]
-cpuids_per_socket() = CPUIDS[]

@@ -92,21 +92,4 @@ end
         @test typeof(latencies) == Matrix{Float64}
         @test size(latencies) == (Sys.CPU_THREADS, Sys.CPU_THREADS)
     end
-
-    @testset "Hwloc support" begin
-        # setup
-        cpuids_before = reverse(0:nthreads()-1)
-        pinthreads(cpuids_before)
-        @assert getcpuids() == cpuids_before
-
-        using Hwloc
-        @test isnothing(threadinfo())
-        # scatter pinning
-        @test isnothing(pinthreads(:scatter))
-        cpuids_after = getcpuids()
-        @test cpuids_after != cpuids_before
-        # check "compact" pinning within each package
-        npackages = Hwloc.num_packages()
-        @test check_compact_within_socket(cpuids_after; nsockets = npackages)
-    end
 end

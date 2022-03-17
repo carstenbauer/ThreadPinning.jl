@@ -23,14 +23,13 @@ include("libuv.jl")
 include("libpthread.jl")
 include("api.jl")
 export getcpuid, getcpuids, pinthread, pinthreads, threadinfo, @tspawnat
+export hyperthreading_is_enabled, ishyperthread, nsockets, cpuids_per_socket
 
 include("Core2CoreLatency/Core2CoreLatency.jl")
 using .Core2CoreLatency
 include("latency.jl")
 
 function __init__()
-    @require Hwloc = "0e44f5e4-bd66-52a0-8798-143a42290a1d" include("hwloc.jl")
-
     @static if !Sys.islinux()
         @warn(
             "ThreadPinning.jl currently only supports Linux. Don't expect anything to work!"
