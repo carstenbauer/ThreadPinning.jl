@@ -63,7 +63,7 @@ end
 
     @testset "Thread Pinning (scatter)" begin
         # no hyperthreads
-        # default, i.e. nsockets == 2 and hyperthreads == false
+        # default, i.e. nsockets == 2 and hyperthreading == false
         @test isnothing(pinthreads(:scatter))
         cpuids_after = getcpuids()
         @test check_compact_within_socket(cpuids_after; nsockets = 2)
@@ -74,12 +74,12 @@ end
         @test check_compact_within_socket(cpuids_after; nsockets = 1) # same as above, but why not :)
 
         # hyperthreads
-        # fresh setup agin
+        # fresh setup again
         cpuids_before = reverse(0:nthreads()-1)
         pinthreads(cpuids_before)
         @assert getcpuids() == cpuids_before
         # single-socket + hyperthreads
-        @test isnothing(pinthreads(:scatter; nsockets = 1, hyperthreads = true))
+        @test isnothing(pinthreads(:scatter; nsockets = 1, hyperthreading = true))
         cpuids_after = getcpuids()
         @test cpuids_after == 0:nthreads()-1
         @test check_compact_within_socket(cpuids_after; nsockets = 1) # same as above, but why not :)

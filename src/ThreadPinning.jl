@@ -5,9 +5,16 @@ using Base.Threads: @threads, nthreads
 using Libdl
 using LinearAlgebra
 using Random
+using DelimitedFiles
 
 # packages
 using Requires
+
+# constants (with defaults)
+const HYPERTHREADING = Ref(false)
+const NSOCKETS = Ref(2)
+const CPUIDS = Ref(Vector{Int}[collect(0:Sys.CPU_THREADS-1)])
+const ISHYPERTHREAD = Ref(fill(false, Sys.CPU_THREADS))
 
 # includes
 include("utility.jl")
@@ -28,6 +35,8 @@ function __init__()
         @warn(
             "ThreadPinning.jl currently only supports Linux. Don't expect anything to work!"
         )
+    else
+        gather_sysinfo_lscpu()
     end
 end
 

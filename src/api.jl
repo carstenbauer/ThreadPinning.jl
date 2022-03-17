@@ -120,7 +120,7 @@ Per default, `nthreads == Threads.nthreads()`
 
 Allowed strategies:
 * `:compact`: pins to the first `0:nthreads-1` cores
-* `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion. To function automatically, Hwloc.jl should be loaded (i.e. `using Hwloc`). Otherwise, we the keyword arguments `nsockets` (default: `2`) and `hyperthreads` (default: `false`) can be used to indicate whether hyperthreads are available on the system (i.e. whether `Sys.CPU_THREADS == 2 * nphysicalcores`).
+* `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion.
 * `:random` or `:rand`: pins threads to random cores (ensures that no core is double occupied).
 * `:halfcompact`: pins to the first `0:2:2*nthreads-1` cores
 """
@@ -147,18 +147,16 @@ function _pin_random(nthreads)
 end
 _pin_compact(nthreads) = pinthreads(0:(nthreads - 1); warn=false)
 _pin_halfcompact(nthreads) = pinthreads(0:2:(2 * nthreads - 1); warn=false)
-function _pin_scatter(nthreads; hyperthreading=false, nsockets=2, verbose=false, kwargs...)
+function _pin_scatter(nthreads; hyperthreading=hyperthreading_is_enabled(), nsockets=nsockets(), verbose=false, kwargs...)
     verbose && @info(
-        "Assuming $nsockets sockets and the ",
-        hyperthreading ? "availability" : "absence",
-        " of hyperthreads."
+        "Assuming $nsockets sockets and the $(hyperthreading ? "availability" : "absence") of hyperthreads."
     )
     ncpus = Sys.CPU_THREADS
     if !hyperthreading
         cpuids_per_socket = Iterators.partition(0:(ncpus - 1), ncpus ÷ nsockets)
         cpuids = interweave(cpuids_per_socket...)
     else
-        # alternate between sockets but use hyperthreads (i.e. 2 threads per core) only if necessary
+        # only use hyperthreads if necessary
         cpuids_per_socket_and_hyper =
             collect.(Iterators.partition(0:(ncpus - 1), (ncpus ÷ 2) ÷ nsockets))
         cpuids_per_socket = [
@@ -253,24 +251,41 @@ function threadinfo(; blas=false, hints=false, color=true, kwargs...)
 end
 
 function _visualize_affinity(; thread_cpuids=getcpuids(), blocksize=32, color=true)
-    print(" ")
-    nvcores = Sys.CPU_THREADS
-    for (i, puid) in pairs(0:(nvcores - 1))
-        if color
-            if puid in thread_cpuids
-                printstyled(puid; bold=true, color=:yellow)
+    ncpuids = Sys.CPU_THREADS
+    cpuids_socket = cpuids_per_socket()
+    printstyled("| "; bold=true)
+    for (i, cpuids) in pairs(cpuids_socket)
+        for (k, cpuid) in pairs(cpuids)
+            if color
+                if cpuid in thread_cpuids
+                    printstyled(
+                        cpuid; bold=true, color=ishyperthread(cpuid) ? :light_magenta : :yellow
+                    )
+                else
+                    printstyled(cpuid; color=ishyperthread(cpuid) ? :light_black : :default)
+                end
             else
-                print(puid)
+                if cpuid in thread_cpuids
+                    printstyled(cpuid; bold=true)
+                else
+                    print("_")
+                end
             end
-        else
-            if puid in thread_cpuids
-                printstyled(puid; bold=true)
-            else
-                print("_")
+            if !(cpuid == last(cpuids))
+                print(",")
+                mod(k, blocksize) == 0 && print("\n  ")
             end
         end
-        !(puid == nvcores - 1) && print(",")
-        mod(i, blocksize) == 0 && print("\n ")
+        # print(" | ")
+        if ncpuids > 32
+            printstyled(" |"; bold=true)
+            if !(i == length(cpuids_socket))
+                println()
+                printstyled("| "; bold=true)
+            end
+        else
+            printstyled(" | "; bold=true)
+        end
     end
     println()
     # legend
@@ -280,7 +295,15 @@ function _visualize_affinity(; thread_cpuids=getcpuids(), blocksize=32, color=tr
     else
         printstyled("#"; bold=true)
     end
-    print(" = Julia thread")
+    print(" = Julia thread, ")
+    if hyperthreading_is_enabled()
+        printstyled("#"; color=:light_black)
+        print(" = HT, ")
+        printstyled("#"; bold=true, color=:light_magenta)
+        print(" = Julia thread on HT, ")
+    end
+    printstyled("|"; bold=true)
+    print(" = Package seperator")
     println("\n")
     return nothing
 end

@@ -111,33 +111,33 @@ BLAS_lib() = basename(first(BLAS.get_config().loaded_libs).libname)
 
 function _color_mkl_num_threads(; hints=false)
     jlthreads = Threads.nthreads()
-    cores = Sys.CPU_THREADS
-    cores_per_jlthread = floor(Int, cores / jlthreads)
+    cputhreads = Sys.CPU_THREADS
+    cputhreads_per_jlthread = floor(Int, cputhreads / jlthreads)
     blasthreads_per_jlthread = BLAS.get_num_threads()
     if blasthreads_per_jlthread == 1
         if jlthreads < Sys.CPU_THREADS
             hints && @info(
-                "blasthreads_per_jlthread == 1 && jlthreads < cores. You should set BLAS.set_num_threads($cores_per_jlthread) or try to increase the number of Julia threads to $cores."
+                "blasthreads_per_jlthread == 1 && jlthreads < cputhreads. You should set BLAS.set_num_threads($cputhreads_per_jlthread) or try to increase the number of Julia threads to $cputhreads."
             )
             return :yellow
-        elseif jlthreads == cores
+        elseif jlthreads == cputhreads
             return :green
         else
             hints && @warn(
-                "jlthreads > cores. You should decrease the number of Julia threads to $cores."
+                "jlthreads > cputhreads. You should decrease the number of Julia threads to $cputhreads."
             )
             return :red
         end
-    elseif blasthreads_per_jlthread < cores_per_jlthread
+    elseif blasthreads_per_jlthread < cputhreads_per_jlthread
         hints && @info(
-            "blasthreads_per_jlthread < cores_per_jlthread. You should increase the number of MKL threads, i.e. BLAS.set_num_threads($cores_per_jlthread)."
+            "blasthreads_per_jlthread < cputhreads_per_jlthread. You should increase the number of MKL threads, i.e. BLAS.set_num_threads($cputhreads_per_jlthread)."
         )
         return :yellow
-    elseif blasthreads_per_jlthread == cores_per_jlthread
+    elseif blasthreads_per_jlthread == cputhreads_per_jlthread
         return :green
     else
         hints && @warn(
-            "blasthreads_per_jlthread > cores_per_jlthread. You should decrease the number of MKL threads, i.e. BLAS.set_num_threads($cores_per_jlthread)."
+            "blasthreads_per_jlthread > cputhreads_per_jlthread. You should decrease the number of MKL threads, i.e. BLAS.set_num_threads($cputhreads_per_jlthread)."
         )
         return :red
     end
@@ -145,7 +145,7 @@ end
 
 function _color_openblas_num_threads(; hints=false)
     # BLAS uses `blasthreads` many threads in total
-    cores = Sys.CPU_THREADS
+    cputhreads = Sys.CPU_THREADS
     blasthreads = BLAS.get_num_threads()
     jlthreads = Threads.nthreads()
     if jlthreads != 1
@@ -158,35 +158,35 @@ function _color_openblas_num_threads(; hints=false)
                     "jlthreads != 1 && blasthreads < jlthreads. You should set BLAS.set_num_threads(1)."
                 )
                 return :red
-            elseif blasthreads < cores
+            elseif blasthreads < cputhreads
                 hints && @info(
-                    "jlthreads != 1 && blasthreads < cores. You should either set BLAS.set_num_threads(1) (recommended!) or at least BLAS.set_num_threads($cores)."
+                    "jlthreads != 1 && blasthreads < cputhreads. You should either set BLAS.set_num_threads(1) (recommended!) or at least BLAS.set_num_threads($cputhreads)."
                 )
                 return :yellow
-            elseif blasthreads == cores
+            elseif blasthreads == cputhreads
                 hints && @info(
                     "For jlthreads != 1 we strongly recommend to set BLAS.set_num_threads(1)."
                 )
                 return :green
             else
                 hints && @warn(
-                    "jlthreads != 1 && blasthreads > cores. You should set BLAS.set_num_threads(1) (recommended!) or at least BLAS.set_num_threads($cores)."
+                    "jlthreads != 1 && blasthreads > cputhreads. You should set BLAS.set_num_threads(1) (recommended!) or at least BLAS.set_num_threads($cputhreads)."
                 )
                 return :red
             end
         end
     else
         # single Julia thread
-        if blasthreads < cores
+        if blasthreads < cputhreads
             hints && @info(
-                "blasthreads < cores. You should increase the number of OpenBLAS threads, i.e. BLAS.set_num_threads($cores)."
+                "blasthreads < cputhreads. You should increase the number of OpenBLAS threads, i.e. BLAS.set_num_threads($cputhreads)."
             )
             return :yellow
-        elseif blasthreads == cores
+        elseif blasthreads == cputhreads
             return :green
         else
             hints && @warn(
-                "blasthreads > cores. You should decrease the number of OpenBLAS threads, i.e. BLAS.set_num_threads($corse)."
+                "blasthreads > cputhreads. You should decrease the number of OpenBLAS threads, i.e. BLAS.set_num_threads($corse)."
             )
             return :red
         end
@@ -195,17 +195,67 @@ end
 
 function _general_hints()
     jlthreads = Threads.nthreads()
-    cores = Sys.CPU_THREADS
+    cputhreads = Sys.CPU_THREADS
     thread_cpuids = getcpuids()
-    if jlthreads > cores
+    if jlthreads > cputhreads
         @warn(
-            "jlthreads > cores. You should decrease the number of Julia threads to $cores."
+            "jlthreads > cputhreads. You should decrease the number of Julia threads to $cputhreads."
         )
-    elseif jlthreads < cores
-        @info("jlthreads < cores. Perhaps increase number of Julia threads to $cores?")
+    elseif jlthreads < cputhreads
+        @info("jlthreads < cputhreads. Perhaps increase number of Julia threads to $cputhreads?")
     end
     if length(unique(thread_cpuids)) < jlthreads
         @warn("Overlap: Some Julia threads are running on the same core!")
     end
     return nothing
 end
+
+function lscpu()
+    run(`lscpu --all --extended`)
+    return nothing
+end
+
+function gather_sysinfo_lscpu()
+    local table
+    try
+        table = readdlm(IOBuffer(read(`lscpu --all --extended`, String)))
+    catch
+        return false
+    end
+    if size(table,1) != Sys.CPU_THREADS + 1
+        @warn("Could read `lscpu --all --extended` but number of cpuids doesn't match Sys.CPU_THREADS. Falling back to defaults.")
+    end
+    # hyperthreading?
+    HYPERTHREADING[] = hasduplicates(@view(table[2:end, 4]))
+    # count number of sockets
+    NSOCKETS[] = length(unique(@view(table[2:end, 3])))
+    # cpuids per socket
+    CPUIDS[] = [Int[] for _ in 1:nsockets()]
+    for i in 2:size(table,1)
+        cpuid = table[i, 1]
+        socket = table[i, 3]
+        push!(CPUIDS[][socket+1], cpuid)
+    end
+    # if a coreid is seen for a second time
+    # the corresponding cpuid is identified
+    # as a hypterthread
+    fill!(ISHYPERTHREAD[], false)
+    seen_coreids = Set{Int}()
+    for i in 2:size(table,1)
+        cpuid = table[i, 1]
+        coreid = table[i, 4]
+        if coreid in seen_coreids
+            # mark as hyperthread
+            ISHYPERTHREAD[][cpuid+1] = true
+        end
+        push!(seen_coreids, coreid)
+    end
+    return true
+end
+
+hasduplicates(xs::AbstractVector) = length(xs) != length(Set(xs))
+
+hyperthreading_is_enabled() = HYPERTHREADING[]
+ishyperthread(cpuid::Integer) = ISHYPERTHREAD[][cpuid+1]
+nsockets() = NSOCKETS[]
+cpuids_per_socket() = CPUIDS[]
