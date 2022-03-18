@@ -52,7 +52,7 @@ to add the package to your Julia environment.
 
 ## Example
 
-(Dual-socket system with 20 cores per socket, `julia -t 20`)
+Dual-socket system where each CPU has 128 hardware threads (64 CPU-cores + hyperthreading).
 
 <img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/assets/threadinfo.png" width=900px>
 

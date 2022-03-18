@@ -4,17 +4,19 @@ Generally speaking, the most important functions are [`pinthreads`](@ref) and [`
 
 ## Typical usage
 
-Below, we consider a dual-socket system with 20 cores per socket and started julia with 20 threads, i.e. `julia -t 20`.
+Below, we consider a dual-socket system where each CPU has 128 hardware threads (64 CPU-cores + hyperthreading) and start julia with 40 threads, i.e. `julia -t 40`.
 
 ### `color=true` (default)
 
 ![threadinfo.png](threadinfo.png)
 
+Note that hyperthreads are highlighted with a different color since often times you want to avoid pinning Julia threads to them (of course, there are exceptions).
+
 ### `color=false`
 
 ```@repl ex_pinning
 using ThreadPinning
-pinthreads(:rand) # hide
+pinthreads(:rand; hyperthreads=true) # hide
 threadinfo(; color=false)
 ```
 
@@ -28,15 +30,11 @@ pinthreads(:spread)
 threadinfo(; color=false)
 ```
 
-## Hyperthreading
+## No-Hyperthreading
 
-On a system where hyperthreading is enabled, you will get something like the following (with `color=true`).
+On a system where hyperthreading is disabled, you will get something like the following (with `color=true`).
 
-![threadinfo_ht.png](threadinfo_ht.png)
-
-Note that hyperthreads are highlighted with a different color since often times you want to avoid pinning Julia threads to them (of course, there are exceptions).
-For example, using `pinthreads(:compact)` might not be what you want since two Julia threads would run on the same core (two hardware threads therein) which might lead to
-suboptimal performance. For this reason, we provide `pinthreads(:halfcompact)` which skips every other cpuid. (Feel free to add other / smarter pinning strategies in PRs!)
+![threadinfo_noht.png](threadinfo_noht.png)
 
 ## Fine-grained control
 

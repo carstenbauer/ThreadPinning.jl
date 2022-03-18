@@ -5,10 +5,10 @@ using Random: shuffle
 
 nthreads() ≥ 2 || error("Can't run tests with single Julia thread! Forgot to set `JULIA_NUM_THREADS`?")
 
-function check_compact_within_socket(cpuids; nsockets)
-    for s in 1:nsockets
-        ids_within_socket = cpuids[s:nsockets:end]
-        if ids_within_socket != minimum(ids_within_socket):maximum(ids_within_socket)
+function check_compact_within_socket(cpuids)
+    socket_cpuids = cpuids_per_socket()
+    for s in 1:nsockets()
+        if cpuids != socket_cpuids[s][1:length(cpuids)]
             return false
         end
     end
@@ -24,10 +24,15 @@ end
         @test_throws ArgumentError ThreadPinning.interweave([1, 2, 3, 4], [5, 6, 7, 8, 9])
     end
 
-    @testset "Querying CPU IDs" begin
+    @testset "Querying" begin
         @test typeof(getcpuid()) == Int
         @test typeof(getcpuids()) == Vector{Int}
         @test getcpuids() == getcpuid.(1:Threads.nthreads())
+        @test typeof(nsockets()) == Int
+        @test nsockets() >= 1
+        @test typeof(hyperthreading_is_enabled()) == Bool
+        @test typeof(cpuids_per_socket()) == Vector{Vector{Int}}
+        @test ishyperthread(0) == false
     end
 
     @testset "threadinfo()" begin
@@ -62,29 +67,9 @@ end
     end
 
     @testset "Thread Pinning (scatter)" begin
-        # no hyperthreads
-        # default, i.e. nsockets == 2 and hyperthreading == false
         @test isnothing(pinthreads(:scatter))
         cpuids_after = getcpuids()
-        @test check_compact_within_socket(cpuids_after; nsockets = 2)
-        # single-socket, no hyperthreads
-        @test isnothing(pinthreads(:scatter; nsockets = 1))
-        cpuids_after = getcpuids()
-        @test cpuids_after == 0:nthreads()-1
-        @test check_compact_within_socket(cpuids_after; nsockets = 1) # same as above, but why not :)
-
-        # hyperthreads
-        # fresh setup again
-        cpuids_before = reverse(0:nthreads()-1)
-        pinthreads(cpuids_before)
-        @assert getcpuids() == cpuids_before
-        # single-socket + hyperthreads
-        @test isnothing(pinthreads(:scatter; nsockets = 1, hyperthreading = true))
-        cpuids_after = getcpuids()
-        @test cpuids_after == 0:nthreads()-1
-        @test check_compact_within_socket(cpuids_after; nsockets = 1) # same as above, but why not :)
-        # dual-socket + hyperthreads
-        # TODO: how to test this properly?
+        @test check_compact_within_socket(cpuids_after)
     end
 
     @testset "Core2CoreLatency" begin
