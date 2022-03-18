@@ -14,5 +14,5 @@ Order   = [:function, :type]
 
 ```@autodocs
 Modules = [ThreadPinning]
-Pages   = ["utility.jl"]
+Pages   = ["utility.jl, blas.jl"]
 ```

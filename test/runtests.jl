@@ -8,7 +8,8 @@ nthreads() ≥ 2 || error("Can't run tests with single Julia thread! Forgot to s
 function check_compact_within_socket(cpuids)
     socket_cpuids = cpuids_per_socket()
     for s in 1:nsockets()
-        if cpuids != socket_cpuids[s][1:length(cpuids)]
+        cpuids_filtered = filter(x -> x in socket_cpuids[s], cpuids)
+        if cpuids_filtered != socket_cpuids[s][1:length(cpuids_filtered)]
             return false
         end
     end

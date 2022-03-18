@@ -4,13 +4,11 @@ Generally speaking, the most important functions are [`pinthreads`](@ref) and [`
 
 ## Typical usage
 
-Below, we consider a dual-socket system where each CPU has 128 hardware threads (64 CPU-cores + hyperthreading) and start julia with 40 threads, i.e. `julia -t 40`.
+Below, we consider a dual-socket system where each CPU has 20 hardware threads and start julia with 20 threads, i.e. `julia -t 20`.
 
 ### `color=true` (default)
 
-![threadinfo.png](threadinfo.png)
-
-Note that hyperthreads are highlighted with a different color since often times you want to avoid pinning Julia threads to them (of course, there are exceptions).
+![threadinfo_noht.png](threadinfo_noht.png)
 
 ### `color=false`
 
@@ -30,11 +28,13 @@ pinthreads(:spread)
 threadinfo(; color=false)
 ```
 
-## No-Hyperthreading
+## Hyperthreading
 
-On a system where hyperthreading is disabled, you will get something like the following (with `color=true`).
+On a system where hyperthreading is enabled, you will get something like the following (with `color=true`). Below, we consider a dual-socket system where each CPU has 128 hardware threads (64 CPU-cores + hyperthreading) and start julia with 40 threads, i.e. `julia -t 40`.
 
-![threadinfo_noht.png](threadinfo_noht.png)
+![threadinfo.png](threadinfo.png)
+
+Note that hyperthreads are highlighted with a different color since often times you want to avoid pinning Julia threads to them (of course, there are exceptions).
 
 ## Fine-grained control
 
