@@ -42,7 +42,7 @@ Because
 
 ## Installation
 
-**Note: Only Linux is supported!** (macOS doesn't support thread pinning. Windows might or might not work.)
+**Note: Only Linux is supported!**
 
 The package is registered. Hence, you can simply use
 ```
