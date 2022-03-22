@@ -9,13 +9,21 @@
 
 ## Installation
 
+**Note: Only Linux is supported!**
+
 The package is registered. Hence, you can simply use
 ```
 ] add ThreadPinning
 ```
 to add the package to your Julia environment.
 
-**Note: Only Linux is officially supported!** (macOS doesn't support thread pinning. Windows might or might not work.)
+### Prerequisites
+
+For ThreadPinning.jl to properly work, [`lscpu`](https://man7.org/linux/man-pages/man1/lscpu.1.html) must be available. This should be the case on virtually all linux systems. Only then can ThreadPinning.jl query relevant system information (sockets, NUMA nodes, hyperthreading, ...).
+
+In the unlikely case that `lscpu` isn't already installed on your system, here are a few ways to get it
+* install `util-linux` via your system's package manager or manually from [here](https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/)
+* download the same as a Julia artefact: [util_linux_jll.jl](https://github.com/JuliaBinaryWrappers/util_linux_jll.jl)
 
 ## Noteworthy Alternatives
 
