@@ -7,6 +7,7 @@ Keyword arguments:
 * `hyperthreading` (default: `true`): If `true`, we (try to) highlight cpu threads associated with hyperthreading in the `color=true` output.
 * `blas` (default: `false`): Show information about BLAS threads as well.
 * `hints` (default: `false`): Give some hints about how to improve the threading related settings.
+* `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, or `:none`.
 """
 function threadinfo(; blas=false, hints=false, color=true, kwargs...)
     # general info
@@ -83,12 +84,19 @@ function _visualize_affinity(;
     thread_cpuids=getcpuids(),
     blocksize=16,
     color=true,
+    groupby=:sockets,
     hyperthreading=hyperthreading_is_enabled(),
 )
     ncpuids = Sys.CPU_THREADS
-    cpuids_socket = cpuids_per_socket()
+    cpuids_grouped = if groupby in (:sockets, :socket)
+        cpuids_per_socket()
+    elseif groupby == :numa
+        cpuids_per_numa()
+    else
+        [collect(0:(Sys.CPU_THREADS - 1))]
+    end
     printstyled("| "; bold=true)
-    for (i, cpuids) in pairs(cpuids_socket)
+    for (i, cpuids) in pairs(cpuids_grouped)
         for (k, cpuid) in pairs(cpuids)
             if color
                 if cpuid in thread_cpuids
@@ -125,7 +133,7 @@ function _visualize_affinity(;
         # print(" | ")
         if ncpuids > 32
             printstyled(" |"; bold=true)
-            if !(i == length(cpuids_socket))
+            if !(i == length(cpuids_grouped))
                 println()
                 printstyled("| "; bold=true)
             end
@@ -148,8 +156,13 @@ function _visualize_affinity(;
         printstyled("#"; bold=true, color=:light_magenta)
         print(" = Julia thread on HT, ")
     end
-    printstyled("|"; bold=true)
-    print(" = Socket seperator")
+    if groupby in (:sockets, :socket)
+        printstyled("|"; bold=true)
+        print(" = Socket seperator")
+    elseif groupby == :numa
+        printstyled("|"; bold=true)
+        print(" = NUMA seperator")
+    end
     println("\n")
     return nothing
 end

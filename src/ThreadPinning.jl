@@ -13,7 +13,9 @@ using Requires
 # constants (with defaults)
 const HYPERTHREADING = Ref{Union{Nothing,Bool}}(nothing)
 const NSOCKETS = Ref{Union{Nothing,Int}}(nothing)
+const NNUMA = Ref{Union{Nothing,Int}}(nothing)
 const CPUIDS = Ref{Union{Nothing,Vector{Vector{Int}}}}(nothing)
+const CPUIDS_NUMA = Ref{Union{Nothing,Vector{Vector{Int}}}}(nothing)
 const ISHYPERTHREAD = Ref{Union{Nothing,Vector{Bool}}}(nothing)
 
 # includes
@@ -29,7 +31,7 @@ include("Core2CoreLatency/Core2CoreLatency.jl")
 using .Core2CoreLatency
 include("latency.jl")
 export getcpuid, getcpuids, pinthread, pinthreads, threadinfo, @tspawnat
-export hyperthreading_is_enabled, ishyperthread, nsockets, cpuids_per_socket
+export hyperthreading_is_enabled, ishyperthread, nsockets, nnuma, cpuids_per_socket, cpuids_per_numa
 export threadinfo
 
 function __init__()
@@ -41,8 +43,10 @@ function __init__()
         if !gather_sysinfo_lscpu()
             # couldn't gather sysinfo -> use defaults
             NSOCKETS[] = 1
+            NNUMA[] = 1
             HYPERTHREADING[] = false
             CPUIDS[] = Vector{Int}[collect(0:(Sys.CPU_THREADS - 1))]
+            CPUIDS_NUMA[] = Vector{Int}[collect(0:(Sys.CPU_THREADS - 1))]
             ISHYPERTHREAD[] = fill(false, Sys.CPU_THREADS)
         end
     end

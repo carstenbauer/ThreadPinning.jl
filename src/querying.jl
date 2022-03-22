@@ -33,5 +33,9 @@ hyperthreading_is_enabled() = HYPERTHREADING[]
 ishyperthread(cpuid::Integer) = ISHYPERTHREAD[][cpuid + 1]
 "Number of CPU sockets"
 nsockets() = NSOCKETS[]
+"Number of NUMA nodes"
+nnuma() = NNUMA[]
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available CPU sockets"
 cpuids_per_socket() = CPUIDS[]
+"Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available NUMA nodes"
+cpuids_per_numa() = CPUIDS_NUMA[]

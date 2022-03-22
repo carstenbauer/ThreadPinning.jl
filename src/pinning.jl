@@ -50,7 +50,8 @@ Per default, `nthreads == Threads.nthreads()`
 
 Allowed strategies:
 * `:compact`: pins to the first `nthreads` cpu threads while trying to avoid using hyperthreads (i.e. moving to next socket before using hyperthreads). If `hyperthreads=true`, hyperthreads will be used before moving to the next socket, if necessary.
-* `:scatter` or `:spread`: pins to all available sockets in an alternating / round robin fashion.
+* `:scatter` or `:spread` or `sockets`: pins to all available sockets in an alternating / round robin fashion.
+* `:numa`: pins to all available NUMA nodes in an alternating / round robin fashion.
 * `:random` or `:rand`: pins threads to random cpu threads (ensures that no cpu thread is double occupied). By default (`hyperthreads=false`), hyperthreads will be ignored.
 * `:firstn`: pins to the cpuids `0:nthreads-1`
 """
@@ -60,8 +61,10 @@ function pinthreads(
     warn && _check_environment()
     if strategy == :compact
         return _pin_compact(nthreads; kwargs...)
-    elseif strategy in (:scatter, :spread)
+    elseif strategy in (:scatter, :spread, :sockets)
         return _pin_scatter(nthreads; kwargs...)
+    elseif strategy == :numa
+        return _pin_numa(nthreads; kwargs...)
     elseif strategy in (:rand, :random)
         return _pin_random(nthreads; kwargs...)
     elseif strategy == :firstn
@@ -96,6 +99,11 @@ function _pin_compact(nthreads; hyperthreads=false)
 end
 function _pin_scatter(nthreads)
     cpuids = interweave(cpuids_per_socket()...)
+    pinthreads(@view cpuids[1:nthreads]; warn=false)
+    return nothing
+end
+function _pin_numa(nthreads)
+    cpuids = interweave(cpuids_per_numa()...)
     pinthreads(@view cpuids[1:nthreads]; warn=false)
     return nothing
 end

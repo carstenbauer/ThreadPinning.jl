@@ -83,12 +83,17 @@ function gather_sysinfo_lscpu()
     HYPERTHREADING[] = hasduplicates(@view(table[2:end, 4]))
     # count number of sockets
     NSOCKETS[] = length(unique(@view(table[2:end, 3])))
-    # cpuids per socket
+    # count number of numa nodes
+    NNUMA[] = length(unique(@view(table[2:end, 2])))
+    # cpuids per socket / numa
     CPUIDS[] = [Int[] for _ in 1:nsockets()]
+    CPUIDS_NUMA[] = [Int[] for _ in 1:nnuma()]
     for i in 2:size(table, 1)
         cpuid = table[i, 1]
+        numa = table[i, 2]
         socket = table[i, 3]
         push!(CPUIDS[][socket + 1], cpuid)
+        push!(CPUIDS_NUMA[][numa + 1], cpuid)
     end
     # if a coreid is seen for a second time
     # the corresponding cpuid is identified
