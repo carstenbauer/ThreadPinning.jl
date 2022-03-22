@@ -56,7 +56,7 @@ For ThreadPinning.jl to properly work, [`lscpu`](https://man7.org/linux/man-page
 
 In the unlikely case that `lscpu` isn't already installed on your system, here are a few ways to get it
 * install `util-linux` via your system's package manager or manually from [here](https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/)
-* download the same as a Julia artefact: [util_linux_jll.jl](https://github.com/JuliaBinaryWrappers/util_linux_jll.jl)
+* download the same as a Julia artifact: [util_linux_jll.jl](https://github.com/JuliaBinaryWrappers/util_linux_jll.jl)
 
 ## Example
 
