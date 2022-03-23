@@ -7,16 +7,17 @@ using LinearAlgebra
 using Random
 using DelimitedFiles
 
-# packages
-using Requires
-
-# constants (with defaults)
-const HYPERTHREADING = Ref{Union{Nothing,Bool}}(nothing)
-const NSOCKETS = Ref{Union{Nothing,Int}}(nothing)
-const NNUMA = Ref{Union{Nothing,Int}}(nothing)
-const CPUIDS = Ref{Union{Nothing,Vector{Vector{Int}}}}(nothing)
-const CPUIDS_NUMA = Ref{Union{Nothing,Vector{Vector{Int}}}}(nothing)
-const ISHYPERTHREAD = Ref{Union{Nothing,Vector{Bool}}}(nothing)
+# system information
+Base.@kwdef struct SysInfo
+    nsockets::Int = 1
+    nnuma::Int = 1
+    hyperthreading::Bool = false
+    cpuids_sockets::Vector{Vector{Int}} = [collect(0:(Sys.CPU_THREADS - 1))]
+    cpuids_numa::Vector{Vector{Int}} = [collect(0:(Sys.CPU_THREADS - 1))]
+    ishyperthread::Vector{Bool} = fill(false, Sys.CPU_THREADS)
+end
+const SYSINFO_INITIALIZED = Ref{Bool}(false)
+const SYSINFO = Ref{SysInfo}(SysInfo())
 
 # includes
 include("utility.jl")
@@ -31,7 +32,13 @@ include("Core2CoreLatency/Core2CoreLatency.jl")
 using .Core2CoreLatency
 include("latency.jl")
 export getcpuid, getcpuids, pinthread, pinthreads, threadinfo, @tspawnat
-export hyperthreading_is_enabled, ishyperthread, nsockets, nnuma, cpuids_per_socket, cpuids_per_numa
+export systeminfo,
+    nsockets,
+    nnuma,
+    hyperthreading_is_enabled,
+    ishyperthread,
+    cpuids_per_socket,
+    cpuids_per_numa
 export threadinfo
 
 function __init__()
@@ -40,16 +47,13 @@ function __init__()
             "ThreadPinning.jl currently only supports Linux. Don't expect anything to work!"
         )
     else
-        if !gather_sysinfo_lscpu()
-            # couldn't gather sysinfo -> use defaults
-            NSOCKETS[] = 1
-            NNUMA[] = 1
-            HYPERTHREADING[] = false
-            CPUIDS[] = Vector{Int}[collect(0:(Sys.CPU_THREADS - 1))]
-            CPUIDS_NUMA[] = Vector{Int}[collect(0:(Sys.CPU_THREADS - 1))]
-            ISHYPERTHREAD[] = fill(false, Sys.CPU_THREADS)
+        if !maybe_init_sysinfo()
+            @warn(
+                "Couldn't gather system information. Perhaps `lscpu` isn't available? Not all features will work (optimally)."
+            )
         end
     end
+    return nothing
 end
 
 end

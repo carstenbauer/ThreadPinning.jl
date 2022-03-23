@@ -67,12 +67,23 @@ function interweave(arrays::AbstractVector{T}...) where {T}
     return res
 end
 
+function maybe_init_sysinfo()
+    if !SYSINFO_INITIALIZED[]
+        sysinfo = gather_sysinfo_lscpu()
+        SYSINFO[] = sysinfo
+        SYSINFO_INITIALIZED[] = true
+        return true
+    else
+        return false
+    end
+end
+
 function gather_sysinfo_lscpu()
     local table
     try
         table = readdlm(IOBuffer(read(`lscpu --all --extended`, String)))
     catch
-        return false
+        return nothing
     end
     if size(table, 1) != Sys.CPU_THREADS + 1
         @warn(
@@ -80,36 +91,38 @@ function gather_sysinfo_lscpu()
         )
     end
     # hyperthreading?
-    HYPERTHREADING[] = hasduplicates(@view(table[2:end, 4]))
+    hyperthreading = hasduplicates(@view(table[2:end, 4]))
     # count number of sockets
-    NSOCKETS[] = length(unique(@view(table[2:end, 3])))
+    nsockets = length(unique(@view(table[2:end, 3])))
     # count number of numa nodes
-    NNUMA[] = length(unique(@view(table[2:end, 2])))
+    nnuma = length(unique(@view(table[2:end, 2])))
     # cpuids per socket / numa
-    CPUIDS[] = [Int[] for _ in 1:nsockets()]
-    CPUIDS_NUMA[] = [Int[] for _ in 1:nnuma()]
+    cpuids_sockets = [Int[] for _ in 1:nsockets]
+    cpuids_numa = [Int[] for _ in 1:nnuma]
     for i in 2:size(table, 1)
         cpuid = table[i, 1]
         numa = table[i, 2]
         socket = table[i, 3]
-        push!(CPUIDS[][socket + 1], cpuid)
-        push!(CPUIDS_NUMA[][numa + 1], cpuid)
+        push!(cpuids_sockets[socket + 1], cpuid)
+        push!(cpuids_numa[numa + 1], cpuid)
     end
     # if a coreid is seen for a second time
     # the corresponding cpuid is identified
     # as a hypterthread
-    ISHYPERTHREAD[] = fill(false, Sys.CPU_THREADS)
+    ishyperthread = fill(false, Sys.CPU_THREADS)
     seen_coreids = Set{Int}()
     for i in 2:size(table, 1)
         cpuid = table[i, 1]
         coreid = table[i, 4]
         if coreid in seen_coreids
             # mark as hyperthread
-            ISHYPERTHREAD[][cpuid + 1] = true
+            ishyperthread[cpuid + 1] = true
         end
         push!(seen_coreids, coreid)
     end
-    return true
+    return SysInfo(
+        nsockets, nnuma, hyperthreading, cpuids_sockets, cpuids_numa, ishyperthread
+    )
 end
 
 hasduplicates(xs::AbstractVector) = length(xs) != length(Set(xs))
