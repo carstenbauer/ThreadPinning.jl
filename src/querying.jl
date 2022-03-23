@@ -30,19 +30,24 @@ end
 """
 Get information about the system like how many sockets or NUMA nodes it has, whether hyperthreading is enabled, etc.
 """
-function systeminfo()
-    # TODO: If not SYSINFO_INITIALIZED...
+function sysinfo()
+    maybe_gather_sysinfo()
+    if !SYSINFO_SUCCESS[]
+        @warn(
+            "System information is likely wrong because it couldn't be gathered. You are only seeing the fallback values / defaults."
+        )
+    end
     return SYSINFO[]
 end
 "Check whether hyperthreading is enabled."
-hyperthreading_is_enabled() = systeminfo().hyperthreading
+hyperthreading_is_enabled() = sysinfo().hyperthreading
 "Check whether the given cpu thread is a hyperthread (i.e. the second cpu thread associated with a CPU-core)."
-ishyperthread(cpuid::Integer) = systeminfo().ishyperthread[cpuid + 1]
+ishyperthread(cpuid::Integer) = sysinfo().ishyperthread[cpuid + 1]
 "Number of CPU sockets"
-nsockets() = systeminfo().nsockets
+nsockets() = sysinfo().nsockets
 "Number of NUMA nodes"
-nnuma() = systeminfo().nnuma
+nnuma() = sysinfo().nnuma
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available CPU sockets"
-cpuids_per_socket() = systeminfo().cpuids_sockets
+cpuids_per_socket() = sysinfo().cpuids_sockets
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available NUMA nodes"
-cpuids_per_numa() = systeminfo().cpuids_numa
+cpuids_per_numa() = sysinfo().cpuids_numa

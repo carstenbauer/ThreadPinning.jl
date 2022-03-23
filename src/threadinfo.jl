@@ -10,6 +10,7 @@ Keyword arguments:
 * `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, or `:none`.
 """
 function threadinfo(; blas=false, hints=false, color=true, kwargs...)
+    maybe_gather_sysinfo()
     # general info
     jlthreads = Threads.nthreads()
     thread_cpuids = getcpuids()

@@ -58,6 +58,7 @@ Allowed strategies:
 function pinthreads(
     strategy::Symbol; nthreads=Threads.nthreads(), warn::Bool=true, kwargs...
 )
+    maybe_gather_sysinfo()
     warn && _check_environment()
     if strategy == :compact
         return _pin_compact(nthreads; kwargs...)

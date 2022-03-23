@@ -16,7 +16,8 @@ Base.@kwdef struct SysInfo
     cpuids_numa::Vector{Vector{Int}} = [collect(0:(Sys.CPU_THREADS - 1))]
     ishyperthread::Vector{Bool} = fill(false, Sys.CPU_THREADS)
 end
-const SYSINFO_INITIALIZED = Ref{Bool}(false)
+const SYSINFO_ATTEMPT = Ref{Bool}(false) # have we yet attempted to gather the sysinfo
+const SYSINFO_SUCCESS = Ref{Bool}(false) # have we succeeded in gathering the sysinfo yet
 const SYSINFO = Ref{SysInfo}(SysInfo())
 
 # includes
@@ -32,7 +33,7 @@ include("Core2CoreLatency/Core2CoreLatency.jl")
 using .Core2CoreLatency
 include("latency.jl")
 export getcpuid, getcpuids, pinthread, pinthreads, threadinfo, @tspawnat
-export systeminfo,
+export sysinfo,
     nsockets,
     nnuma,
     hyperthreading_is_enabled,
@@ -40,20 +41,5 @@ export systeminfo,
     cpuids_per_socket,
     cpuids_per_numa
 export threadinfo
-
-function __init__()
-    @static if !Sys.islinux()
-        @warn(
-            "ThreadPinning.jl currently only supports Linux. Don't expect anything to work!"
-        )
-    else
-        if !maybe_init_sysinfo()
-            @warn(
-                "Couldn't gather system information. Perhaps `lscpu` isn't available? Not all features will work (optimally)."
-            )
-        end
-    end
-    return nothing
-end
 
 end

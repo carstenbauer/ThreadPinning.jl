@@ -67,15 +67,21 @@ function interweave(arrays::AbstractVector{T}...) where {T}
     return res
 end
 
-function maybe_init_sysinfo()
-    if !SYSINFO_INITIALIZED[]
+function maybe_gather_sysinfo()
+    if !SYSINFO_ATTEMPT[]
+        SYSINFO_ATTEMPT[] = true
         sysinfo = gather_sysinfo_lscpu()
-        SYSINFO[] = sysinfo
-        SYSINFO_INITIALIZED[] = true
-        return true
-    else
-        return false
+        if isnothing(sysinfo)
+            SYSINFO_SUCCESS[] = false # redundant
+            @warn(
+                "Couldn't gather system information via `lscpu` (might not be available?). Some features won't work optimally, others might not work at all."
+            )
+        else
+            SYSINFO_SUCCESS[] = true
+            SYSINFO[] = sysinfo
+        end
     end
+    return nothing
 end
 
 function gather_sysinfo_lscpu()
