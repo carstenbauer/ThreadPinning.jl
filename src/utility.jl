@@ -67,10 +67,10 @@ function interweave(arrays::AbstractVector{T}...) where {T}
     return res
 end
 
-function maybe_gather_sysinfo()
-    if !SYSINFO_ATTEMPT[]
+function maybe_gather_sysinfo(lscpustr=nothing; force=false, verbose=false)
+    if !SYSINFO_ATTEMPT[] || force
         SYSINFO_ATTEMPT[] = true
-        sysinfo = gather_sysinfo_lscpu()
+        sysinfo = gather_sysinfo_lscpu(lscpustr; verbose)
         if isnothing(sysinfo)
             SYSINFO_SUCCESS[] = false # redundant
             @warn(
@@ -84,42 +84,83 @@ function maybe_gather_sysinfo()
     return nothing
 end
 
-function gather_sysinfo_lscpu()
+function gather_sysinfo_lscpu(lscpustr=nothing; verbose=false)
     local table
-    try
-        table = readdlm(IOBuffer(read(`lscpu --all --extended`, String)))
-    catch
-        return nothing
+    if isnothing(lscpustr)
+        try
+            table = readdlm(IOBuffer(read(`lscpu --all --extended`, String)))
+        catch
+            return nothing
+        end
+    else
+        # for debugging purposes
+        table = readdlm(IOBuffer(lscpustr))
     end
-    if size(table, 1) != Sys.CPU_THREADS + 1
+    colid_socket = findfirst(isequal("SOCKET"), table[1, :])
+    colid_numa = findfirst(isequal("NODE"), table[1, :])
+    colid_core = findfirst(isequal("CORE"), table[1, :])
+    colid_cpu = findfirst(isequal("CPU"), table[1, :])
+    colid_online = findfirst(isequal("ONLINE"), table[1, :])
+    online_cpu_tblidcs = findall(isequal("yes"), @view(table[:, colid_online]))
+    verbose && @show online_cpu_tblidcs
+    if length(online_cpu_tblidcs) != Sys.CPU_THREADS
         @warn(
-            "Could read `lscpu --all --extended` but number of cpuids doesn't match Sys.CPU_THREADS. Falling back to defaults."
+            "Could read `lscpu --all --extended` but number of online CPUs ($(length(online_cpu_tblidcs))) doesn't match Sys.CPU_THREADS ($(Sys.CPU_THREADS))."
         )
     end
     # hyperthreading?
-    hyperthreading = hasduplicates(@view(table[2:end, 4]))
+    hyperthreading = hasduplicates(@view(table[online_cpu_tblidcs, colid_core]))
+    verbose && @show hyperthreading
     # count number of sockets
-    nsockets = length(unique(@view(table[2:end, 3])))
+    nsockets = if isnothing(colid_socket)
+        1
+    else
+        length(unique(@view(table[online_cpu_tblidcs, colid_socket])))
+    end
+    verbose && @show nsockets
     # count number of numa nodes
-    nnuma = length(unique(@view(table[2:end, 2])))
+    nnuma = if isnothing(colid_numa)
+        1
+    else
+        length(unique(@view(table[online_cpu_tblidcs, colid_numa])))
+    end
+    verbose && @show nnuma
     # cpuids per socket / numa
     cpuids_sockets = [Int[] for _ in 1:nsockets]
     cpuids_numa = [Int[] for _ in 1:nnuma]
-    for i in 2:size(table, 1)
-        cpuid = table[i, 1]
-        numa = table[i, 2]
-        socket = table[i, 3]
-        push!(cpuids_sockets[socket + 1], cpuid)
-        push!(cpuids_numa[numa + 1], cpuid)
+    prev_numa = 0
+    prev_socket = 0
+    numaidcs = Dict{Int,Int}(0 => 1)
+    socketidcs = Dict{Int,Int}(0 => 1)
+    for i in online_cpu_tblidcs
+        cpuid = table[i, colid_cpu]
+        numa = isnothing(colid_numa) ? 0 : table[i, colid_numa]
+        socket = isnothing(colid_socket) ? 0 : table[i, colid_socket]
+        if numa != prev_numa
+            if !haskey(numaidcs, numa)
+                numaidcs[numa] = maximum(values(numaidcs)) + 1
+            end
+            prev_numa = numa
+        end
+        if socket != prev_socket
+            if !haskey(numaidcs, numa)
+                socketidcs[socket] = maximum(values(socketidcs)) + 1
+            end
+            prev_socket = socket
+        end
+        numaidx = numaidcs[numa]
+        socketidx = numaidcs[socket]
+        push!(cpuids_sockets[socketidx], cpuid)
+        push!(cpuids_numa[numaidx], cpuid)
     end
     # if a coreid is seen for a second time
     # the corresponding cpuid is identified
     # as a hypterthread
-    ishyperthread = fill(false, Sys.CPU_THREADS)
+    ishyperthread = fill(false, length(online_cpu_tblidcs))
     seen_coreids = Set{Int}()
-    for i in 2:size(table, 1)
-        cpuid = table[i, 1]
-        coreid = table[i, 4]
+    for i in online_cpu_tblidcs
+        cpuid = table[i, colid_cpu]
+        coreid = table[i, colid_core]
         if coreid in seen_coreids
             # mark as hyperthread
             ishyperthread[cpuid + 1] = true

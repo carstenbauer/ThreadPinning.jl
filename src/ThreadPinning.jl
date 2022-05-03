@@ -37,6 +37,7 @@ const SYSINFO = Ref{SysInfo}(SysInfo())
 
 # includes
 include("utility.jl")
+include("lscpu_examples.jl")
 include("libs/libc.jl")
 include("libs/libuv.jl")
 include("libs/libpthread.jl")
