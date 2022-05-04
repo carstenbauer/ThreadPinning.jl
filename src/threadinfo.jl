@@ -94,7 +94,7 @@ function _visualize_affinity(;
     elseif groupby == :numa
         cpuids_per_numa()
     else
-        [collect(0:(Sys.CPU_THREADS - 1))]
+        [cpuids_all()]
     end
     printstyled("| "; bold=true)
     for (i, cpuids) in pairs(cpuids_grouped)

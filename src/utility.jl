@@ -108,6 +108,8 @@ function gather_sysinfo_lscpu(lscpustr=nothing; verbose=false)
             "Could read `lscpu --all --extended` but number of online CPUs ($(length(online_cpu_tblidcs))) doesn't match Sys.CPU_THREADS ($(Sys.CPU_THREADS))."
         )
     end
+    cpuids = table[online_cpu_tblidcs, colid_cpu]
+    verbose && @show cpuids
     # hyperthreading?
     hyperthreading = hasduplicates(@view(table[online_cpu_tblidcs, colid_core]))
     verbose && @show hyperthreading
@@ -163,12 +165,13 @@ function gather_sysinfo_lscpu(lscpustr=nothing; verbose=false)
         coreid = table[i, colid_core]
         if coreid in seen_coreids
             # mark as hyperthread
-            ishyperthread[cpuid + 1] = true
+            cpuidx = findfirst(isequal(cpuid), cpuids)
+            ishyperthread[cpuidx] = true
         end
         push!(seen_coreids, coreid)
     end
     return SysInfo(
-        nsockets, nnuma, hyperthreading, cpuids_sockets, cpuids_numa, ishyperthread
+        nsockets, nnuma, hyperthreading, cpuids, cpuids_sockets, cpuids_numa, ishyperthread
     )
 end
 

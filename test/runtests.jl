@@ -45,6 +45,7 @@ end
         @test sinfo.nsockets == 1
         @test sinfo.nnuma == 4
         @test sinfo.hyperthreading == true
+        @test sinfo.cpuids == 0:127
         @test length(sinfo.cpuids_sockets) == 1
         @test sinfo.cpuids_sockets[1] == 0:127
         @test length(sinfo.cpuids_numa) == 4
@@ -61,8 +62,9 @@ end
         @test sinfo.nsockets == 1
         @test sinfo.nnuma == 6
         @test sinfo.hyperthreading == false
+        @test sinfo.cpuids == vcat([0, 1], 12:59)
         @test length(sinfo.cpuids_sockets) == 1
-        @test sinfo.cpuids_sockets[1] == vcat([0, 1], 12:59)
+        @test sinfo.cpuids_sockets[1] == sinfo.cpuids
         @test length(sinfo.cpuids_numa) == 6
         @test sinfo.cpuids_numa[1] == [0]
         @test sinfo.cpuids_numa[2] == [1]
@@ -103,7 +105,7 @@ end
         @test getcpuids() == cpuids_new
 
         rand_thread = rand(1:Threads.nthreads())
-        for cpuid in rand(0:(Sys.CPU_THREADS - 1), 5)
+        for cpuid in rand(cpuids_all(), 5)
             @test isnothing(pinthread(rand_thread, cpuid))
             @test getcpuid(rand_thread) == cpuid
         end

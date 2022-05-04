@@ -5,8 +5,10 @@ Pin the calling Julia thread to the CPU with id `cpuid`.
 """
 function pinthread(cpuid::Integer; warn::Bool=true)
     if warn
-        (0 ≤ cpuid ≤ Sys.CPU_THREADS - 1) || throw(
-            ArgumentError("cpuid is out of bounds (0 ≤ cpuid ≤ Sys.CPU_THREADS - 1).")
+        (minimum(cpuids_all()) ≤ cpuid ≤ maximum(cpuids_all())) || throw(
+            ArgumentError(
+                "cpuid is out of bounds ($(minimum(cpuids_all())) ≤ cpuid ≤ $(maximum(cpuids_all()))).",
+            ),
         )
         _check_environment()
     end
@@ -35,8 +37,12 @@ function pinthreads(cpuids::AbstractVector{<:Integer}; warn::Bool=true)
     ncpuids = length(cpuids)
     ncpuids ≤ nthreads() ||
         throw(ArgumentError("length(cpuids) must be ≤ Threads.nthreads()"))
-    (minimum(cpuids) ≥ 0 && maximum(cpuids) ≤ Sys.CPU_THREADS - 1) ||
-        throw(ArgumentError("All cpuids must be ≤ Sys.CPU_THREADS-1 and ≥ 0."))
+    (minimum(cpuids) ≥ minimum(cpuids_all()) && maximum(cpuids) ≤ maximum(cpuids_all())) ||
+        throw(
+            ArgumentError(
+                "All cpuids must be ≤ $(maximum(cpuids_all)) and ≥ $(minimum(cpuids_all())).",
+            ),
+        )
     @threads :static for tid in 1:ncpuids
         pinthread(cpuids[tid]; warn=false)
     end
@@ -78,23 +84,19 @@ end
 _pin_firstn(nthreads) = pinthreads(0:(nthreads - 1); warn=false)
 function _pin_random(nthreads; hyperthreads=false)
     if !hyperthreads
-        cpuids_sockets = cpuids_per_socket()
-        cpuids = shuffle!(
-            collect(Iterators.flatten(Iterators.Filter.(!ishyperthread, cpuids_sockets)))
-        )
+        cpuids = shuffle!(filter(!ishyperthread, cpuids_all()))
     else
-        cpuids = shuffle!(collect(0:(Sys.CPU_THREADS-1)))
+        cpuids = shuffle(cpuids_all())
     end
     return pinthreads(@view(cpuids[1:nthreads]); warn=false)
 end
 function _pin_compact(nthreads; hyperthreads=false)
-    cpuids_sockets = cpuids_per_socket()
     if !hyperthreads
-        cpuids_noht = filter.(!ishyperthread, cpuids_sockets)
-        cpuids_ht = filter.(ishyperthread, cpuids_sockets)
-        cpuids = @views vcat(reduce(vcat, cpuids_noht), reduce(vcat, cpuids_ht))[1:nthreads]
+        cpuids_noht = filter(!ishyperthread, cpuids_all())
+        cpuids_ht = filter(ishyperthread, cpuids_all())
+        cpuids = @views vcat(cpuids_noht, cpuids_ht)[1:nthreads]
     else
-        cpuids = @views reduce(vcat, cpuids_sockets)[1:nthreads]
+        cpuids = @views cpuids_all()[1:nthreads]
     end
     return pinthreads(cpuids; warn=false)
 end

@@ -12,6 +12,7 @@ Base.@kwdef struct SysInfo
     nsockets::Int = 1
     nnuma::Int = 1
     hyperthreading::Bool = false
+    cpuids::Vector{Int} = collect(0:(Sys.CPU_THREADS - 1))
     cpuids_sockets::Vector{Vector{Int}} = [collect(0:(Sys.CPU_THREADS - 1))]
     cpuids_numa::Vector{Vector{Int}} = [collect(0:(Sys.CPU_THREADS - 1))]
     ishyperthread::Vector{Bool} = fill(false, Sys.CPU_THREADS)
@@ -55,7 +56,8 @@ export sysinfo,
     hyperthreading_is_enabled,
     ishyperthread,
     cpuids_per_socket,
-    cpuids_per_numa
+    cpuids_per_numa,
+    cpuids_all
 export threadinfo
 
 end

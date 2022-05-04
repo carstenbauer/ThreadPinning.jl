@@ -42,7 +42,7 @@ end
 "Check whether hyperthreading is enabled."
 hyperthreading_is_enabled() = sysinfo().hyperthreading
 "Check whether the given cpu thread is a hyperthread (i.e. the second cpu thread associated with a CPU-core)."
-ishyperthread(cpuid::Integer) = sysinfo().ishyperthread[cpuid + 1]
+ishyperthread(cpuid::Integer) = sysinfo().ishyperthread[_cpuidx(cpuid)]
 "Number of CPU sockets"
 nsockets() = sysinfo().nsockets
 "Number of NUMA nodes"
@@ -51,3 +51,7 @@ nnuma() = sysinfo().nnuma
 cpuids_per_socket() = sysinfo().cpuids_sockets
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available NUMA nodes"
 cpuids_per_numa() = sysinfo().cpuids_numa
+"Returns a `Vector{Int}` which lists all valid CPUIDs"
+cpuids_all() = sysinfo().cpuids
+
+_cpuidx(cpuid) = findfirst(isequal(cpuid), cpuids_all())

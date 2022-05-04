@@ -39,7 +39,7 @@ Note that hyperthreads are highlighted with a different color since often times 
 ## Fine-grained control
 
 !!! note
-    While we enumerate Julia threads as `1:Threads.nthreads()`, **cpuids start from zero** and are hence enumerated as `0:Sys.CPU_THREADS-1`!
+    While we enumerate Julia threads as `1:Threads.nthreads()`, **cpuids start from zero** and are hence (typically) enumerated as `0:Sys.CPU_THREADS-1`!
 
 Apart from the general pinning strategies like e.g. `:compact` or `:spread` you can use [`pinthreads(::AbstractVector{<:Integer})`](@ref) to pin Julia threads to specific cores.
 
