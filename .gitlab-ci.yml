@@ -3,7 +3,6 @@ stages:
   - documentation
 
 # This job tests the ThreadPinning.jl with Julia 1.6
-# + generates and submits code coverage to codecov.io
 julia/1.6:
   stage: test
   tags:
@@ -22,11 +21,10 @@ julia/1.6:
   script:
     - /bin/bash -l
     - module load lang/Julia/1.6.5-linux-x86_64
-    - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
-    - julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
-    - julia --color=yes --project=test/coverage test/coverage/coverage.jl
+    - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = false);'
 
 # This job tests the ThreadPinning.jl with Julia 1.7 if the 1.6 job has passed
+# + generates and submits code coverage to codecov.io
 julia/1.7:
   stage: test
   tags:
@@ -42,9 +40,10 @@ julia/1.7:
     job: julia/1.6
   script:
     - /bin/bash -l
-    - module load lang/Julia/1.7.1-linux-x86_64
-    - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = false);'
-  allow_failure: true
+    - module load lang/Julia/1.7.2-linux-x86_64
+    - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
+    - julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
+    - julia --color=yes --project=test/coverage test/coverage/coverage.jl
 
 # Documentation
 build-and-deploy:
@@ -63,7 +62,7 @@ build-and-deploy:
     job: julia/1.7
   script:
     - /bin/bash -l
-    - module load lang/Julia/1.7.1-linux-x86_64
+    - module load lang/Julia/1.7.2-linux-x86_64
     - cd docs
     - julia --color=yes build_docs.jl
   allow_failure: false
