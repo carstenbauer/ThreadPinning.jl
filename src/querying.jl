@@ -32,11 +32,11 @@ Get information about the system like how many sockets or NUMA nodes it has, whe
 """
 function sysinfo()
     maybe_gather_sysinfo()
-    if !SYSINFO_SUCCESS[]
-        @warn(
-            "System information is likely wrong because it couldn't be gathered. You are only seeing the fallback values / defaults."
-        )
-    end
+    # if !SYSINFO_SUCCESS[]
+    #     @warn(
+    #         "System information is likely wrong because it couldn't be gathered. You are only seeing the fallback values / defaults."
+    #     )
+    # end
     return SYSINFO[]
 end
 "Check whether hyperthreading is enabled."
