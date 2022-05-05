@@ -151,7 +151,7 @@ function gather_sysinfo_lscpu(lscpustr=nothing; verbose=false)
             prev_socket = socket
         end
         numaidx = numaidcs[numa]
-        socketidx = numaidcs[socket]
+        socketidx = socketidcs[socket]
         push!(cpuids_sockets[socketidx], cpuid)
         push!(cpuids_numa[numaidx], cpuid)
     end
