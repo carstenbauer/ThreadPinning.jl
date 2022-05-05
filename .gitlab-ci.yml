@@ -44,7 +44,7 @@ julia/1.6-n2:
   script:
     - /bin/bash -l
     - module load lang
-    - module load /Julia/1.6.5-linux-x86_64
+    - module load Julia/1.6.5-linux-x86_64
     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = false);'
 
 # This job tests the ThreadPinning.jl with Julia 1.7 if the 1.6 job has passed
