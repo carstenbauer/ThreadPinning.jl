@@ -76,6 +76,7 @@ function maybe_gather_sysinfo(lscpustr=nothing; force=false, verbose=false)
             @warn(
                 "Couldn't gather system information via `lscpu` (might not be available?). Some features won't work optimally, others might not work at all."
             )
+            SYSINFO[] = SysInfo() # default fallback
         else
             SYSINFO_SUCCESS[] = true
             SYSINFO[] = sysinfo
