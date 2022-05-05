@@ -146,7 +146,7 @@ function gather_sysinfo_lscpu(lscpustr=nothing; verbose=false)
             prev_numa = numa
         end
         if socket != prev_socket
-            if !haskey(numaidcs, numa)
+            if !haskey(socketidcs, socket)
                 socketidcs[socket] = maximum(values(socketidcs)) + 1
             end
             prev_socket = socket
