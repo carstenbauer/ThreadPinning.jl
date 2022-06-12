@@ -8,7 +8,7 @@ julia/1.6-n1:
   tags:
     - bauerc-noctua
   variables:
-    SCHEDULER_PARAMETERS: "-A pc2-mitarbeiter -p short"
+    SCHEDULER_PARAMETERS: "-N 1 -n 1 -c 40 -t 00:15:00 -A pc2-mitarbeiter -p normal --exclusive"
     JULIA_NUM_THREADS: "20"
   rules:
     - changes:
@@ -20,7 +20,8 @@ julia/1.6-n1:
     - when: on_success
   script:
     - /bin/bash -l
-    - module load lang/Julia/1.6.5-linux-x86_64
+    - module load lang
+    - module load Julia/1.6.5-linux-x86_64
     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = false);'
 
 # This job tests the ThreadPinning.jl with Julia 1.6 on Noctua 2
@@ -54,7 +55,7 @@ julia/1.7:
   tags:
     - bauerc-noctua
   variables:
-    SCHEDULER_PARAMETERS: "-A pc2-mitarbeiter -p short"
+    SCHEDULER_PARAMETERS: "-N 1 -n 1 -c 40 -t 00:15:00 -A pc2-mitarbeiter -p normal --exclusive"
     JULIA_NUM_THREADS: "20"
   rules:
     - changes:
@@ -64,7 +65,8 @@ julia/1.7:
     job: julia/1.6-n2
   script:
     - /bin/bash -l
-    - module load lang/Julia/1.7.2-linux-x86_64
+    - module load lang
+    - module load Julia/1.7.2-linux-x86_64
     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
     - julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
     - julia --color=yes --project=test/coverage test/coverage/coverage.jl
@@ -86,7 +88,8 @@ build-and-deploy:
     job: julia/1.7
   script:
     - /bin/bash -l
-    - module load lang/Julia/1.7.2-linux-x86_64
+    - module load lang
+    - module load Julia/1.7.2-linux-x86_64
     - cd docs
     - julia --color=yes build_docs.jl
   allow_failure: false
