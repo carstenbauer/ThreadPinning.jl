@@ -18,7 +18,7 @@ Data structure to describe CPU mask.
 Ref: [docs](https://github.com/lattera/glibc/blob/master/posix/bits/cpu-set.h)
 """
 struct cpu_set_t
-    __bits::NTuple{16,__cpu_mask}
+    __bits::NTuple{16, __cpu_mask}
 end
 
 """
@@ -34,9 +34,8 @@ pthread_self() = @ccall libpthread.pthread_self()::pthread_t
 Ref: [docs](https://man7.org/linux/man-pages/man3/pthread_setaffinity_np.3.html)
 """
 function pthread_setaffinity_np(thread, cpussetsize, cpuset)
-    @ccall libpthread.pthread_setaffinity_np(
-        thread::pthread_t, cpussetsize::Csize_t, cpuset::Ptr{cpu_set_t}
-    )::Cint
+    @ccall libpthread.pthread_setaffinity_np(thread::pthread_t, cpussetsize::Csize_t,
+                                             cpuset::Ptr{cpu_set_t})::Cint
 end
 
 # function pinthread(processorId::Integer)

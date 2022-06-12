@@ -29,9 +29,8 @@ and must be greater-than-or-equal-to `uv_cpumask_size`.
 Ref: [docs](https://github.com/clibs/uv/blob/master/docs/src/threading.rst)
 """
 function uv_thread_getaffinity(self_ref, cpumask, masksize)
-    @ccall uv_thread_getaffinity(
-        self_ref::Ptr{uv_thread_t}, cpumask::Ptr{Cchar}, masksize::Cssize_t
-    )::Cint
+    @ccall uv_thread_getaffinity(self_ref::Ptr{uv_thread_t}, cpumask::Ptr{Cchar},
+                                 masksize::Cssize_t)::Cint
 end
 
 """
@@ -69,12 +68,10 @@ and must be greater-than-or-equal-to `uv_cpumask_size()`.
 Ref: [docs](https://github.com/clibs/uv/blob/master/docs/src/threading.rst)
 """
 function uv_thread_setaffinity(self_ref, cpumask, oldmask, masksize)
-    @ccall uv_thread_setaffinity(
-        self_ref::Ptr{uv_thread_t},
-        cpumask::Ptr{Cchar},
-        oldmask::Ptr{Cchar},
-        masksize::Csize_t,
-    )::Cint
+    @ccall uv_thread_setaffinity(self_ref::Ptr{uv_thread_t},
+                                 cpumask::Ptr{Cchar},
+                                 oldmask::Ptr{Cchar},
+                                 masksize::Csize_t)::Cint
 end
 
 """

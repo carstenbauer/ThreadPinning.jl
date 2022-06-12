@@ -51,13 +51,13 @@ using .Core2CoreLatency
 include("latency.jl")
 export getcpuid, getcpuids, pinthread, pinthreads, threadinfo, @tspawnat
 export sysinfo,
-    nsockets,
-    nnuma,
-    hyperthreading_is_enabled,
-    ishyperthread,
-    cpuids_per_socket,
-    cpuids_per_numa,
-    cpuids_all
+       nsockets,
+       nnuma,
+       hyperthreading_is_enabled,
+       ishyperthread,
+       cpuids_per_socket,
+       cpuids_per_numa,
+       cpuids_all
 export threadinfo
 
 end

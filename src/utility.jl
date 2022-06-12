@@ -19,11 +19,7 @@ macro tspawnat(thrdid, expr)
     tid = esc(thrdid)
     quote
         if $tid < 1 || $tid > Threads.nthreads()
-            throw(
-                AssertionError(
-                    "@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))",
-                ),
-            )
+            throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
         end
         let $(letargs...)
             local task = Task($thunk)
@@ -67,15 +63,13 @@ function interweave(arrays::AbstractVector...)
     return res
 end
 
-function maybe_gather_sysinfo(lscpustr=nothing; force=false, verbose=false)
+function maybe_gather_sysinfo(lscpustr = nothing; force = false, verbose = false)
     if !SYSINFO_ATTEMPT[] || force
         SYSINFO_ATTEMPT[] = true
         sysinfo = gather_sysinfo_lscpu(lscpustr; verbose)
         if isnothing(sysinfo)
             SYSINFO_SUCCESS[] = false # redundant
-            @warn(
-                "Couldn't gather system information via `lscpu` (might not be available?). Some features won't work optimally, others might not work at all."
-            )
+            @warn("Couldn't gather system information via `lscpu` (might not be available?). Some features won't work optimally, others might not work at all.")
             SYSINFO[] = SysInfo() # default fallback
         else
             SYSINFO_SUCCESS[] = true
@@ -85,7 +79,7 @@ function maybe_gather_sysinfo(lscpustr=nothing; force=false, verbose=false)
     return nothing
 end
 
-function gather_sysinfo_lscpu(lscpustr=nothing; verbose=false)
+function gather_sysinfo_lscpu(lscpustr = nothing; verbose = false)
     local table
     if isnothing(lscpustr)
         try
@@ -105,9 +99,7 @@ function gather_sysinfo_lscpu(lscpustr=nothing; verbose=false)
     online_cpu_tblidcs = findall(isequal("yes"), @view(table[:, colid_online]))
     verbose && @show online_cpu_tblidcs
     if length(online_cpu_tblidcs) != Sys.CPU_THREADS
-        @warn(
-            "Could read `lscpu --all --extended` but number of online CPUs ($(length(online_cpu_tblidcs))) doesn't match Sys.CPU_THREADS ($(Sys.CPU_THREADS))."
-        )
+        @warn("Could read `lscpu --all --extended` but number of online CPUs ($(length(online_cpu_tblidcs))) doesn't match Sys.CPU_THREADS ($(Sys.CPU_THREADS)).")
     end
     cpuids = table[online_cpu_tblidcs, colid_cpu]
     verbose && @show cpuids
@@ -133,8 +125,8 @@ function gather_sysinfo_lscpu(lscpustr=nothing; verbose=false)
     cpuids_numa = [Int[] for _ in 1:nnuma]
     prev_numa = 0
     prev_socket = 0
-    numaidcs = Dict{Int,Int}(0 => 1)
-    socketidcs = Dict{Int,Int}(0 => 1)
+    numaidcs = Dict{Int, Int}(0 => 1)
+    socketidcs = Dict{Int, Int}(0 => 1)
     for i in online_cpu_tblidcs
         cpuid = table[i, colid_cpu]
         numa = isnothing(colid_numa) ? 0 : table[i, colid_numa]
@@ -171,9 +163,8 @@ function gather_sysinfo_lscpu(lscpustr=nothing; verbose=false)
         end
         push!(seen_coreids, coreid)
     end
-    return SysInfo(
-        nsockets, nnuma, hyperthreading, cpuids, cpuids_sockets, cpuids_numa, ishyperthread
-    )
+    return SysInfo(nsockets, nnuma, hyperthreading, cpuids, cpuids_sockets, cpuids_numa,
+                   ishyperthread)
 end
 
 hasduplicates(xs::AbstractVector) = length(xs) != length(Set(xs))

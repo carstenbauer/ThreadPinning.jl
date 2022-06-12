@@ -31,7 +31,8 @@ function wait_as_long_as(S::Sync, wait_state::State)
     return loaded_state
 end
 
-function run_bench(cpu1::Integer, cpu2::Integer; nsamples::Integer=100, mode::Symbol=:min)
+function run_bench(cpu1::Integer, cpu2::Integer; nsamples::Integer = 100,
+                   mode::Symbol = :min)
     cpu1 == cpu2 && return zero(Float64)
     Threads.nthreads() >= 2 || @error("Need at least two Julia threads.")
 
