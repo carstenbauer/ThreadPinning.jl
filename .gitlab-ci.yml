@@ -75,7 +75,7 @@ build-and-deploy:
   tags:
     - bauerc-noctua
   variables:
-    SCHEDULER_PARAMETERS: "-A pc2-mitarbeiter -p short"
+    SCHEDULER_PARAMETERS: "-N 1 -n 1 -c 40 -t 00:15:00 -A pc2-mitarbeiter -p normal --exclusive"
     JULIA_NUM_THREADS: "20"
   only:
     - main
