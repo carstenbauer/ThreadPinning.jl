@@ -2,27 +2,27 @@ stages:
   - test
   - documentation
 
-# This job tests the ThreadPinning.jl with Julia 1.6 on Noctua 1
-julia/1.6-n1:
-  stage: test
-  tags:
-    - bauerc-noctua
-  variables:
-    SCHEDULER_PARAMETERS: "-N 1 -n 1 -c 40 -t 00:15:00 -A pc2-mitarbeiter -p normal --exclusive"
-    JULIA_NUM_THREADS: "20"
-  rules:
-    - changes:
-      - "README.md"
-    #   - "docs/**/*.md"
-    #   - "docs/make.jl"
-    #   - "docs/build_docs.jl"
-    #   when: never
-    - when: on_success
-  script:
-    - /bin/bash -l
-    - module load lang
-    - module load Julia/1.6.5-linux-x86_64
-    - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = false);'
+# # This job tests the ThreadPinning.jl with Julia 1.6 on Noctua 1
+# julia/1.6-n1:
+#   stage: test
+#   tags:
+#     - bauerc-noctua
+#   variables:
+#     SCHEDULER_PARAMETERS: "-N 1 -n 1 -c 40 -t 00:15:00 -A pc2-mitarbeiter -p normal --exclusive"
+#     JULIA_NUM_THREADS: "20"
+#   rules:
+#     - changes:
+#       - "README.md"
+#     #   - "docs/**/*.md"
+#     #   - "docs/make.jl"
+#     #   - "docs/build_docs.jl"
+#     #   when: never
+#     - when: on_success
+#   script:
+#     - /bin/bash -l
+#     - module load lang
+#     - module load Julia/1.6.5-linux-x86_64
+#     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = false);'
 
 # This job tests the ThreadPinning.jl with Julia 1.6 on Noctua 2
 julia/1.6-n2:
@@ -40,8 +40,6 @@ julia/1.6-n2:
     #   - "docs/build_docs.jl"
     #   when: never
     - when: on_success
-  needs:
-    job: julia/1.6-n1
   script:
     - /bin/bash -l
     - module load lang
@@ -50,7 +48,7 @@ julia/1.6-n2:
 
 # This job tests the ThreadPinning.jl with Julia 1.7 if the 1.6 job has passed
 # + generates and submits code coverage to codecov.io
-julia/1.7:
+julia/1.7-n1:
   stage: test
   tags:
     - bauerc-noctua
@@ -61,8 +59,8 @@ julia/1.7:
     - changes:
       - "README.md"
     - when: on_success
-  needs:
-    job: julia/1.6-n2
+#   needs:
+#     job: julia/1.6-n1
   script:
     - /bin/bash -l
     - module load lang
@@ -85,7 +83,7 @@ build-and-deploy:
     - tags
     - external_pull_requests
   needs:
-    job: julia/1.7
+    job: julia/1.7-n1
   script:
     - /bin/bash -l
     - module load lang
