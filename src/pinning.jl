@@ -35,7 +35,7 @@ function pinthreads(cpuids::AbstractVector{<:Integer}; warn::Bool = true)
     ncpuids ≤ nthreads() ||
         throw(ArgumentError("length(cpuids) must be ≤ Threads.nthreads()"))
     (minimum(cpuids) ≥ minimum(cpuids_all()) && maximum(cpuids) ≤ maximum(cpuids_all())) ||
-        throw(ArgumentError("All cpuids must be ≤ $(maximum(cpuids_all)) and ≥ $(minimum(cpuids_all()))."))
+        throw(ArgumentError("All cpuids must be ≤ $(maximum(cpuids_all())) and ≥ $(minimum(cpuids_all()))."))
     @threads :static for tid in 1:ncpuids
         pinthread(cpuids[tid]; warn = false)
     end

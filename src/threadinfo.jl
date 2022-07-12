@@ -226,7 +226,7 @@ function _color_openblas_num_threads(; hints = false)
             return :green
         else
             hints &&
-                @warn("blasthreads > cputhreads. You should decrease the number of OpenBLAS threads, i.e. BLAS.set_num_threads($corse).")
+                @warn("blasthreads > cputhreads. You should decrease the number of OpenBLAS threads, i.e. BLAS.set_num_threads($cputhreads).")
             return :red
         end
     end

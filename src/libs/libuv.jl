@@ -46,6 +46,7 @@ function uv_thread_getaffinity()
     err = uv_thread_getaffinity(self_ref, cpumask, masksize)
     @assert err == 0
     n = findlast(isone, cpumask)
+    @assert !isnothing(n)
     resize!(cpumask, n)
     return cpumask
 end
@@ -75,7 +76,7 @@ function uv_thread_setaffinity(self_ref, cpumask, oldmask, masksize)
 end
 
 """
-    uv_thread_setaffinity(procid::Integer) 
+    uv_thread_setaffinity(procid::Integer)
 Set the calling thread's affinity to `procid`.
 """
 function uv_thread_setaffinity(procid::Integer)

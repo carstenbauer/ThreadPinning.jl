@@ -83,7 +83,8 @@ function gather_sysinfo_lscpu(lscpustr = nothing; verbose = false)
     local table
     if isnothing(lscpustr)
         try
-            table = readdlm(IOBuffer(read(`lscpu --all --extended`, String)))
+            buf = IOBuffer(read(`lscpu --all --extended`, String))
+            table = readdlm(buf)
         catch
             return nothing
         end
