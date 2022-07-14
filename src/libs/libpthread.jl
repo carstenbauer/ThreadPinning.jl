@@ -1,50 +1,62 @@
 # ------------ pthread.h ------------
 const libpthread = "libpthread"
-# Justification: https://refspecs.linuxfoundation.org/LSB_3.1.0/LSB-Core-generic/LSB-Core-generic/libpthread-ddefs.html
-const pthread_t = Culong
 
-const __ULONG32_TYPE = Culong
-const __t_uscalar_t = __ULONG32_TYPE
-const __ULONGWORD_TYPE = __t_uscalar_t
-const __CPU_MASK_TYPE = __ULONGWORD_TYPE
-const __cpu_mask = __CPU_MASK_TYPE
+const Cpthread_t = Culong
+const Ccpu_set_t_tuple = NTuple{16, UInt64}
+struct Ccpu_set_t
+    bits::NTuple{16, UInt64}
+end
+function Base.convert(::Type{BitArray}, cpuset)
+    # TODO: improve
+    bitstr = join(bitstring.(reverse(cpuset.bits)))
+    maskarray = BitArray(b == '0' ? false : true for b in bitstr[end-ncputhreads()+1:end])
+    return maskarray
+end
+Base.show(io::IO, cpuset::Ccpu_set_t) = print(io, "Ccpu_set_t(", join(bitstring.(reverse(cpuset.bits))),")")
 
-const __CPU_SETSIZE = 1024
-const __NCPUBITS = (8 * sizeof(__cpu_mask))
+_pthread_self() = @ccall libpthread.pthread_self()::Cpthread_t
 
-"""
-Data structure to describe CPU mask.
-
-Ref: [docs](https://github.com/lattera/glibc/blob/master/posix/bits/cpu-set.h)
-"""
-struct cpu_set_t
-    __bits::NTuple{16, __cpu_mask}
+# pthread_setaffinity_np
+function _pthread_setaffinity_np(thread, cpussetsize, cpuset::Ccpu_set_t_tuple)
+    @ccall libpthread.pthread_setaffinity_np(thread::Cpthread_t, cpussetsize::Csize_t,
+                                             cpuset::Ccpu_set_t_tuple)::Cint
+end
+function _pthread_setaffinity_np(thread, cpussetsize, cpuset::Ccpu_set_t)
+    @ccall libpthread.pthread_setaffinity_np(thread::Cpthread_t, cpussetsize::Csize_t,
+                                             cpuset::Ccpu_set_t)::Cint
 end
 
-"""
-Returns the ID of the calling thread.
-This is the same value that is returned in `*thread` in the
-`pthread_create(3)`` call that created this thread.
-
-Ref: [docs](https://man7.org/linux/man-pages/man3/pthread_self.3.html)
-"""
-pthread_self() = @ccall libpthread.pthread_self()::pthread_t
-
-"""
-Ref: [docs](https://man7.org/linux/man-pages/man3/pthread_setaffinity_np.3.html)
-"""
-function pthread_setaffinity_np(thread, cpussetsize, cpuset)
-    @ccall libpthread.pthread_setaffinity_np(thread::pthread_t, cpussetsize::Csize_t,
-                                             cpuset::Ptr{cpu_set_t})::Cint
+# pthread_getaffinity_np
+function _pthread_getaffinity_np(thread, cpussetsize, cpuset)
+    @ccall libpthread.pthread_getaffinity_np(thread::Cpthread_t, cpussetsize::Csize_t,
+                                             cpuset::Ptr{Ccpu_set_t})::Cint
 end
 
-# function pinthread(processorId::Integer)
-#     cpuset = cpu_set_t()
-#     cpuset_ref = Ref(cpuset)
-#     thread = zero(pthread_t)
+function pthread_get_affinity_mask(threadid)
+    cpuset = Ref{Ccpu_set_t}()
+    ret = fetch(@tspawnat threadid _pthread_getaffinity_np(_pthread_self(), sizeof(cpuset), cpuset))
+    if ret != 0
+        @warn "_pthread_getaffinity_np call returned a non-zero value (indicating failure)"
+    end
+    return convert(BitArray, cpuset[])
+end
 
-#     thread = pthread_self()
-#     # CPU_ZERO(&cpuset)
-#     # CPU_SET(processorId, &cpuset);
-#     pthread_setaffinity_np(thread, sizeof(cpu_set_t), cpuset_ref)
-# end
+function pthread_print_affinity_mask(threadid)
+    mask = Ref{Ccpu_set_t}()
+    ret = fetch(@tspawnat threadid _pthread_getaffinity_np(_pthread_self(), sizeof(mask), mask))
+    if ret != 0
+        @warn "_pthread_getaffinity_np call returned a non-zero value (indicating failure)"
+    end
+    println(join(bitstring.(reverse(mask[].bits)))[end-ncputhreads()+1:end])
+    return nothing
+end
+
+function pthread_getcpuid(threadid=Threads.threadid())
+    mask = pthread_get_affinity_mask(threadid)
+    if count(mask) == 1 # exactly one bit set
+        return findfirst(reverse(mask))-1
+    else
+        @warn "The affinity mask of Julia thread $threadid includes multiple cpu threads."
+        return -1
+    end
+end

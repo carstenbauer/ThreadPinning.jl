@@ -47,6 +47,8 @@ ishyperthread(cpuid::Integer) = sysinfo().ishyperthread[_cpuidx(cpuid)]
 nsockets() = sysinfo().nsockets
 "Number of NUMA nodes"
 nnuma() = sysinfo().nnuma
+"Number of CPU threads"
+ncputhreads() = length(cpuids_all())
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available CPU sockets"
 cpuids_per_socket() = sysinfo().cpuids_sockets
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available NUMA nodes"

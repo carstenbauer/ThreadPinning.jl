@@ -1,7 +1,7 @@
 module ThreadPinning
 
 # stdlibs
-using Base.Threads: @threads, nthreads
+using Base.Threads: @threads, nthreads, threadid
 using Libdl
 using LinearAlgebra
 using Random
@@ -53,6 +53,7 @@ export getcpuid, getcpuids, pinthread, pinthreads, threadinfo, @tspawnat
 export sysinfo,
        nsockets,
        nnuma,
+       ncputhreads,
        hyperthreading_is_enabled,
        ishyperthread,
        cpuids_per_socket,
