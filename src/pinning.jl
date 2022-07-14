@@ -58,49 +58,48 @@ function pinthreads(strategy::Symbol; nthreads = Threads.nthreads(), warn::Bool 
                     kwargs...)
     maybe_gather_sysinfo()
     warn && _check_environment()
-    if strategy == :compact
-        return _pin_compact(nthreads; kwargs...)
+    cpuids = if strategy == :compact
+        _strategy_compact(; kwargs...)
     elseif strategy in (:scatter, :spread, :sockets)
-        return _pin_scatter(nthreads; kwargs...)
+        _strategy_scatter(; kwargs...)
     elseif strategy == :numa
-        return _pin_numa(nthreads; kwargs...)
+        _strategy_numa(; kwargs...)
     elseif strategy in (:rand, :random)
-        return _pin_random(nthreads; kwargs...)
+        _strategy_random(; kwargs...)
     elseif strategy == :firstn
-        return _pin_firstn(nthreads)
+        _strategy_firstn(nthreads)
     else
         throw(ArgumentError("Unknown pinning strategy."))
     end
+    pinthreads(@view(cpuids[1:nthreads]); warn = false)
 end
 
-_pin_firstn(nthreads) = pinthreads(0:(nthreads - 1); warn = false)
-function _pin_random(nthreads; hyperthreads = false)
+_strategy_firstn(nthreads) = return 0:(nthreads-1)
+function _strategy_random(; hyperthreads = false)
     if !hyperthreads
         cpuids = shuffle!(filter(!ishyperthread, cpuids_all()))
     else
         cpuids = shuffle(cpuids_all())
     end
-    return pinthreads(@view(cpuids[1:nthreads]); warn = false)
+    return cpuids
 end
-function _pin_compact(nthreads; hyperthreads = false)
+function _strategy_compact(; hyperthreads = false)
     if !hyperthreads
         cpuids_noht = filter(!ishyperthread, cpuids_all())
         cpuids_ht = filter(ishyperthread, cpuids_all())
-        cpuids = @views vcat(cpuids_noht, cpuids_ht)[1:nthreads]
+        cpuids = vcat(cpuids_noht, cpuids_ht)
     else
-        cpuids = @views cpuids_all()[1:nthreads]
+        cpuids = cpuids_all()
     end
-    return pinthreads(cpuids; warn = false)
+    return cpuids
 end
-function _pin_scatter(nthreads)
+function _strategy_scatter()
     cpuids = interweave(cpuids_per_socket()...)
-    pinthreads(@view cpuids[1:nthreads]; warn = false)
-    return nothing
+    return cpuids
 end
-function _pin_numa(nthreads)
+function _strategy_numa()
     cpuids = interweave(cpuids_per_numa()...)
-    pinthreads(@view cpuids[1:nthreads]; warn = false)
-    return nothing
+    return cpuids
 end
 
 # Potentially throw warnings if the environment is such that thread pinning might not work.
