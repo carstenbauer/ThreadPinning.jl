@@ -49,6 +49,17 @@ nsockets() = sysinfo().nsockets
 nnuma() = sysinfo().nnuma
 "Number of CPU threads"
 ncputhreads() = length(cpuids_all())
+"Number of CPU threads per NUMA domain"
+ncputhreads_per_numa() = length.(cpuids_per_numa())
+"Number of CPU threads per socket"
+ncputhreads_per_socket() = length.(cpuids_per_socket())
+"Number of cores (i.e. excluding hyperthreads)"
+ncores() = count(!ishyperthread, cpuids_all())
+"Number of CPU cores per NUMA domain"
+ncores_per_numa() = count.(!ishyperthread, cpuids_per_numa())
+"Number of CPU cores per socket"
+ncores_per_socket() = count.(!ishyperthread, cpuids_per_socket())
+
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available CPU sockets"
 cpuids_per_socket() = sysinfo().cpuids_sockets
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available NUMA nodes"

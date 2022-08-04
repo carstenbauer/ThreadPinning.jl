@@ -10,6 +10,12 @@ pinthreads(:random)
 @test getcpuids() == getcpuid.(1:Threads.nthreads())
 @test typeof(nsockets()) == Int
 @test nsockets() >= 1
+@test ncputhreads() >= 1
+@test ncores() >= 1
+@test sum(ncputhreads_per_socket()) >= nsockets()
+@test sum(ncputhreads_per_numa()) >= nnuma()
+@test sum(ncores_per_socket()) >= nsockets()
+@test sum(ncores_per_numa()) >= nnuma()
 @test typeof(hyperthreading_is_enabled()) == Bool
 @test typeof(cpuids_per_socket()) == Vector{Vector{Int}}
 @test ishyperthread(0) == false
