@@ -132,3 +132,16 @@ end
     pinthreads(reverse(cpuids); force = false)
     @test getcpuids() == cpuids
 end
+
+@testset "Thread Pinning (random)" begin
+    pinthreads(0:nthreads() - 1)
+
+    cpuids = Vector{Vector{Int64}}()
+    for _ in 1:10
+        pinthreads(:random)
+        push!(cpuids, getcpuids())
+    end
+
+    # Check that at least some of the pinning settings were different
+    @test any([any(x .!= cpuids[1]) for x in cpuids[2:end]])
+end
