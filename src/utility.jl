@@ -63,62 +63,58 @@ function interweave(arrays::AbstractVector...)
     return res
 end
 
-function maybe_gather_sysinfo(lscpustr = nothing; force = false, verbose = false)
-    if !SYSINFO_ATTEMPT[] || force
-        SYSINFO_ATTEMPT[] = true
-        sysinfo = gather_sysinfo_lscpu(lscpustr; verbose)
-        if isnothing(sysinfo)
-            SYSINFO_SUCCESS[] = false # redundant
-            @warn("Couldn't gather system information via `lscpu` (might not be available?). Some features won't work optimally, others might not work at all.")
-            SYSINFO[] = SysInfo() # default fallback
-        else
-            SYSINFO_SUCCESS[] = true
-            SYSINFO[] = sysinfo
-        end
+function update_sysinfo!(lscpustr = nothing; verbose = false)
+    sysinfo = gather_sysinfo_lscpu(lscpustr; verbose)
+    if isnothing(sysinfo)
+        @warn("Couldn't gather system information via `lscpu` (might not be available?). Some features won't work optimally, others might not work at all.")
+        SYSINFO[] = SysInfo() # default fallback
+    else
+        SYSINFO[] = sysinfo
     end
     return nothing
 end
 
-function gather_sysinfo_lscpu(lscpustr = nothing; verbose = false)
+function read_lscpu(lscpustr = nothing)
     local table
     if isnothing(lscpustr)
         try
             buf = IOBuffer(read(`lscpu --all --extended`, String))
-            table = readdlm(buf)
+            table = readdlm(buf, String)
         catch
             return nothing
         end
     else
         # for debugging purposes
-        table = readdlm(IOBuffer(lscpustr))
+        table = readdlm(IOBuffer(lscpustr), String)
     end
-    colid_socket = findfirst(isequal("SOCKET"), table[1, :])
-    colid_numa = findfirst(isequal("NODE"), table[1, :])
-    colid_core = findfirst(isequal("CORE"), table[1, :])
-    colid_cpu = findfirst(isequal("CPU"), table[1, :])
-    colid_online = findfirst(isequal("ONLINE"), table[1, :])
-    online_cpu_tblidcs = findall(isequal("yes"), @view(table[:, colid_online]))
+end
+
+function gather_sysinfo_lscpu(lscpustr = nothing; verbose = false)
+    table = read_lscpu(lscpustr)
+    colid_socket = @views findfirst(isequal("SOCKET"), table[1, :])
+    colid_numa = @views findfirst(isequal("NODE"), table[1, :])
+    colid_core = @views findfirst(isequal("CORE"), table[1, :])
+    colid_cpu = @views findfirst(isequal("CPU"), table[1, :])
+    colid_online = @views findfirst(isequal("ONLINE"), table[1, :])
+    online_cpu_tblidcs = @views findall(isequal("yes"), table[:, colid_online])
     verbose && @show online_cpu_tblidcs
     if length(online_cpu_tblidcs) != Sys.CPU_THREADS
         @warn("Could read `lscpu --all --extended` but number of online CPUs ($(length(online_cpu_tblidcs))) doesn't match Sys.CPU_THREADS ($(Sys.CPU_THREADS)).")
     end
-    cpuids = table[online_cpu_tblidcs, colid_cpu]
+    cpuids = @views parse.(Int, table[online_cpu_tblidcs, colid_cpu])
     verbose && @show cpuids
-    # hyperthreading?
-    hyperthreading = hasduplicates(@view(table[online_cpu_tblidcs, colid_core]))
-    verbose && @show hyperthreading
     # count number of sockets
     nsockets = if isnothing(colid_socket)
         1
     else
-        length(unique(@view(table[online_cpu_tblidcs, colid_socket])))
+        @views length(unique(table[online_cpu_tblidcs, colid_socket]))
     end
     verbose && @show nsockets
     # count number of numa nodes
     nnuma = if isnothing(colid_numa)
         1
     else
-        length(unique(@view(table[online_cpu_tblidcs, colid_numa])))
+        @views length(unique(table[online_cpu_tblidcs, colid_numa]))
     end
     verbose && @show nnuma
     # cpuids per socket / numa
@@ -129,9 +125,9 @@ function gather_sysinfo_lscpu(lscpustr = nothing; verbose = false)
     numaidcs = Dict{Int, Int}(0 => 1)
     socketidcs = Dict{Int, Int}(0 => 1)
     for i in online_cpu_tblidcs
-        cpuid = table[i, colid_cpu]
-        numa = isnothing(colid_numa) ? 0 : table[i, colid_numa]
-        socket = isnothing(colid_socket) ? 0 : table[i, colid_socket]
+        cpuid = parse(Int, table[i, colid_cpu])
+        numa = isnothing(colid_numa) ? 0 : parse(Int, table[i, colid_numa])
+        socket = isnothing(colid_socket) ? 0 : parse(Int, table[i, colid_socket])
         if numa != prev_numa
             if !haskey(numaidcs, numa)
                 numaidcs[numa] = maximum(values(numaidcs)) + 1
@@ -155,8 +151,8 @@ function gather_sysinfo_lscpu(lscpustr = nothing; verbose = false)
     ishyperthread = fill(false, length(online_cpu_tblidcs))
     seen_coreids = Set{Int}()
     for i in online_cpu_tblidcs
-        cpuid = table[i, colid_cpu]
-        coreid = table[i, colid_core]
+        cpuid = parse(Int, table[i, colid_cpu])
+        coreid = parse(Int, table[i, colid_core])
         if coreid in seen_coreids
             # mark as hyperthread
             cpuidx = findfirst(isequal(cpuid), cpuids)
@@ -164,6 +160,9 @@ function gather_sysinfo_lscpu(lscpustr = nothing; verbose = false)
         end
         push!(seen_coreids, coreid)
     end
+    # hyperthreading?
+    hyperthreading = any(ishyperthread)
+    verbose && @show hyperthreading
     return SysInfo(nsockets, nnuma, hyperthreading, cpuids, cpuids_sockets, cpuids_numa,
                    ishyperthread)
 end

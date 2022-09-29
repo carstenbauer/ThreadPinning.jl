@@ -63,7 +63,6 @@ end
 openblas_pinthreads(cpuids; juliathread=1) = openblas_pinthreads(1:length(cpuids), cpuids; juliathread)
 
 function openblas_pinthreads(strategy::Symbol; nthreads=nblasthreads(), juliathread=1, kwargs...)
-    maybe_gather_sysinfo()
     cpuids = if strategy == :compact
         _strategy_compact(; kwargs...)
     elseif strategy in (:scatter, :spread, :sockets)

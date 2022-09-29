@@ -56,7 +56,6 @@ Allowed strategies:
 """
 function pinthreads(strategy::Symbol; nthreads = Threads.nthreads(), warn::Bool = true,
                     kwargs...)
-    maybe_gather_sysinfo()
     warn && _check_environment()
     cpuids = if strategy == :compact
         _strategy_compact(; kwargs...)
