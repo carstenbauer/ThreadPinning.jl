@@ -1,43 +1,15 @@
 module ThreadPinning
 
-# stdlibs
+# imports
 using Base.Threads: @threads, nthreads, threadid
 using Libdl
 using LinearAlgebra
 using Random
 using DelimitedFiles
 
-# system information
-Base.@kwdef struct SysInfo
-    nsockets::Int = 1
-    nnuma::Int = 1
-    hyperthreading::Bool = false
-    cpuids::Vector{Int} = collect(0:(Sys.CPU_THREADS - 1))
-    cpuids_sockets::Vector{Vector{Int}} = [collect(0:(Sys.CPU_THREADS - 1))]
-    cpuids_numa::Vector{Vector{Int}} = [collect(0:(Sys.CPU_THREADS - 1))]
-    ishyperthread::Vector{Bool} = fill(false, Sys.CPU_THREADS)
-end
-function Base.show(io::IO, sysinfo::SysInfo)
-    return print(io, "SysInfo()")
-end
-function Base.show(io::IO, mime::MIME{Symbol("text/plain")}, sysinfo::SysInfo)
-    summary(io, sysinfo)
-    println(io)
-    fnames = fieldnames(SysInfo)
-    for fname in fnames[1:(end - 1)]
-        println(io, "├ $fname: ", getfield(sysinfo, fname))
-    end
-    print(io, "└ $(fnames[end]): ", getfield(sysinfo, fnames[end]))
-    return nothing
-end
-
-# constants
-const SYSINFO_ATTEMPT = Ref{Bool}(false) # have we yet attempted to gather the sysinfo
-const SYSINFO_SUCCESS = Ref{Bool}(false) # have we succeeded in gathering the sysinfo yet
-const SYSINFO = Ref{SysInfo}(SysInfo())
-
 # includes
 include("utility.jl")
+include("sysinfo.jl")
 include("lscpu_examples.jl")
 include("libs/libc.jl")
 include("libs/libuv.jl")
@@ -46,11 +18,45 @@ include("blas.jl")
 include("querying.jl")
 include("pinning.jl")
 include("threadinfo.jl")
-include("Core2CoreLatency/Core2CoreLatency.jl")
-using .Core2CoreLatency
 include("latency.jl")
-export getcpuid, getcpuids, pinthread, pinthreads, threadinfo, @tspawnat
-export sysinfo,
+
+# initialization
+function __init__()
+    update_sysinfo!()
+end
+
+# precompile
+import SnoopPrecompile
+SnoopPrecompile.@precompile_all_calls begin
+    sysinfo()
+    threadinfo()
+    pinthreads(:compact)
+    pinthread(0)
+    pinthreads(0:(Threads.nthreads() - 1))
+    pinthreads(collect(0:(Threads.nthreads() - 1)))
+    getcpuid()
+    getcpuids()
+    nsockets()
+    nnuma()
+    cpuids_all()
+    cpuids_per_socket()
+    cpuids_per_numa()
+    ncputhreads()
+    ncputhreads_per_socket()
+    ncputhreads_per_numa()
+    ncores()
+    ncores_per_socket()
+    ncores_per_numa()
+end
+
+# exports
+export threadinfo,
+       pinthreads,
+       pinthread,
+       getcpuids,
+       getcpuid,
+       @tspawnat,
+       sysinfo,
        nsockets,
        nnuma,
        ncputhreads,
@@ -64,6 +70,4 @@ export sysinfo,
        cpuids_per_socket,
        cpuids_per_numa,
        cpuids_all
-export threadinfo
-
 end

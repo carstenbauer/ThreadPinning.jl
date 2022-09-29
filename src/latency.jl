@@ -1,3 +1,6 @@
+include("Core2CoreLatency/Core2CoreLatency.jl")
+using .Core2CoreLatency
+
 """
     bench_core2core_latency([cpuids = 0:Sys.CPU_THREADS-1; nbench = 5, nsamples::Integer = 100, mode::Symbol = :min])
 A tool for measuring core-to-core latency (i.e. inter-core latency) in nanoseconds.
