@@ -8,8 +8,8 @@ using Random
 using DelimitedFiles
 
 # includes
-include("sysinfo.jl")
 include("utility.jl")
+include("sysinfo.jl")
 include("lscpu_examples.jl")
 include("libs/libc.jl")
 include("libs/libuv.jl")
