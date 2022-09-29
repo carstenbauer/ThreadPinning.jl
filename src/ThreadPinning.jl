@@ -49,6 +49,20 @@ include("threadinfo.jl")
 include("Core2CoreLatency/Core2CoreLatency.jl")
 using .Core2CoreLatency
 include("latency.jl")
+
+
+import SnoopPrecompile
+
+SnoopPrecompile.@precompile_all_calls begin
+    threadinfo()
+    pinthreads(:compact)
+    pinthread(0)
+    pinthreads(0:Threads.nthreads()-1)
+    getcpuid()
+    getcpuids()
+end
+
+
 export getcpuid, getcpuids, pinthread, pinthreads, threadinfo, @tspawnat
 export sysinfo,
        nsockets,
