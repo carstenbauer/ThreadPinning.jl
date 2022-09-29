@@ -54,12 +54,16 @@ include("latency.jl")
 import SnoopPrecompile
 
 SnoopPrecompile.@precompile_all_calls begin
-    threadinfo()
+    #threadinfo()
     pinthreads(:compact)
     pinthread(0)
     pinthreads(0:Threads.nthreads()-1)
     getcpuid()
     getcpuids()
+    ncores()
+    ncputhreads()
+    nsockets()
+    nnuma()
 end
 
 
