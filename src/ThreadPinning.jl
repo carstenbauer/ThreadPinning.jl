@@ -50,6 +50,11 @@ include("Core2CoreLatency/Core2CoreLatency.jl")
 using .Core2CoreLatency
 include("latency.jl")
 
+function __init__()
+    SYSINFO_ATTEMPT[] = false
+    SYSINFO_SUCCESS[] = false
+    SYSINFO[] = SysInfo()
+end
 
 import SnoopPrecompile
 
