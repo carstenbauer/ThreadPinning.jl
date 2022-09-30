@@ -48,7 +48,7 @@ Pin the first `1:nthreads` Julia threads according to the given pinning `strateg
 Per default, `nthreads == Threads.nthreads()`
 
 Allowed strategies:
-* `:compact`: pins to the first `nthreads` cpu threads while trying to avoid using hyperthreads (i.e. moving to next socket before using hyperthreads). If `hyperthreads=true`, hyperthreads will be used before moving to the next socket, if necessary.
+* `:compact` or `:close`, or `:cores`: pins to the first `nthreads` cpu threads while trying to avoid using hyperthreads (i.e. moving to next socket before using hyperthreads). If `hyperthreads=true`, hyperthreads will be used before moving to the next socket, if necessary.
 * `:scatter` or `:spread` or `sockets`: pins to all available sockets in an alternating / round robin fashion.
 * `:numa`: pins to all available NUMA nodes in an alternating / round robin fashion.
 * `:random` or `:rand`: pins threads to random cpu threads (ensures that no cpu thread is double occupied). By default (`hyperthreads=false`), hyperthreads will be ignored.
@@ -57,8 +57,10 @@ Allowed strategies:
 function pinthreads(strategy::Symbol; nthreads = Threads.nthreads(), warn::Bool = true,
                     kwargs...)
     warn && _check_environment()
-    cpuids = if strategy == :compact
+    cpuids = if strategy in (:compact, :close, :cores)
         _strategy_compact(; kwargs...)
+    elseif strategy == :threads
+        _strategy_compact(; kwargs..., hyperthreads=true)
     elseif strategy in (:scatter, :spread, :sockets)
         _strategy_scatter(; kwargs...)
     elseif strategy == :numa
@@ -72,6 +74,7 @@ function pinthreads(strategy::Symbol; nthreads = Threads.nthreads(), warn::Bool 
     end
     pinthreads(@view(cpuids[1:nthreads]); warn = false)
 end
+pinthreads(strategy::AbstractString; kwargs...) = pinthreads(Symbol(strategy); kwargs...)
 
 _strategy_firstn(nthreads) = return 0:(nthreads-1)
 function _strategy_random(; hyperthreads = false)

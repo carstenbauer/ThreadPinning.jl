@@ -14,6 +14,7 @@ include("lscpu_examples.jl")
 include("libs/libc.jl")
 include("libs/libuv.jl")
 include("libs/libpthread.jl")
+include("omp.jl")
 include("blas.jl")
 include("querying.jl")
 include("pinning.jl")
@@ -22,7 +23,26 @@ include("latency.jl")
 
 # initialization
 function __init__()
-    update_sysinfo!()
+    if lowercase(get(ENV, "JULIA_TP_AUTOUPDATE", "true")) != "false"
+        update_sysinfo!()
+    end
+
+    pinning = lowercase(get(ENV, "JULIA_PINTHREADS", ""))
+    if !isempty(pinning)
+        try
+            if startswith(pinning, '[')
+                cpuids = parse.(Int, split(first(split(last(split(pinning, '[')), ']')), ","))
+                pinning = cpuids
+            end
+            pinthreads(pinning)
+        catch err
+            @warn("Ignoring unsupported setting \"JULIA_PINTHREADS=$pinning\".")
+        end
+    end
+
+    # TODO (maybe): OMP-like env variables
+    # places = get(ENV, "JULIA_PINTHREADS_PLACES", "")
+    # bind = get(ENV, "JULIA_PINTHREADS_BIND", "")
 end
 
 # precompile
