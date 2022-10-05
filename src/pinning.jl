@@ -62,6 +62,7 @@ function _places_symbol2singleton(::Type{Val{T}}) where {T}
     throw(ArgumentError("Unknown places symbol."))
 end
 _places_symbol2singleton(::Type{Val{:threads}}) = CPUThreads()
+_places_symbol2singleton(::Type{Val{:cputhreads}}) = CPUThreads()
 _places_symbol2singleton(::Type{Val{:cores}}) = Cores()
 _places_symbol2singleton(::Type{Val{:numa}}) = NUMA()
 _places_symbol2singleton(::Type{Val{:NUMA}}) = NUMA()
@@ -129,7 +130,7 @@ Per default, `nthreads == Threads.nthreads()` and a reasonable value for `places
 
 **Places** (`places`):
 * `:cores` or `Cores()`: all the cores of the system
-* `:threads` or `CPUThreads()`: all the cpu threads of the system (equal to `:cores` if there is one cpu thread per core, e.g. no hyperthreading)
+* `:threads`, `:cputhreads`, or `CPUThreads()`: all the cpu threads of the system (equal to `:cores` if there is one cpu thread per core, e.g. no hyperthreading)
 * `:sockets` or `Sockets()`: the sockets of the system
 * `:numa` or `NUMA()`: the NUMA domains of the system
 * An `AbstractVector{<:AbstractVector{<:Integer}}` of cpu ids that defines the places explicitly
