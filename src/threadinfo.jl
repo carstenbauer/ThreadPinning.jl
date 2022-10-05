@@ -11,7 +11,7 @@ Keyword arguments:
 """
 function threadinfo(; blas = false, hints = false, color = true, kwargs...)
     # general info
-    jlthreads = Threads.nthreads()
+    jlthreads = Base.Threads.nthreads()
     thread_cpuids = getcpuids()
     occupied_cputhreads = length(unique(thread_cpuids))
     cputhreads = Sys.CPU_THREADS
@@ -83,7 +83,7 @@ function _visualize_affinity(;
     ncpuids = Sys.CPU_THREADS
     cpuids_grouped = if groupby in (:sockets, :socket)
         cpuids_per_socket()
-    elseif groupby == :numa
+    elseif groupby in (:numa, :NUMA)
         cpuids_per_numa()
     else
         [cpuids_all()]

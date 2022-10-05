@@ -55,3 +55,14 @@ threadinfo(; color=false)
 ```
 
 If you want to pin the calling thread you can simply use [`pinthread(cpuid)`](@ref).
+
+## Environment variables
+
+**Pinning:**
+
+The following environment variables can be used to specify the desired pinning before starting Julia. Julia Threads will then automatically get pinned during the initialization of the ThreadPinning package, i.e. when calling `using ThreadPinning`.
+* `JULIA_PIN`: Can be set to any binding / pinning strategy symbol supported by [`pinthreads`](@ref), e.g. `JULIA_PIN=compact`.
+* `JULIA_PLACES` (optional): Can be set to any places symbol supported by [`pinthreads`](@ref), e.g. `JULIA_PLACES=sockets`.
+
+**Other:**
+* `JULIA_TP_AUTOUPDATE`: When set to `false`, ThreadPinning.jl won't query lscpu when `using` the package but will use the system information obtained during precompilation. This can drastically reduce the `using ThreadPinning` time but is only safe if the package is used on the same system used for precompilation (i.e. often not the case on clusters!).

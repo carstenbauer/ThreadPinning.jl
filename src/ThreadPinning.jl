@@ -4,7 +4,7 @@ module ThreadPinning
 using Base.Threads: @threads, nthreads, threadid
 using Libdl
 using LinearAlgebra
-using Random
+import Random
 using DelimitedFiles
 
 # includes
@@ -14,6 +14,7 @@ include("lscpu_examples.jl")
 include("libs/libc.jl")
 include("libs/libuv.jl")
 include("libs/libpthread.jl")
+include("omp.jl")
 include("blas.jl")
 include("querying.jl")
 include("pinning.jl")
@@ -22,18 +23,44 @@ include("latency.jl")
 
 # initialization
 function __init__()
-    update_sysinfo!()
+    if lowercase(get(ENV, "JULIA_TP_AUTOUPDATE", "true")) != "false"
+        update_sysinfo!()
+    end
+
+    JULIA_PIN = get(ENV, "JULIA_PIN", nothing)
+    JULIA_PLACES = get(ENV, "JULIA_PLACES", nothing)
+    if !isnothing(JULIA_PIN)
+        try
+            binding = Symbol(lowercase(JULIA_PIN))
+            if !isnothing(JULIA_PLACES)
+                pinthreads(binding; places = Symbol(lowercase(JULIA_PLACES)))
+            else
+                pinthreads(binding)
+            end
+        catch err
+            @warn("Ignoring unsupported settings:", JULIA_PIN,
+                  JULIA_PLACES)
+        end
+    end
+    return nothing
 end
 
 # precompile
 import SnoopPrecompile
 SnoopPrecompile.@precompile_all_calls begin
     sysinfo()
-    threadinfo()
-    pinthreads(:compact)
+    # threadinfo()
     pinthread(0)
-    pinthreads(0:(Threads.nthreads() - 1))
-    pinthreads(collect(0:(Threads.nthreads() - 1)))
+    pinthreads(0:(nthreads() - 1))
+    pinthreads(collect(0:(nthreads() - 1)))
+    pinthreads(:compact)
+    pinthreads(:spread)
+    pinthreads(:random)
+    pinthreads(:current)
+    pinthreads(:compact; places=Cores())
+    pinthreads(:compact; places=CPUThreads())
+    pinthreads(:spread; places=NUMA())
+    pinthreads(:spread; places=Sockets())
     getcpuid()
     getcpuids()
     nsockets()
@@ -69,5 +96,13 @@ export threadinfo,
        ishyperthread,
        cpuids_per_socket,
        cpuids_per_numa,
-       cpuids_all
+       cpuids_all,
+       CPUThreads,
+       Cores,
+       Sockets,
+       NUMA,
+       CompactBind,
+       SpreadBind,
+       RandomBind,
+       CurrentBind
 end
