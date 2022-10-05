@@ -48,21 +48,37 @@ end
 end
 
 @testset "Thread Pinning (compact)" begin
-    @assert getcpuids() != 0:(nthreads() - 1)
-    @test isnothing(pinthreads(:compact; nthreads = 2))
-    @test getcpuids()[1:2] == 0:1
-    @test isnothing(pinthreads(:compact))
-    @test getcpuids() == 0:(nthreads() - 1)
+    for binding in (:compact, :close)
+        pinthreads(:random; places=:threads)
+        @test isnothing(pinthreads(binding; nthreads = 2))
+        @test getcpuids()[1:2] == 0:1
+        @test isnothing(pinthreads(binding))
+        @test getcpuids() == 0:(nthreads() - 1)
+    end
 end
 
-@testset "Thread Pinning (scatter)" begin
-    @test isnothing(pinthreads(:scatter))
-    cpuids_after = getcpuids()
-    @test check_compact_within_socket(cpuids_after)
+@testset "Thread Pinning (spread)" begin
+    for binding in (:spread, :scatter)
+        pinthreads(:random; places=:threads)
+        @test isnothing(pinthreads(binding))
+        cpuids_after = getcpuids()
+        @test check_compact_within_socket(cpuids_after)
+    end
 end
 
 @testset "Thread Pinning (numa)" begin
-    @test isnothing(pinthreads(:numa))
+    for places in (:numa, :NUMA)
+        pinthreads(:random; places=:threads)
+        @test isnothing(pinthreads(:compact; places))
+        cpuids_after = getcpuids()
+        @test check_compact_within_numa(cpuids_after)
+    end
+end
+
+@testset "Thread Pinning (current)" begin
+    pinthreads(:random; places=:threads)
+    cpuids_before = getcpuids()
+    @test isnothing(pinthreads(:current))
     cpuids_after = getcpuids()
-    @test check_compact_within_numa(cpuids_after)
+    @test cpuids_before == cpuids_after
 end

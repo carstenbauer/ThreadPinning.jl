@@ -4,7 +4,7 @@ module ThreadPinning
 using Base.Threads: @threads, nthreads, threadid
 using Libdl
 using LinearAlgebra
-using Random
+import Random
 using DelimitedFiles
 
 # includes
@@ -27,33 +27,33 @@ function __init__()
         update_sysinfo!()
     end
 
-    pinning = lowercase(get(ENV, "JULIA_PINTHREADS", ""))
-    if !isempty(pinning)
+    JULIA_PINTHREADS = get(ENV, "JULIA_PINTHREADS", nothing)
+    JULIA_PINTHREADS_PLACES = get(ENV, "JULIA_PINTHREADS_PLACES", nothing)
+    if !isnothing(JULIA_PINTHREADS)
         try
-            if startswith(pinning, '[')
-                cpuids = parse.(Int, split(first(split(last(split(pinning, '[')), ']')), ","))
-                pinning = cpuids
+            binding = Symbol(lowercase(JULIA_PINTHREADS))
+            if !isnothing(JULIA_PINTHREADS_PLACES)
+                pinthreads(binding; places = Symbol(lowercase(JULIA_PINTHREADS_PLACES)))
+            else
+                pinthreads(binding)
             end
-            pinthreads(pinning)
         catch err
-            @warn("Ignoring unsupported setting \"JULIA_PINTHREADS=$pinning\".")
+            @warn("Ignoring unsupported settings:", JULIA_PINTHREADS,
+                  JULIA_PINTHREADS_PLACES)
         end
     end
-
-    # TODO (maybe): OMP-like env variables
-    # places = get(ENV, "JULIA_PINTHREADS_PLACES", "")
-    # bind = get(ENV, "JULIA_PINTHREADS_BIND", "")
+    return nothing
 end
 
 # precompile
 import SnoopPrecompile
 SnoopPrecompile.@precompile_all_calls begin
     sysinfo()
-    threadinfo()
+    # threadinfo()
     pinthreads(:compact)
     pinthread(0)
-    pinthreads(0:(Threads.nthreads() - 1))
-    pinthreads(collect(0:(Threads.nthreads() - 1)))
+    pinthreads(0:(nthreads() - 1))
+    pinthreads(collect(0:(nthreads() - 1)))
     getcpuid()
     getcpuids()
     nsockets()
