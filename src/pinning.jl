@@ -50,11 +50,11 @@ struct Cores <: Places end
 struct NUMA <: Places end
 struct Sockets <: Places end
 
-abstract type BindingStrategy end
-struct CompactBind <: BindingStrategy end
-struct SpreadBind <: BindingStrategy end
-struct RandomBind <: BindingStrategy end
-struct CurrentBind <: BindingStrategy end
+abstract type PinningStrategy end
+struct CompactBind <: PinningStrategy end
+struct SpreadBind <: PinningStrategy end
+struct RandomBind <: PinningStrategy end
+struct CurrentBind <: PinningStrategy end
 
 # Places logic
 _places_symbol2singleton(s::Symbol) = _places_symbol2singleton(Val{s})
@@ -88,40 +88,40 @@ getplaces_cpuids(::NUMA) = cpuids_per_numa()
 getplaces_cpuids(::Sockets) = cpuids_per_socket()
 getplaces_cpuids(v::AbstractVector{<:AbstractVector{<:Integer}}) = v
 
-_default_places(::BindingStrategy) = Cores() # fallback
+_default_places(::PinningStrategy) = Cores() # fallback
 _default_places(::CompactBind) = Cores()
 _default_places(::SpreadBind) = Sockets()
 _default_places(::RandomBind) = CPUThreads()
 
 # Binding strategy logic
-_binding_symbol2singleton(s::Symbol)::BindingStrategy = _binding_symbol2singleton(Val{s})
-_binding_symbol2singleton(::Type{Val{:compact}}) = CompactBind()
-_binding_symbol2singleton(::Type{Val{:close}}) = CompactBind()
-_binding_symbol2singleton(::Type{Val{:spread}}) = SpreadBind()
-_binding_symbol2singleton(::Type{Val{:scatter}}) = SpreadBind()
-_binding_symbol2singleton(::Type{Val{:random}}) = RandomBind()
-_binding_symbol2singleton(::Type{Val{:current}}) = CurrentBind()
+_pinning_symbol2singleton(s::Symbol)::PinningStrategy = _pinning_symbol2singleton(Val{s})
+_pinning_symbol2singleton(::Type{Val{:compact}}) = CompactBind()
+_pinning_symbol2singleton(::Type{Val{:close}}) = CompactBind()
+_pinning_symbol2singleton(::Type{Val{:spread}}) = SpreadBind()
+_pinning_symbol2singleton(::Type{Val{:scatter}}) = SpreadBind()
+_pinning_symbol2singleton(::Type{Val{:random}}) = RandomBind()
+_pinning_symbol2singleton(::Type{Val{:current}}) = CurrentBind()
 
-function getcpuids_binding(s::Symbol, places; kwargs...)
-    getcpuids_binding(_binding_symbol2singleton(s), places; kwargs...)
+function getcpuids_pinning(s::Symbol, places; kwargs...)
+    getcpuids_pinning(_pinning_symbol2singleton(s), places; kwargs...)
 end
-function getcpuids_binding(::BindingStrategy, places; kwargs...)
-    throw(ArgumentError("Unknown binding strategy."))
+function getcpuids_pinning(::PinningStrategy, places; kwargs...)
+    throw(ArgumentError("Unknown pinning strategy."))
 end
-getcpuids_binding(::CompactBind, places; kwargs...) = reduce(vcat, getplaces_cpuids(places))
-getcpuids_binding(::SpreadBind, places; kwargs...) = interweave(getplaces_cpuids(places)...)
-function getcpuids_binding(::RandomBind, places; kwargs...)
+getcpuids_pinning(::CompactBind, places; kwargs...) = reduce(vcat, getplaces_cpuids(places))
+getcpuids_pinning(::SpreadBind, places; kwargs...) = interweave(getplaces_cpuids(places)...)
+function getcpuids_pinning(::RandomBind, places; kwargs...)
     reduce(vcat, Random.shuffle(getplaces_cpuids(places)))
 end
-getcpuids_binding(::CurrentBind, args...; kwargs...) = getcpuids()
+getcpuids_pinning(::CurrentBind, args...; kwargs...) = getcpuids()
 
 # High-level pinthreads
 """
-    pinthreads(binding[; places, nthreads, warn, kwargs...])
-Pins the first `1:nthreads` Julia threads according to the given `binding` strategy to the given `places`.
-Per default, `nthreads == Threads.nthreads()` and a reasonable value for `places` is chosen based on `binding`.
+    pinthreads(pinning[; places, nthreads, warn, kwargs...])
+Pins the first `1:nthreads` Julia threads according to the given `pinning` strategy to the given `places`.
+Per default, `nthreads == Threads.nthreads()` and a reasonable value for `places` is chosen based on `pinning`.
 
-**Binding strategies** (`binding`):
+**Pinning strategies** (`pinning`):
 * `:compact` or `:close`: pins to `places` one after another.
 * `:spread` or `scatter`: pins to `places` in an alternating / round robin fashion.
 * `:random`: shuffles the given `places` and then pins to them compactly.
@@ -134,17 +134,17 @@ Per default, `nthreads == Threads.nthreads()` and a reasonable value for `places
 * `:numa` or `NUMA()`: the NUMA domains of the system
 * An `AbstractVector{<:AbstractVector{<:Integer}}` of cpu ids that defines the places explicitly
 """
-function pinthreads(binding::BindingStrategy;
+function pinthreads(pinning::PinningStrategy;
                     places::Union{Places, Symbol,
-                                  AbstractVector{<:AbstractVector{<:Integer}}} = _default_places(binding),
+                                  AbstractVector{<:AbstractVector{<:Integer}}} = _default_places(pinning),
                     nthreads = Base.Threads.nthreads(), warn::Bool = true,
                     kwargs...)
     warn && _check_environment()
-    cpuids = getcpuids_binding(binding, places; kwargs...)
+    cpuids = getcpuids_pinning(pinning, places; kwargs...)
     @views pinthreads(cpuids[1:nthreads]; warn = false)
 end
-function pinthreads(binding::Symbol; kwargs...)
-    pinthreads(_binding_symbol2singleton(binding); kwargs...)
+function pinthreads(pinning::Symbol; kwargs...)
+    pinthreads(_pinning_symbol2singleton(pinning); kwargs...)
 end
 
 # Potentially throw warnings if the environment is such that thread pinning might not work.

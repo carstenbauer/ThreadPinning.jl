@@ -27,19 +27,19 @@ function __init__()
         update_sysinfo!()
     end
 
-    JULIA_PINTHREADS = get(ENV, "JULIA_PINTHREADS", nothing)
-    JULIA_PINTHREADS_PLACES = get(ENV, "JULIA_PINTHREADS_PLACES", nothing)
-    if !isnothing(JULIA_PINTHREADS)
+    JULIA_PIN = get(ENV, "JULIA_PIN", nothing)
+    JULIA_PLACES = get(ENV, "JULIA_PLACES", nothing)
+    if !isnothing(JULIA_PIN)
         try
-            binding = Symbol(lowercase(JULIA_PINTHREADS))
-            if !isnothing(JULIA_PINTHREADS_PLACES)
-                pinthreads(binding; places = Symbol(lowercase(JULIA_PINTHREADS_PLACES)))
+            binding = Symbol(lowercase(JULIA_PIN))
+            if !isnothing(JULIA_PLACES)
+                pinthreads(binding; places = Symbol(lowercase(JULIA_PLACES)))
             else
                 pinthreads(binding)
             end
         catch err
-            @warn("Ignoring unsupported settings:", JULIA_PINTHREADS,
-                  JULIA_PINTHREADS_PLACES)
+            @warn("Ignoring unsupported settings:", JULIA_PIN,
+                  JULIA_PLACES)
         end
     end
     return nothing
