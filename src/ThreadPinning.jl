@@ -89,5 +89,13 @@ export threadinfo,
        ishyperthread,
        cpuids_per_socket,
        cpuids_per_numa,
-       cpuids_all
+       cpuids_all,
+       CPUThreads,
+       Cores,
+       Sockets,
+       NUMA,
+       CompactBind,
+       SpreadBind,
+       RandomBind,
+       CurrentBind
 end

@@ -45,7 +45,7 @@ end
 
 # Types
 abstract type Places end
-struct Threads <: Places end
+struct CPUThreads <: Places end
 struct Cores <: Places end
 struct NUMA <: Places end
 struct Sockets <: Places end
@@ -61,14 +61,14 @@ _places_symbol2singleton(s::Symbol) = _places_symbol2singleton(Val{s})
 function _places_symbol2singleton(::Type{Val{T}}) where {T}
     throw(ArgumentError("Unknown places symbol."))
 end
-_places_symbol2singleton(::Type{Val{:threads}}) = Threads()
+_places_symbol2singleton(::Type{Val{:threads}}) = CPUThreads()
 _places_symbol2singleton(::Type{Val{:cores}}) = Cores()
 _places_symbol2singleton(::Type{Val{:numa}}) = NUMA()
 _places_symbol2singleton(::Type{Val{:NUMA}}) = NUMA()
 _places_symbol2singleton(::Type{Val{:sockets}}) = Sockets()
 
 getplaces_cpuids(s::Symbol) = getplaces_cpuids(_places_symbol2singleton(s))
-function getplaces_cpuids(::Threads)
+function getplaces_cpuids(::CPUThreads)
     if hyperthreading_is_enabled()
         [[cpuid]
          for cpuid in interweave(filter(!ishyperthread, cpuids_all()),
@@ -91,10 +91,10 @@ getplaces_cpuids(v::AbstractVector{<:AbstractVector{<:Integer}}) = v
 _default_places(::BindingStrategy) = Cores() # fallback
 _default_places(::CompactBind) = Cores()
 _default_places(::SpreadBind) = Sockets()
-_default_places(::RandomBind) = Threads()
+_default_places(::RandomBind) = CPUThreads()
 
 # Binding strategy logic
-_binding_symbol2singleton(s::Symbol) = _binding_symbol2singleton(Val{s})
+_binding_symbol2singleton(s::Symbol)::BindingStrategy = _binding_symbol2singleton(Val{s})
 _binding_symbol2singleton(::Type{Val{:compact}}) = CompactBind()
 _binding_symbol2singleton(::Type{Val{:close}}) = CompactBind()
 _binding_symbol2singleton(::Type{Val{:spread}}) = SpreadBind()
@@ -128,10 +128,10 @@ Per default, `nthreads == Threads.nthreads()` and a reasonable value for `places
 * `:current`: pins threads to the cpu threads where they are currently running (ignores `places`).
 
 **Places** (`places`):
-* `:cores` or `ThreadPinning.Cores()`: all the cores of the system
-* `:threads` or `ThreadPinning.Threads()`: all the cpu threads of the system (equal to `:cores` if there is one cpu thread per core, e.g. no hyperthreading)
-* `:sockets` or `ThreadPinning.Sockets()`: the sockets of the system
-* `:numa` or `ThreadPinning.NUMA()`: the NUMA domains of the system
+* `:cores` or `Cores()`: all the cores of the system
+* `:threads` or `CPUThreads()`: all the cpu threads of the system (equal to `:cores` if there is one cpu thread per core, e.g. no hyperthreading)
+* `:sockets` or `Sockets()`: the sockets of the system
+* `:numa` or `NUMA()`: the NUMA domains of the system
 * An `AbstractVector{<:AbstractVector{<:Integer}}` of cpu ids that defines the places explicitly
 """
 function pinthreads(binding::BindingStrategy;
@@ -140,12 +140,8 @@ function pinthreads(binding::BindingStrategy;
                     nthreads = Base.Threads.nthreads(), warn::Bool = true,
                     kwargs...)
     warn && _check_environment()
-    if places isa Symbol
-        cpuids = getcpuids_binding(binding, places; kwargs...)
-    else
-        cpuids = getcpuids_binding(binding, places; kwargs...)
-    end
-    pinthreads(@view(cpuids[1:nthreads]); warn = false)
+    cpuids = getcpuids_binding(binding, places; kwargs...)
+    @views pinthreads(cpuids[1:nthreads]; warn = false)
 end
 function pinthreads(binding::Symbol; kwargs...)
     pinthreads(_binding_symbol2singleton(binding); kwargs...)
