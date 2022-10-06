@@ -26,13 +26,17 @@ end
 const SYSINFO = Ref{SysInfo}(SysInfo())
 
 # lscpu parsing
-function update_sysinfo!(lscpustr = nothing; verbose = false)
-    sysinfo = gather_sysinfo_lscpu(lscpustr; verbose)
-    if isnothing(sysinfo)
-        @warn("Couldn't gather system information via `lscpu` (might not be available?). Some features won't work optimally, others might not work at all.")
-        SYSINFO[] = SysInfo() # default fallback
+function update_sysinfo!(lscpustr = nothing; verbose = false, clear=false)
+    if clear
+        SYSINFO[] = SysInfo()
     else
-        SYSINFO[] = sysinfo
+        sysinfo = gather_sysinfo_lscpu(lscpustr; verbose)
+        if isnothing(sysinfo)
+            @warn("Couldn't gather system information via `lscpu` (might not be available?). Some features won't work optimally, others might not work at all.")
+            SYSINFO[] = SysInfo() # default fallback
+        else
+            SYSINFO[] = sysinfo
+        end
     end
     return nothing
 end

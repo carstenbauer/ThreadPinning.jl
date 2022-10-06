@@ -74,3 +74,11 @@ end
     @test sinfo.cpuids_numa[6] == 48:59
     @test sinfo.ishyperthread == falses(50)
 end
+
+@testset "update_sysinfo" begin
+    nsockets_before = nsockets()
+    @test isnothing(ThreadPinning.update_sysinfo!(; clear=true))
+    @test nsockets() == 1
+    @test isnothing(ThreadPinning.update_sysinfo!())
+    @test nsockets() == nsockets_before
+end
