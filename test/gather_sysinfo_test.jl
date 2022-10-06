@@ -76,6 +76,7 @@ end
 end
 
 @testset "update_sysinfo" begin
+    @test isnothing(ThreadPinning.update_sysinfo!())
     nsockets_before = nsockets()
     @test isnothing(ThreadPinning.update_sysinfo!(; clear=true))
     @test nsockets() == 1
