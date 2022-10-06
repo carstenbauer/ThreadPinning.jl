@@ -23,9 +23,11 @@ include("latency.jl")
 
 # initialization
 function __init__()
-    if lowercase(get(ENV, "JULIA_TP_AUTOUPDATE", "true")) != "false"
-        update_sysinfo!()
-    end
+    # JULIA_TP_AUTOUPDATE = get(ENV, "JULIA_TP_AUTOUPDATE", nothing)
+    # autoup_user_optout = !isnothing(JULIA_TP_AUTOUPDATE) && lowercase(JULIA_TP_AUTOUPDATE) == "false"
+    # if !autoup_user_optout
+    #     update_sysinfo!()
+    # end
 
     JULIA_PIN = get(ENV, "JULIA_PIN", nothing)
     JULIA_PLACES = get(ENV, "JULIA_PLACES", nothing)
@@ -46,35 +48,35 @@ function __init__()
 end
 
 # precompile
-import SnoopPrecompile
-SnoopPrecompile.@precompile_all_calls begin
-    sysinfo()
-    # threadinfo()
-    pinthread(0)
-    pinthreads(0:(nthreads() - 1))
-    pinthreads(collect(0:(nthreads() - 1)))
-    pinthreads(:compact)
-    pinthreads(:spread)
-    pinthreads(:random)
-    pinthreads(:current)
-    pinthreads(:compact; places=Cores())
-    pinthreads(:compact; places=CPUThreads())
-    pinthreads(:spread; places=NUMA())
-    pinthreads(:spread; places=Sockets())
-    getcpuid()
-    getcpuids()
-    nsockets()
-    nnuma()
-    cpuids_all()
-    cpuids_per_socket()
-    cpuids_per_numa()
-    ncputhreads()
-    ncputhreads_per_socket()
-    ncputhreads_per_numa()
-    ncores()
-    ncores_per_socket()
-    ncores_per_numa()
-end
+# import SnoopPrecompile
+# SnoopPrecompile.@precompile_all_calls begin
+#     sysinfo()
+#     # threadinfo()
+#     pinthread(0)
+#     pinthreads(0:(nthreads() - 1))
+#     pinthreads(collect(0:(nthreads() - 1)))
+#     pinthreads(:compact)
+#     pinthreads(:spread)
+#     pinthreads(:random)
+#     pinthreads(:current)
+#     pinthreads(:compact; places=Cores())
+#     pinthreads(:compact; places=CPUThreads())
+#     pinthreads(:spread; places=NUMA())
+#     pinthreads(:spread; places=Sockets())
+#     getcpuid()
+#     getcpuids()
+#     nsockets()
+#     nnuma()
+#     cpuids_all()
+#     cpuids_per_socket()
+#     cpuids_per_numa()
+#     ncputhreads()
+#     ncputhreads_per_socket()
+#     ncputhreads_per_numa()
+#     ncores()
+#     ncores_per_socket()
+#     ncores_per_numa()
+# end
 
 # exports
 export threadinfo,
