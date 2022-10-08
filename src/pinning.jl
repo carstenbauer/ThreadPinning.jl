@@ -10,6 +10,7 @@ function pinthread(cpuid::Integer; warn::Bool = true)
             throw(ArgumentError("cpuid is out of bounds ($(minimum(cpuids_all())) ≤ cpuid ≤ $(maximum(cpuids_all())))."))
         _check_environment()
     end
+    FIRST_PIN[] = false
     return uv_thread_setaffinity(cpuid)
 end
 
@@ -95,8 +96,10 @@ _default_places(::SpreadBind) = Sockets()
 _default_places(::RandomBind) = CPUThreads()
 
 # Binding strategy logic
-_pinning_symbol2singleton(s::Symbol)::Union{PinningStrategy, Nothing} = _pinning_symbol2singleton(Val{s})
-_pinning_symbol2singleton(::Type{Val{T}}) where T = nothing # fallback
+_pinning_symbol2singleton(s::Symbol)::Union{PinningStrategy, Nothing} = _pinning_symbol2singleton(Val{
+                                                                                                      s
+                                                                                                      })
+_pinning_symbol2singleton(::Type{Val{T}}) where {T} = nothing # fallback
 _pinning_symbol2singleton(::Type{Val{:compact}}) = CompactBind()
 _pinning_symbol2singleton(::Type{Val{:close}}) = CompactBind()
 _pinning_symbol2singleton(::Type{Val{:spread}}) = SpreadBind()
@@ -151,6 +154,22 @@ function pinthreads(pinning::Symbol; kwargs...)
     pinthreads(_pinning_symbol2singleton(pinning); kwargs...)
 end
 
+"""
+Same as `pinthreads` but will only pin threads if this is the first attempt to pin threads
+with ThreadPinning.jl.
+
+Essentially, `maybe_pinthreads` statements can be "overwritten":
+Previous `pinthreads` calls, or environment variable settings (e.g. `JULIA_PIN`),
+or preferences (e.g. "LocalPreferences.toml") take precedence in which case `maybe_pinthreads` turn into no-ops.
+This may be particularly useful for libraries that merely want to specify a "default pinning".
+"""
+function maybe_pinthreads(args...; kwargs...)
+    if first_pin_attempt()
+        pinthreads(args...; kwargs...)
+    end
+    return nothing
+end
+
 # Potentially throw warnings if the environment is such that thread pinning might not work.
 function _check_environment()
     if Base.Threads.nthreads() > 1 && mkl_is_loaded() && mkl_get_dynamic() == 1
@@ -158,3 +177,8 @@ function _check_environment()
     end
     return nothing
 end
+
+# global "constants"
+const FIRST_PIN = Ref{Bool}(true)
+
+first_pin_attempt() = FIRST_PIN[]

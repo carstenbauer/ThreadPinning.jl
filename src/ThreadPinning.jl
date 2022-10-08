@@ -66,6 +66,7 @@ end
 
 # initialization
 function __init__()
+    FIRST_PIN[] = true
     # maybe_autoupdate()
     update_sysinfo!(; fromscratch = true)
     maybe_autopin()
@@ -90,6 +91,7 @@ SnoopPrecompile.@precompile_all_calls begin
     pinthreads(:compact; places = CPUThreads())
     pinthreads(:spread; places = NUMA())
     pinthreads(:spread; places = Sockets())
+    maybe_pinthreads(:compact)
     getcpuid()
     getcpuids()
     nsockets()
@@ -109,6 +111,7 @@ end
 export threadinfo,
        pinthreads,
        pinthread,
+       maybe_pinthreads,
        getcpuids,
        getcpuid,
        @tspawnat,
