@@ -2,7 +2,7 @@ using Test
 using ThreadPinning
 
 @testset "gather_sysinfo_lscpu (NOCTUA2LOGIN)" begin
-    sinfo = ThreadPinning.gather_sysinfo_lscpu(ThreadPinning.lscpu_NOCTUA2LOGIN)
+    sinfo = ThreadPinning.lscpu2sysinfo(ThreadPinning.lscpu_NOCTUA2LOGIN)
     @test typeof(sinfo) == ThreadPinning.SysInfo
     @test sinfo.nsockets == 1
     @test sinfo.nnuma == 4
@@ -19,7 +19,7 @@ using ThreadPinning
 end
 
 @testset "gather_sysinfo_lscpu (NOCTUA2)" begin
-    sinfo = ThreadPinning.gather_sysinfo_lscpu(ThreadPinning.lscpu_NOCTUA2)
+    sinfo = ThreadPinning.lscpu2sysinfo(ThreadPinning.lscpu_NOCTUA2)
     @test typeof(sinfo) == ThreadPinning.SysInfo
     @test sinfo.nsockets == 2
     @test sinfo.nnuma == 8
@@ -41,7 +41,7 @@ end
 end
 
 @testset "gather_sysinfo_lscpu (NOCTUA1)" begin
-    sinfo = ThreadPinning.gather_sysinfo_lscpu(ThreadPinning.lscpu_NOCTUA1)
+    sinfo = ThreadPinning.lscpu2sysinfo(ThreadPinning.lscpu_NOCTUA1)
     @test typeof(sinfo) == ThreadPinning.SysInfo
     @test sinfo.nsockets == 2
     @test sinfo.nnuma == 2
@@ -57,7 +57,7 @@ end
 end
 
 @testset "gather_sysinfo_lscpu (FUGAKU)" begin
-    sinfo = ThreadPinning.gather_sysinfo_lscpu(ThreadPinning.lscpu_FUGAKU)
+    sinfo = ThreadPinning.lscpu2sysinfo(ThreadPinning.lscpu_FUGAKU)
     @test typeof(sinfo) == ThreadPinning.SysInfo
     @test sinfo.nsockets == 1
     @test sinfo.nnuma == 6

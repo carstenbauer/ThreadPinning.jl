@@ -22,51 +22,44 @@ function Base.show(io::IO, mime::MIME{Symbol("text/plain")}, sysinfo::SysInfo)
     return nothing
 end
 
-# global "constant"
-const SYSINFO = Ref{SysInfo}(SysInfo())
-
 # lscpu parsing
-function update_sysinfo!(lscpustr = nothing; verbose = false, clear=false)
+function update_sysinfo!(; fromscratch = false, lscpustr = nothing, verbose = false,
+                         clear = false)
     if clear
         SYSINFO[] = SysInfo()
     else
-        sysinfo = gather_sysinfo_lscpu(lscpustr; verbose)
-        if isnothing(sysinfo)
-            @warn("Couldn't gather system information via `lscpu` (might not be available?). Some features won't work optimally, others might not work at all.")
-            SYSINFO[] = SysInfo() # default fallback
-        else
-            SYSINFO[] = sysinfo
+        local sysinfo
+        try
+            if !isnothing(lscpustr)
+                # explicit lscpu string given
+                sysinfo = lscpu2sysinfo(lscpustr; verbose)
+            else
+                if !fromscratch
+                    # use precompiled lscpu string
+                    sysinfo = lscpu2sysinfo(LSCPU_STRING; verbose)
+                else
+                    # from scratch: query lscpu again
+                    sysinfo = lscpu2sysinfo(lscpu_string(); verbose)
+                end
+            end
+        catch err
+            throw(ArgumentError("Couldn't parse the given lscpu string:\n\n $lscpustr \n\n"))
         end
+        SYSINFO[] = sysinfo
     end
     return nothing
 end
 
-function gather_sysinfo_lscpu(lscpustr = nothing; verbose = false)
-    table = _read_lscpu(lscpustr)
-    if isnothing(table)
-        return nothing
-    end
+function lscpu2sysinfo(lscpustr = nothing; verbose = false)
+    table = _lscpu2table(lscpustr)
     cols = _lscpu_table_to_columns(table; verbose)
     verbose && @show cols
     sysinfo = _create_sysinfo_obj(cols; verbose)
     return sysinfo
 end
 
-function _read_lscpu(lscpustr = nothing)::Union{Nothing, Matrix{String}}
-    local table
-    if isnothing(lscpustr)
-        try
-            buf = IOBuffer(read(`lscpu --all --extended`, String))
-            table = readdlm(buf, String)
-        catch
-            return nothing
-        end
-    else
-        # for debugging purposes
-        table = readdlm(IOBuffer(lscpustr), String)
-    end
-    return table
-end
+_lscpu2table(lscpustr = nothing)::Union{Nothing, Matrix{String}} = readdlm(IOBuffer(lscpustr),
+                                                                           String)
 
 function _lscpu_table_to_columns(table;
                                  verbose = false)::NamedTuple{
@@ -169,3 +162,15 @@ function lscpu()
     run(`lscpu --all --extended`)
     return nothing
 end
+
+function lscpu_string()
+    try
+        return read(`lscpu --all --extended`, String)
+    catch err
+        error("Couldn't gather system information via `lscpu` (might not be available?).")
+    end
+end
+
+# global "constant"
+const SYSINFO = Ref{SysInfo}(SysInfo())
+const LSCPU_STRING = lscpu_string()

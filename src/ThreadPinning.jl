@@ -22,18 +22,20 @@ include("threadinfo.jl")
 include("latency.jl")
 include("preferences.jl")
 
-# initialization
-function __init__()
+function maybe_autoupdate()
     JULIA_TP_AUTOUPDATE = get(ENV, "JULIA_TP_AUTOUPDATE", nothing)
     if !isnothing(JULIA_TP_AUTOUPDATE) && lowercase(JULIA_TP_AUTOUPDATE) == "true"
-        update_sysinfo!()
+        update_sysinfo!(; fromscratch = true)
     else
         autoupdate = Prefs.get_autoupdate()
         if autoupdate == true
             update_sysinfo!()
         end
     end
+    return nothing
+end
 
+function maybe_autopin()
     JULIA_PIN = get(ENV, "JULIA_PIN", nothing)
     JULIA_PLACES = get(ENV, "JULIA_PLACES", nothing)
     if !isnothing(JULIA_PIN)
@@ -62,12 +64,21 @@ function __init__()
     return nothing
 end
 
+# initialization
+function __init__()
+    # maybe_autoupdate()
+    update_sysinfo!(; fromscratch = true)
+    maybe_autopin()
+    return nothing
+end
+
 # precompile
 import SnoopPrecompile
 SnoopPrecompile.@precompile_all_calls begin
+    ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
     update_sysinfo!()
+    lscpu_string()
     sysinfo()
-    threadinfo()
     pinthread(0)
     pinthreads(0:(nthreads() - 1))
     pinthreads(collect(0:(nthreads() - 1)))
@@ -75,10 +86,10 @@ SnoopPrecompile.@precompile_all_calls begin
     pinthreads(:spread)
     pinthreads(:random)
     pinthreads(:current)
-    pinthreads(:compact; places=Cores())
-    pinthreads(:compact; places=CPUThreads())
-    pinthreads(:spread; places=NUMA())
-    pinthreads(:spread; places=Sockets())
+    pinthreads(:compact; places = Cores())
+    pinthreads(:compact; places = CPUThreads())
+    pinthreads(:spread; places = NUMA())
+    pinthreads(:spread; places = Sockets())
     getcpuid()
     getcpuids()
     nsockets()
