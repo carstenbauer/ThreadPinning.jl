@@ -22,18 +22,18 @@ include("threadinfo.jl")
 include("latency.jl")
 include("preferences.jl")
 
-function maybe_autoupdate()
-    JULIA_TP_AUTOUPDATE = get(ENV, "JULIA_TP_AUTOUPDATE", nothing)
-    if !isnothing(JULIA_TP_AUTOUPDATE) && lowercase(JULIA_TP_AUTOUPDATE) == "true"
-        update_sysinfo!(; fromscratch = true)
-    else
-        autoupdate = Prefs.get_autoupdate()
-        if autoupdate == true
-            update_sysinfo!()
-        end
-    end
-    return nothing
-end
+# function maybe_autoupdate()
+#     JULIA_TP_AUTOUPDATE = get(ENV, "JULIA_TP_AUTOUPDATE", nothing)
+#     if !isnothing(JULIA_TP_AUTOUPDATE) && lowercase(JULIA_TP_AUTOUPDATE) == "true"
+#         update_sysinfo!(; fromscratch = true)
+#     else
+#         autoupdate = Prefs.get_autoupdate()
+#         if autoupdate == true
+#             update_sysinfo!()
+#         end
+#     end
+#     return nothing
+# end
 
 function maybe_autopin()
     JULIA_PIN = get(ENV, "JULIA_PIN", nothing)
