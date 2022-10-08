@@ -182,3 +182,7 @@ end
 const FIRST_PIN = Ref{Bool}(true)
 
 first_pin_attempt() = FIRST_PIN[]
+function forget_pin_attempts()
+    FIRST_PIN[] = true
+    return nothing
+end

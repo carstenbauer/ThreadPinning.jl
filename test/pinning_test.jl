@@ -115,3 +115,19 @@ end
         @test check_compact_within_numa(cpuids_all())'`)
     end
 end
+
+@testset "First pin attempt" begin
+    @test isnothing(ThreadPinning.forget_pin_attempts())
+    @test ThreadPinning.first_pin_attempt()
+    pinthreads(:random)
+    @test !ThreadPinning.first_pin_attempt()
+
+    # maybe_pinthreads
+    ThreadPinning.forget_pin_attempts()
+    @test ThreadPinning.first_pin_attempt()
+    maybe_pinthreads(:compact)
+    @test !ThreadPinning.first_pin_attempt()
+    cpuids = getcpuids()
+    maybe_pinthreads(reverse(cpuids))
+    @test getcpuids() == cpuids
+end

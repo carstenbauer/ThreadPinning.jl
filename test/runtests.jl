@@ -10,4 +10,5 @@ Threads.nthreads() ≥ 2 ||
     @time @safetestset "Querying" begin include("querying_test.jl") end
     @time @safetestset "threadinfo" begin include("threadinfo_test.jl") end
     @time @safetestset "OMP" begin include("omp_test.jl") end
+    @time @safetestset "Preferences" begin include("preferences_test.jl") end
 end

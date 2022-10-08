@@ -66,7 +66,7 @@ end
 
 # initialization
 function __init__()
-    FIRST_PIN[] = true
+    forget_pin_attempts()
     # maybe_autoupdate()
     update_sysinfo!(; fromscratch = true)
     maybe_autopin()
