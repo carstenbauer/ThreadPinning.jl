@@ -58,15 +58,15 @@ struct CurrentBind <: PinningStrategy end
 
 # Places logic
 _places_symbol2singleton(s::Symbol) = _places_symbol2singleton(Val{s})
-function _places_symbol2singleton(::Type{Val{T}}) where {T}
-    throw(ArgumentError("Unknown places symbol."))
-end
+_places_symbol2singleton(::Type{Val{T}}) where {T} = nothing # fallback
 _places_symbol2singleton(::Type{Val{:threads}}) = CPUThreads()
 _places_symbol2singleton(::Type{Val{:cputhreads}}) = CPUThreads()
 _places_symbol2singleton(::Type{Val{:cores}}) = Cores()
 _places_symbol2singleton(::Type{Val{:numa}}) = NUMA()
 _places_symbol2singleton(::Type{Val{:NUMA}}) = NUMA()
 _places_symbol2singleton(::Type{Val{:sockets}}) = Sockets()
+
+is_valid_places_symbol(s::Symbol) = !isnothing(_places_symbol2singleton(s))
 
 getplaces_cpuids(s::Symbol) = getplaces_cpuids(_places_symbol2singleton(s))
 function getplaces_cpuids(::CPUThreads)
@@ -95,13 +95,16 @@ _default_places(::SpreadBind) = Sockets()
 _default_places(::RandomBind) = CPUThreads()
 
 # Binding strategy logic
-_pinning_symbol2singleton(s::Symbol)::PinningStrategy = _pinning_symbol2singleton(Val{s})
+_pinning_symbol2singleton(s::Symbol)::Union{PinningStrategy, Nothing} = _pinning_symbol2singleton(Val{s})
+_pinning_symbol2singleton(::Type{Val{T}}) where T = nothing # fallback
 _pinning_symbol2singleton(::Type{Val{:compact}}) = CompactBind()
 _pinning_symbol2singleton(::Type{Val{:close}}) = CompactBind()
 _pinning_symbol2singleton(::Type{Val{:spread}}) = SpreadBind()
 _pinning_symbol2singleton(::Type{Val{:scatter}}) = SpreadBind()
 _pinning_symbol2singleton(::Type{Val{:random}}) = RandomBind()
 _pinning_symbol2singleton(::Type{Val{:current}}) = CurrentBind()
+
+is_valid_pinning_symbol(s::Symbol) = !isnothing(_pinning_symbol2singleton(s))
 
 function getcpuids_pinning(s::Symbol, places; kwargs...)
     getcpuids_pinning(_pinning_symbol2singleton(s), places; kwargs...)
