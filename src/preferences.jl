@@ -3,10 +3,7 @@ module Prefs
 using Preferences
 using ..ThreadPinning: is_valid_pinning_symbol, is_valid_places_symbol
 
-_nothing_or_symbol(x) = Symbol(x)
-_nothing_or_symbol(x::Nothing) = nothing
-
-const ALL_PREFERENCES = ("pinning", "places", "autoupdate")
+const ALL_PREFERENCES = ("pinning", "places")
 
 function has_pinning()
     @has_preference("pinning")
@@ -57,28 +54,6 @@ function set_places(s::Symbol)
         throw(ArgumentError("`$s` is not a valid places symbol"))
     end
     @set_preferences!("places"=>String(s))
-    return nothing
-end
-
-function has_autoupdate()
-    @has_preference("autoupdate")
-end
-
-function get_autoupdate()
-    p = @load_preference("autoupdate")
-    if isnothing(p)
-        return nothing
-    else
-        try
-            return parse(Bool, lowercase(p))
-        catch err
-            error("`$p` is not a valid autoupdate preference")
-        end
-    end
-end
-
-function set_autoupdate(b::Bool)
-    @set_preferences!("autoupdate"=>string(b))
     return nothing
 end
 
