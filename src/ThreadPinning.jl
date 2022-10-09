@@ -91,7 +91,6 @@ SnoopPrecompile.@precompile_all_calls begin
     pinthreads(:compact; places = CPUThreads())
     pinthreads(:spread; places = NUMA())
     pinthreads(:spread; places = Sockets())
-    maybe_pinthreads(:compact)
     getcpuid()
     getcpuids()
     nsockets()

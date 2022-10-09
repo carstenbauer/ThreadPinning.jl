@@ -122,12 +122,12 @@ end
     pinthreads(:random)
     @test !ThreadPinning.first_pin_attempt()
 
-    # maybe_pinthreads
+    # pinthreads with force=false
     ThreadPinning.forget_pin_attempts()
     @test ThreadPinning.first_pin_attempt()
-    maybe_pinthreads(:compact)
+    pinthreads(:compact; force = false)
     @test !ThreadPinning.first_pin_attempt()
     cpuids = getcpuids()
-    maybe_pinthreads(reverse(cpuids))
+    pinthreads(reverse(cpuids); force = false)
     @test getcpuids() == cpuids
 end

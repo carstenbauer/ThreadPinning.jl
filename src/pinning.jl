@@ -31,15 +31,18 @@ Note that `length(cpuids)` may not be larger than `Threads.nthreads()`.
 
 For more information see `pinthread`.
 """
-function pinthreads(cpuids::AbstractVector{<:Integer}; warn::Bool = true)
-    warn && _check_environment()
-    ncpuids = length(cpuids)
-    ncpuids ≤ nthreads() ||
-        throw(ArgumentError("length(cpuids) must be ≤ Threads.nthreads()"))
-    (minimum(cpuids) ≥ minimum(cpuids_all()) && maximum(cpuids) ≤ maximum(cpuids_all())) ||
-        throw(ArgumentError("All cpuids must be ≤ $(maximum(cpuids_all())) and ≥ $(minimum(cpuids_all()))."))
-    @threads :static for tid in 1:ncpuids
-        pinthread(cpuids[tid]; warn = false)
+function pinthreads(cpuids::AbstractVector{<:Integer}; warn::Bool = true, force = true)
+    if force || first_pin_attempt()
+        warn && _check_environment()
+        ncpuids = length(cpuids)
+        ncpuids ≤ nthreads() ||
+            throw(ArgumentError("length(cpuids) must be ≤ Threads.nthreads()"))
+        (minimum(cpuids) ≥ minimum(cpuids_all()) && maximum(cpuids) ≤ maximum(cpuids_all())) ||
+            throw(ArgumentError("All cpuids must be ≤ $(maximum(cpuids_all())) and ≥ $(minimum(cpuids_all()))."))
+
+        @threads :static for tid in 1:ncpuids
+            pinthread(cpuids[tid]; warn = false)
+        end
     end
     return nothing
 end
@@ -124,9 +127,9 @@ getcpuids_pinning(::CurrentBind, args...; kwargs...) = getcpuids()
 
 # High-level pinthreads
 """
-    pinthreads(pinning[; places, nthreads, warn, kwargs...])
+    pinthreads(pinning[; places, nthreads=Threads.nthreads(), warn=true, force=true, kwargs...])
 Pins the first `1:nthreads` Julia threads according to the given `pinning` strategy to the given `places`.
-Per default, `nthreads == Threads.nthreads()` and a reasonable value for `places` is chosen based on `pinning`.
+Per default, a reasonable value for `places` is chosen based on the given `pinning` strategy.
 
 **Pinning strategies** (`pinning`):
 * `:compact` or `:close`: pins to `places` one after another.
@@ -140,34 +143,24 @@ Per default, `nthreads == Threads.nthreads()` and a reasonable value for `places
 * `:sockets` or `Sockets()`: the sockets of the system
 * `:numa` or `NUMA()`: the NUMA domains of the system
 * An `AbstractVector{<:AbstractVector{<:Integer}}` of cpu ids that defines the places explicitly
+
+If `force=false` the `pinthreads` call will only pin threads if this is the first attempt to pin threads with ThreadPinning.jl.
+Otherwise it will be a no-op. This may be particularly useful for packages that merely want to specify a "default pinning".
 """
 function pinthreads(pinning::PinningStrategy;
                     places::Union{Places, Symbol,
                                   AbstractVector{<:AbstractVector{<:Integer}}} = _default_places(pinning),
-                    nthreads = Base.Threads.nthreads(), warn::Bool = true,
+                    nthreads = Base.Threads.nthreads(), warn::Bool = true, force = true,
                     kwargs...)
-    warn && _check_environment()
-    cpuids = getcpuids_pinning(pinning, places; kwargs...)
-    @views pinthreads(cpuids[1:nthreads]; warn = false)
+    if force || first_pin_attempt()
+        warn && _check_environment()
+        cpuids = getcpuids_pinning(pinning, places; kwargs...)
+        @views pinthreads(cpuids[1:nthreads]; warn = false)
+    end
+    return nothing
 end
 function pinthreads(pinning::Symbol; kwargs...)
     pinthreads(_pinning_symbol2singleton(pinning); kwargs...)
-end
-
-"""
-Same as `pinthreads` but will only pin threads if this is the first attempt to pin threads
-with ThreadPinning.jl.
-
-Essentially, `maybe_pinthreads` statements can be "overwritten":
-Previous `pinthreads` calls, or environment variable settings (e.g. `JULIA_PIN`),
-or preferences (e.g. "LocalPreferences.toml") take precedence in which case `maybe_pinthreads` turn into no-ops.
-This may be particularly useful for libraries that merely want to specify a "default pinning".
-"""
-function maybe_pinthreads(args...; kwargs...)
-    if first_pin_attempt()
-        pinthreads(args...; kwargs...)
-    end
-    return nothing
 end
 
 # Potentially throw warnings if the environment is such that thread pinning might not work.

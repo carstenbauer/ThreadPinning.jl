@@ -33,6 +33,7 @@ makedocs(;
              "References" => [
                  "API" => "refs/api.md",
                  "Latency" => "refs/latency.md",
+                 "Preferences" => "refs/prefs.md",
                  "LibX" => "refs/libX.md",
                  "Utility" => "refs/utility.md",
              ],
