@@ -3,7 +3,7 @@ module Prefs
 using Preferences
 using ..ThreadPinning: is_valid_pinning_symbol, is_valid_places_symbol
 
-const ALL_PREFERENCES = ("pinning", "places")
+const ALL_PREFERENCES = ("pinning", "places", "autoupdate")
 
 "Query whether the pinning strategy preference is set"
 function has_pinning()
@@ -74,6 +74,33 @@ function showall()
         val = @load_preference(pref)
         println("$pref => $val")
     end
+    return nothing
+end
+
+"Query whether the autoupdate preference is set"
+function has_autoupdate()
+    @has_preference("autoupdate")
+end
+
+"Get the autoupdate preference. Returns `nothing` if not set."
+function get_autoupdate()
+    p = @load_preference("autoupdate")
+    if isnothing(p)
+        return nothing #default
+    else
+        try
+            b = parse(Bool, lowercase(p))
+            return b
+        catch
+            throw(ArgumentError("`$p` is not a valid value for the autoupdate preference"))
+        end
+    end
+end
+
+"Set the autoupdate preference"
+function set_autoupdate(b::Bool)
+    @set_preferences!("autoupdate"=>string(b))
+    @info("Done. Package might recompile next time it is loaded (in a new Julia session).")
     return nothing
 end
 

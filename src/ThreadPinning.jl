@@ -22,18 +22,21 @@ include("threadinfo.jl")
 include("latency.jl")
 include("preferences.jl")
 
-# function maybe_autoupdate()
-#     JULIA_TP_AUTOUPDATE = get(ENV, "JULIA_TP_AUTOUPDATE", nothing)
-#     if !isnothing(JULIA_TP_AUTOUPDATE) && lowercase(JULIA_TP_AUTOUPDATE) == "true"
-#         update_sysinfo!(; fromscratch = true)
-#     else
-#         autoupdate = Prefs.get_autoupdate()
-#         if autoupdate == true
-#             update_sysinfo!()
-#         end
-#     end
-#     return nothing
-# end
+function _try_get_autoupdate()
+    try
+        x = Prefs.get_autoupdate()
+        if isnothing(x)
+            return true # default
+        else
+            return x
+        end
+    catch err
+        @warn("Couldn't parse autoupdate preference \"$x\" (not a boolean?). Falling back to default (true).")
+        return true # default
+    end
+end
+
+const AUTOUPDATE = _try_get_autoupdate() # compile-time preference
 
 function maybe_autopin()
     JULIA_PIN = get(ENV, "JULIA_PIN", nothing)
@@ -67,8 +70,9 @@ end
 # initialization
 function __init__()
     forget_pin_attempts()
-    # maybe_autoupdate()
-    update_sysinfo!(; fromscratch = true)
+    if AUTOUPDATE
+        update_sysinfo!(; fromscratch = true)
+    end
     maybe_autopin()
     return nothing
 end

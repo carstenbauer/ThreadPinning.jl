@@ -48,6 +48,10 @@ The following environment variables can be used to specify the desired pinning b
 
 You can more permanently specify a certain pinning setup on a per-project basis via [preferences](https://github.com/JuliaPackaging/Preferences.jl). ThreadPinning.jl provides the relevant functionality in the [`ThreadPinning.Prefs` module](@ref Preferences). Note that environment variables and explicit `pinthreads` statements take precedence over these preferences.
 
+#### Speed up package loading (autoupdate)
+
+By default, ThreadPinning.jl queries the system topology using `lscpu` on startup (i.e. at runtime). This is quite costly but is unfortunately necessary since you might have precompiled the package on one machine and use it from another (think e.g. login and compute nodes of a HPC cluster). However, you can tell ThreadPinning.jl to permanently skip this autoupdate at runtime and to always use the system topology that was present at compile time (i.e. when precompiling the package). This is perfectly save if, e.g., you use the package on your local desktop or laptop only and can reduce the package load time significantly. To do so, simply call `ThreadPinning.Prefs.set_autoupdate(false)`.
+
 ## Manual pinning
 
 !!! note
