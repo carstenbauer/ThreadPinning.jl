@@ -50,9 +50,10 @@ end
 @testset "Thread Pinning (compact)" begin for binding in (:compact, :close)
     pinthreads(:random; places = :threads)
     @test isnothing(pinthreads(binding; nthreads = 2))
-    @test getcpuids()[1:2] == 0:1
+    @test getcpuids()[1:2] == filter(!ishyperthread, cpuids_all())[1:2]
     @test isnothing(pinthreads(binding))
-    @test getcpuids() == 0:(nthreads() - 1)
+    idcs = mod1.(1:Threads.nthreads(), ncores())
+    @test getcpuids() == filter(!ishyperthread, cpuids_all())[idcs]
 end end
 
 @testset "Thread Pinning (spread)" begin for binding in (:spread, :scatter)
@@ -81,10 +82,10 @@ end
     julia = Base.julia_cmd()
     pkgdir = joinpath(@__DIR__, "..")
 
-    exec(s) = run(`$julia --project=$(pkgdir) -t 3 -e $s`).exitcode == 0
+    exec(s; nthreads=ncores()) = run(`$julia --project=$(pkgdir) -t $nthreads -e $s`).exitcode == 0
     withenv("JULIA_PIN" => "compact") do
         @test exec(`'using ThreadPinning, Test;
-            @test getcpuids() == cpuids_all()[1:Threads.nthreads()]'`)
+            @test getcpuids() == filter(!ishyperthread, cpuids_all())[1:Threads.nthreads()]'`)
     end
     withenv("JULIA_PIN" => "spread") do
         @test exec(`'using ThreadPinning, Test;
@@ -98,7 +99,7 @@ end
             end
             return true
         end
-        @test check_compact_within_socket(cpuids_all())'`)
+        @test check_compact_within_socket(getcpuids())'`)
     end
     withenv("JULIA_PIN" => "spread", "JULIA_PLACES" => "numa") do
         @test exec(`'using ThreadPinning, Test;
@@ -112,7 +113,7 @@ end
             end
             return true
         end
-        @test check_compact_within_numa(cpuids_all())'`)
+        @test check_compact_within_numa(getcpuids())'`)
     end
 end
 
