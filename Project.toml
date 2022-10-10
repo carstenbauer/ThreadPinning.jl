@@ -1,7 +1,7 @@
 name = "ThreadPinning"
 uuid = "811555cd-349b-4f26-b7bc-1f208b848042"
 authors = ["Carsten Bauer <crstnbr@gmail.com> and contributors"]
-version = "0.6.0"
+version = "0.6.1"
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
