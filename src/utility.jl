@@ -63,4 +63,19 @@ function interweave(arrays::AbstractVector...)
     return res
 end
 
+function interweave_uneven(arr1::AbstractVector, arr2::AbstractVector)
+    if length(arr1) == length(arr2)
+        return interweave(arr1, arr2)
+    else
+        @views if length(arr1) > length(arr2)
+            res_smaller = interweave(arr1[1:length(arr2)], arr2)
+            res = vcat(res_smaller, arr1[length(arr2)+1:end])
+        else
+            res_smaller = interweave(arr1, arr2[1:length(arr1)])
+            res = vcat(res_smaller, arr2[length(arr1)+1:end])
+        end
+        return res
+    end
+end
+
 hasduplicates(xs::AbstractVector) = length(xs) != length(Set(xs))

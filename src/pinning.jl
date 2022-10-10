@@ -74,13 +74,14 @@ is_valid_places_symbol(s::Symbol) = !isnothing(_places_symbol2singleton(s))
 
 getplaces_cpuids(s::Symbol) = getplaces_cpuids(_places_symbol2singleton(s))
 function getplaces_cpuids(::CPUThreads)
-    if hyperthreading_is_enabled()
-        [[cpuid]
-         for cpuid in interweave(filter(!ishyperthread, cpuids_all()),
-                                 filter(ishyperthread, cpuids_all()))]
-    else
-        [[cpuid] for cpuid in cpuids_all()]
-    end
+    # if hyperthreading_is_enabled()
+    #     cpuids_nonht = filter(!ishyperthread, cpuids_all())
+    #     cpuids_ht = filter(ishyperthread, cpuids_all())
+    #     [[cpuid] for cpuid in interweave_uneven(cpuids_nonht, cpuids_ht)]
+    # else
+    #     [[cpuid] for cpuid in cpuids_all()]
+    # end
+    return [[cpuid] for cpuid in cpuids_all()]
 end
 function getplaces_cpuids(::Cores)
     if hyperthreading_is_enabled()
