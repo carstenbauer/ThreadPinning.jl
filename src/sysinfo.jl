@@ -76,7 +76,7 @@ function _lscpu_table_to_columns(table;
     online_cpu_tblidcs = @views findall(isequal("yes"), table[:, colid_online])
     verbose && @show online_cpu_tblidcs
     if length(online_cpu_tblidcs) != Sys.CPU_THREADS
-        @warn("Could read `lscpu --all --extended` but number of online CPUs ($(length(online_cpu_tblidcs))) doesn't match Sys.CPU_THREADS ($(Sys.CPU_THREADS)).")
+        @warn("Number of online CPUs ($(length(online_cpu_tblidcs))) doesn't match Sys.CPU_THREADS ($(Sys.CPU_THREADS)).")
     end
 
     col_cpuid = @views parse.(Int, table[online_cpu_tblidcs, colid_cpu])
