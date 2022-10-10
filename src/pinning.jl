@@ -155,7 +155,13 @@ function pinthreads(pinning::PinningStrategy;
     if force || first_pin_attempt()
         warn && _check_environment()
         cpuids = getcpuids_pinning(pinning, places; kwargs...)
-        @views pinthreads(cpuids[1:nthreads]; warn = false)
+        if nthreads <= length(cpuids)
+            @views pinthreads(cpuids[1:nthreads]; warn = false)
+        else
+            @warn("More Julia threads than CPU IDs to bind to. Some CPU threads will host multiple Julia threads!")
+            idcs = mod1.(1:nthreads, length(cpuids)) # PBC
+            @views pinthreads(cpuids[idcs]; warn = false)
+        end
     end
     return nothing
 end

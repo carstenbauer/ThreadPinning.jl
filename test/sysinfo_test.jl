@@ -1,7 +1,7 @@
 using Test
 using ThreadPinning
 
-@testset "gather_sysinfo_lscpu (NOCTUA2LOGIN)" begin
+@testset "lscpu2sysinfo (NOCTUA2LOGIN)" begin
     sinfo = ThreadPinning.lscpu2sysinfo(ThreadPinning.lscpu_NOCTUA2LOGIN)
     @test typeof(sinfo) == ThreadPinning.SysInfo
     @test sinfo.nsockets == 1
@@ -18,7 +18,7 @@ using ThreadPinning
     @test sinfo.ishyperthread == vcat(falses(64), trues(64))
 end
 
-@testset "gather_sysinfo_lscpu (NOCTUA2)" begin
+@testset "lscpu2sysinfo (NOCTUA2)" begin
     sinfo = ThreadPinning.lscpu2sysinfo(ThreadPinning.lscpu_NOCTUA2)
     @test typeof(sinfo) == ThreadPinning.SysInfo
     @test sinfo.nsockets == 2
@@ -40,7 +40,7 @@ end
     @test sinfo.ishyperthread == falses(128)
 end
 
-@testset "gather_sysinfo_lscpu (NOCTUA1)" begin
+@testset "lscpu2sysinfo (NOCTUA1)" begin
     sinfo = ThreadPinning.lscpu2sysinfo(ThreadPinning.lscpu_NOCTUA1)
     @test typeof(sinfo) == ThreadPinning.SysInfo
     @test sinfo.nsockets == 2
@@ -56,7 +56,7 @@ end
     @test sinfo.ishyperthread == falses(40)
 end
 
-@testset "gather_sysinfo_lscpu (FUGAKU)" begin
+@testset "lscpu2sysinfo (FUGAKU)" begin
     sinfo = ThreadPinning.lscpu2sysinfo(ThreadPinning.lscpu_FUGAKU)
     @test typeof(sinfo) == ThreadPinning.SysInfo
     @test sinfo.nsockets == 1
@@ -73,6 +73,20 @@ end
     @test sinfo.cpuids_numa[5] == 36:47
     @test sinfo.cpuids_numa[6] == 48:59
     @test sinfo.ishyperthread == falses(50)
+end
+
+@testset "lscpu2sysinfo (i912900H)" begin
+    sinfo = ThreadPinning.lscpu2sysinfo(ThreadPinning.lscpu_i912900H)
+    @test typeof(sinfo) == ThreadPinning.SysInfo
+    @test sinfo.nsockets == 1
+    @test sinfo.nnuma == 1
+    @test sinfo.hyperthreading == true
+    @test sinfo.cpuids == 0:19
+    @test length(sinfo.cpuids_sockets) == 1
+    @test sinfo.cpuids_sockets[1] == 0:19
+    @test length(sinfo.cpuids_numa) == 1
+    @test sinfo.cpuids_numa[1] == 0:19
+    @test sinfo.ishyperthread == Bool[0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
 end
 
 @testset "update_sysinfo" begin
