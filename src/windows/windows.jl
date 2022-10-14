@@ -7,8 +7,96 @@ include("error_codes.jl")
 
 const kernel32 = "kernel32"
 
-function get_current_processor_number()
-    @ccall kernel32.GetCurrentProcessorNumber()::DWORD
+get_current_processor_number() = @ccall kernel32.GetCurrentProcessorNumber()::DWORD
+
+get_current_processid() = @ccall kernel32.GetCurrentProcessId()::DWORD
+function get_processid(process_handle)
+    Int(@ccall kernel32.GetProcessId(process_handle::THREAD_HANDLE)::DWORD)
+end
+
+# get_current_process() = @ccall kernel32.GetCurrentProcess()::THREAD_HANDLE # doesn't work properly?!
+function get_process_handle(procid = get_current_processid())
+    dwDesiredAccess = PROCESS_SET_INFORMATION | PROCESS_QUERY_INFORMATION
+    # dwDesiredAccess = 0xffff
+    @ccall kernel32.OpenProcess(dwDesiredAccess::DWORD, true::Bool,
+                                procid::DWORD)::THREAD_HANDLE
+end
+
+function get_process_affinity_mask(process_handle = get_process_handle())
+    # BOOL GetProcessAffinityMask(
+    #   [in]  HANDLE     hProcess,
+    #   [out] PDWORD_PTR lpProcessAffinityMask,
+    #   [out] PDWORD_PTR lpSystemAffinityMask
+    # );
+    lpProcessAffinityMask = Ref{DWORD_PTR}()
+    lpSystemAffinityMask = Ref{DWORD_PTR}()
+    ret = @ccall kernel32.GetProcessAffinityMask(process_handle::THREAD_HANDLE,
+                                                 lpProcessAffinityMask::PDWORD_PTR,
+                                                 lpSystemAffinityMask::PDWORD_PTR)::Bool
+    if ret == true
+        return DWORD(UInt(lpProcessAffinityMask[])), DWORD(UInt(lpSystemAffinityMask[]))
+    else
+        error("Error: $(get_last_error())")
+    end
+end
+
+# get_current_thread() = @ccall kernel32.GetCurrentThread()::THREAD_HANDLE # doesn't work properly?!
+function get_thread_handle(threadid = get_current_threadid())
+    dwDesiredAccess = THREAD_SET_INFORMATION | THREAD_QUERY_INFORMATION
+    # dwDesiredAccess = 0xffff
+    @ccall kernel32.OpenThread(dwDesiredAccess::DWORD, true::Bool,
+                               threadid::DWORD)::THREAD_HANDLE
+end
+
+function set_thread_affinity_mask(thread_handle, mask)
+    @ccall kernel32.SetThreadAffinityMask(thread_handle::THREAD_HANDLE,
+                                          mask::DWORD_PTR)::DWORD_PTR
+end
+function set_thread_affinity(procid::Integer)
+    mask = DWORD(1 << procid)
+    # @show bitstring(mask)
+    ret = set_thread_affinity_mask(get_thread_handle(), Ref(mask))
+    if ret == 0
+        error("Error: $(get_last_error())")
+    else
+        # success: return thread's previous affinity mask.
+        return DWORD(UInt(ret))
+    end
+end
+
+function get_thread_affinity_mask(thread_handle::THREAD_HANDLE = get_thread_handle())
+    # Based on https://stackoverflow.com/a/6601917/2365675
+    mask = DWORD(1)
+    old = DWORD(0)
+
+    # try every CPU one by one until one works or none are left
+    while mask == true
+        old = DWORD(UInt(set_thread_affinity_mask(thread_handle, Ref(mask))))
+        if old != false
+            # this one worked
+            set_thread_affinity_mask(thread_handle, Ref(old)) # restore original
+            return old
+        else
+            if get_last_error() != "ERROR_INVALID_PARAMETER"
+                error("unknown error")
+            end
+        end
+        mask <<= 1
+    end
+    error("failed")
+end
+
+function get_threadid(thread_handle)
+    Int(@ccall kernel32.GetThreadId(thread_handle::THREAD_HANDLE)::DWORD)
+end
+get_current_threadid() = Int(@ccall kernel32.GetCurrentThreadId()::DWORD)
+function get_threadids()
+    nt = Threads.nthreads()
+    ids = zeros(Int, nt)
+    Threads.@threads :static for i in 1:nt
+        ids[i] = get_current_threadid()
+    end
+    return ids
 end
 
 # function get_system_info()

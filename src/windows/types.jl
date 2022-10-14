@@ -1,10 +1,18 @@
 # windows datatypes (https://learn.microsoft.com/de-de/windows/win32/winprog/windows-data-types)
 const DWORD = Culong
 const DWORD_PTR = Ptr{Culong}
+const PDWORD_PTR = Ptr{DWORD_PTR}
 const WORD = Cushort
 const LPVOID = Ptr{Cvoid}
 const BYTE = Cuchar
 const ULONG_PTR = Ptr{Culong}
+const THREAD_HANDLE = UInt32
+# const THREAD_HANDLE = Ptr{UInt32}
+
+const PROCESS_SET_INFORMATION = 0x0200
+const PROCESS_QUERY_INFORMATION = 0x0400
+const THREAD_SET_INFORMATION = 0x0020
+const THREAD_QUERY_INFORMATION = 0x0040
 
 struct SYSTEM_INFO_0_0
     wProcessorArchitecture::WORD
