@@ -29,21 +29,25 @@ function update_sysinfo!(; fromscratch = false, lscpustr = nothing, verbose = fa
         SYSINFO[] = SysInfo()
     else
         local sysinfo
-        try
-            if !isnothing(lscpustr)
-                # explicit lscpu string given
-                sysinfo = lscpu2sysinfo(lscpustr; verbose)
-            else
-                if !fromscratch
-                    # use precompiled lscpu string
-                    sysinfo = lscpu2sysinfo(LSCPU_STRING; verbose)
+        @static if Sys.iswindows()
+            sysinfo = Windows.get_sysinfo()
+        else
+            try
+                if !isnothing(lscpustr)
+                    # explicit lscpu string given
+                    sysinfo = lscpu2sysinfo(lscpustr; verbose)
                 else
-                    # from scratch: query lscpu again
-                    sysinfo = lscpu2sysinfo(lscpu_string(); verbose)
+                    if !fromscratch
+                        # use precompiled lscpu string
+                        sysinfo = lscpu2sysinfo(LSCPU_STRING; verbose)
+                    else
+                        # from scratch: query lscpu again
+                        sysinfo = lscpu2sysinfo(lscpu_string(); verbose)
+                    end
                 end
+            catch err
+                throw(ArgumentError("Couldn't parse the given lscpu string:\n\n $lscpustr \n\n"))
             end
-        catch err
-            throw(ArgumentError("Couldn't parse the given lscpu string:\n\n $lscpustr \n\n"))
         end
         SYSINFO[] = sysinfo
     end
@@ -173,4 +177,8 @@ end
 
 # global "constant"
 const SYSINFO = Ref{SysInfo}(SysInfo())
-const LSCPU_STRING = lscpu_string()
+@static if Sys.iswindows()
+    const LSCPU_STRING = "windows"
+else
+    const LSCPU_STRING = lscpu_string()
+end

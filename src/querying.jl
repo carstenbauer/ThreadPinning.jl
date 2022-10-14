@@ -1,10 +1,14 @@
 """
 Returns the ID of the CPU on which the calling thread
 is currently executing.
-
-See `sched_getcpu` for more information.
 """
-getcpuid() = Int(sched_getcpu())
+function getcpuid()
+    @static if Sys.iswindows()
+        return Int(Windows.get_current_processor_number())
+    else
+        return Int(sched_getcpu())
+    end
+end
 
 """
 Returns the ID of the CPU on which the given Julia thread

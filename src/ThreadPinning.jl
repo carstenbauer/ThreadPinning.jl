@@ -14,6 +14,8 @@ include("lscpu_examples.jl")
 include("libs/libc.jl")
 include("libs/libuv.jl")
 include("libs/libpthread.jl")
+include("windows/windows.jl")
+import .Windows
 include("omp.jl")
 include("blas.jl")
 include("querying.jl")
@@ -80,9 +82,11 @@ end
 # precompile
 import SnoopPrecompile
 SnoopPrecompile.@precompile_all_calls begin
-    ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
+    @static if Sys.islinux()
+        ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
+        lscpu_string()
+    end
     update_sysinfo!()
-    lscpu_string()
     sysinfo()
     pinthread(0)
     pinthreads(0:(nthreads() - 1))
