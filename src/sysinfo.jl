@@ -173,4 +173,8 @@ end
 
 # global "constant"
 const SYSINFO = Ref{SysInfo}(SysInfo())
-const LSCPU_STRING = lscpu_string()
+const LSCPU_STRING = @static if Sys.islinux()
+    lscpu_string()
+else
+    "nolinux"
+end
