@@ -72,47 +72,48 @@ end
 # initialization
 function __init__()
     forget_pin_attempts()
-    if AUTOUPDATE
+    if false
+    # if AUTOUPDATE
         update_sysinfo!(; fromscratch = true)
     end
     maybe_autopin()
     return nothing
 end
 
-# precompile
-import SnoopPrecompile
-SnoopPrecompile.@precompile_all_calls begin
-    @static if Sys.islinux()
-        ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
-        lscpu_string()
-    end
-    update_sysinfo!()
-    sysinfo()
-    pinthread(0)
-    pinthreads(0:(nthreads() - 1))
-    pinthreads(collect(0:(nthreads() - 1)))
-    pinthreads(:compact; nthreads=1)
-    pinthreads(:spread; nthreads=1)
-    pinthreads(:random; nthreads=1)
-    pinthreads(:current; nthreads=1)
-    pinthreads(:compact; places = Cores(), nthreads=1)
-    pinthreads(:compact; places = CPUThreads(), nthreads=1)
-    pinthreads(:spread; places = NUMA(), nthreads=1)
-    pinthreads(:spread; places = Sockets(), nthreads=1)
-    getcpuid()
-    getcpuids()
-    nsockets()
-    nnuma()
-    cpuids_all()
-    cpuids_per_socket()
-    cpuids_per_numa()
-    ncputhreads()
-    ncputhreads_per_socket()
-    ncputhreads_per_numa()
-    ncores()
-    ncores_per_socket()
-    ncores_per_numa()
-end
+# # precompile
+# import SnoopPrecompile
+# SnoopPrecompile.@precompile_all_calls begin
+#     @static if Sys.islinux()
+#         ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
+#         lscpu_string()
+#     end
+#     update_sysinfo!()
+#     sysinfo()
+#     pinthread(0)
+#     pinthreads(0:(nthreads() - 1))
+#     pinthreads(collect(0:(nthreads() - 1)))
+#     pinthreads(:compact; nthreads=1)
+#     pinthreads(:spread; nthreads=1)
+#     pinthreads(:random; nthreads=1)
+#     pinthreads(:current; nthreads=1)
+#     pinthreads(:compact; places = Cores(), nthreads=1)
+#     pinthreads(:compact; places = CPUThreads(), nthreads=1)
+#     pinthreads(:spread; places = NUMA(), nthreads=1)
+#     pinthreads(:spread; places = Sockets(), nthreads=1)
+#     getcpuid()
+#     getcpuids()
+#     nsockets()
+#     nnuma()
+#     cpuids_all()
+#     cpuids_per_socket()
+#     cpuids_per_numa()
+#     ncputhreads()
+#     ncputhreads_per_socket()
+#     ncputhreads_per_numa()
+#     ncores()
+#     ncores_per_socket()
+#     ncores_per_numa()
+# end
 
 # exports
 export threadinfo,
