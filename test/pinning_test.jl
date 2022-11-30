@@ -134,8 +134,6 @@ end
 end
 
 @testset "Thread Pinning (random)" begin
-    pinthreads(getcpuids())
-
     cpuids = Vector{Vector{Int64}}()
     for _ in 1:10
         pinthreads(:random)
