@@ -134,7 +134,7 @@ end
 end
 
 @testset "Thread Pinning (random)" begin
-    pinthreads(0:nthreads() - 1)
+    pinthreads(getcpuids())
 
     cpuids = Vector{Vector{Int64}}()
     for _ in 1:10
@@ -143,5 +143,5 @@ end
     end
 
     # Check that at least some of the pinning settings were different
-    @test any([any(x .!= cpuids[1]) for x in cpuids[2:end]])
+    @test any(x != cpuids[1] for x in cpuids)
 end
