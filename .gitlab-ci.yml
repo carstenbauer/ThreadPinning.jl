@@ -21,7 +21,7 @@ stages:
 #   script:
 #     - /bin/bash -l
 #     - module load lang
-#     - module load Julia/1.6.5-linux-x86_64
+#     - module load Julia/1.6.6-linux-x86_64
 #     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = false);'
 
 # This job tests the ThreadPinning.jl with Julia 1.6 on Noctua 2
@@ -43,12 +43,12 @@ julia/1.6-n2:
   script:
     - /bin/bash -l
     - module load lang
-    - module load Julia/1.6.5-linux-x86_64
+    - module load Julia/1.6.6-linux-x86_64
     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = false);'
 
-# This job tests the ThreadPinning.jl with Julia 1.7 if the 1.6 job has passed
+# This job tests the ThreadPinning.jl with Julia 1.8 if the 1.6 job has passed
 # + generates and submits code coverage to codecov.io
-julia/1.7-n1:
+julia/1.8-n1:
   stage: test
   tags:
     - bauerc-noctua
@@ -63,8 +63,7 @@ julia/1.7-n1:
 #     job: julia/1.6-n1
   script:
     - /bin/bash -l
-    - module load lang
-    - module load Julia/1.7.2-linux-x86_64
+    - module load lang/JuliaHPC/1.8.3-foss-2022a-CUDA-11.7.0
     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
     - julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
     - julia --color=yes --project=test/coverage test/coverage/coverage.jl
@@ -83,11 +82,10 @@ build-and-deploy:
     - tags
     - external_pull_requests
   needs:
-    job: julia/1.7-n1
+    job: julia/1.8-n1
   script:
     - /bin/bash -l
-    - module load lang
-    - module load Julia/1.7.2-linux-x86_64
+    - module load lang/JuliaHPC/1.8.3-foss-2022a-CUDA-11.7.0
     - cd docs
     - julia --color=yes build_docs.jl
   allow_failure: false
