@@ -143,3 +143,18 @@ end
     # Check that at least some of the pinning settings were different
     @test any(x != cpuids[1] for x in cpuids)
 end
+
+@testset "Unpinning" begin
+    ThreadPinning.forget_pin_attempts()
+
+    # Unpinning without explicitly pinning should do nothing
+    initial_pinning = getcpuids()
+    unpinthreads()
+    @test initial_pinning == getcpuids()
+
+    # Whereas any pinning from us should save the initial state and be undone
+    pinthreads(reverse(initial_pinning))
+    @test getcpuids() != initial_pinning
+    unpinthreads()
+    @test getcpuids() == initial_pinning
+end

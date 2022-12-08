@@ -10,7 +10,14 @@ function pinthread(cpuid::Integer; warn::Bool = true)
             throw(ArgumentError("cpuid is out of bounds ($(minimum(cpuids_all())) ≤ cpuid ≤ $(maximum(cpuids_all())))."))
         _check_environment()
     end
+
+    lock(INITIAL_PINNING_LOCK[]) do
+        if first_pin_attempt()
+            INITIAL_PINNING[] = getcpuids()
+        end
+    end
     FIRST_PIN[] = false
+
     return uv_thread_setaffinity(cpuid)
 end
 
@@ -174,6 +181,18 @@ function pinthreads(pinning::Symbol; kwargs...)
     pinthreads(_pinning_symbol2singleton(pinning); kwargs...)
 end
 
+"""
+    unpinthreads()
+
+Reset to the initial pinning state from before any pinning functions in
+ThreadPinning.jl were called. If this is called before any pinning functions
+have been called, it will reset to the pinning state from when the package was
+loaded.
+"""
+function unpinthreads()
+    pinthreads(INITIAL_PINNING[])
+end
+
 # Potentially throw warnings if the environment is such that thread pinning might not work.
 function _check_environment()
     if Base.Threads.nthreads() > 1 && mkl_is_loaded() && mkl_get_dynamic() == 1
@@ -184,9 +203,12 @@ end
 
 # global "constants"
 const FIRST_PIN = Ref{Bool}(true)
+const INITIAL_PINNING = Ref(getcpuids())
+const INITIAL_PINNING_LOCK = Ref(ReentrantLock())
 
 first_pin_attempt() = FIRST_PIN[]
 function forget_pin_attempts()
     FIRST_PIN[] = true
+    INITIAL_PINNING[] = getcpuids()
     return nothing
 end

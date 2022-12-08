@@ -21,8 +21,8 @@ See `getcpuid` for more information.
 function getcpuids()
     nt = nthreads()
     cpuids = zeros(Int, nt)
-    @threads :static for tid in 1:nt
-        cpuids[tid] = getcpuid()
+    for tid in 1:nt
+        cpuids[tid] = getcpuid(tid)
     end
     return cpuids
 end
