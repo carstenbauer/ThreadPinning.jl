@@ -28,6 +28,34 @@ function getcpuids()
 end
 
 """
+Print the affinity masks of all Julia threads.
+"""
+function print_affinity_masks(; kwargs...)
+    for tid in 1:nthreads()
+        mask = uv_thread_getaffinity(tid)
+        str = _affinity_mask_to_string(mask; kwargs...)
+        print(rpad("$(tid):", 5))
+        println(str)
+    end
+    return nothing
+end
+function _affinity_mask_to_string(mask; groupby=:sockets)
+    bitstr = join(mask)[1:ncputhreads()]
+    if groupby == :numa
+        cpuids_per_X = cpuids_per_numa
+        nX = nnuma
+    else
+        cpuids_per_X = cpuids_per_socket
+        nX = nsockets
+    end
+    str = "|"
+    for s in 1:nX()
+        str = string(str, bitstr[cpuids_per_X()[s].+1], "|")
+    end
+    return str
+end
+
+"""
 Get information about the system like how many sockets or NUMA nodes it has, whether hyperthreading is enabled, etc.
 """
 function sysinfo()

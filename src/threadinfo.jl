@@ -8,8 +8,9 @@ Keyword arguments:
 * `blas` (default: `false`): Show information about BLAS threads as well.
 * `hints` (default: `false`): Give some hints about how to improve the threading related settings.
 * `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, or `:none`.
+* `masks` (default: `false`): Show the affinity masks of all Julia threads.
 """
-function threadinfo(; blas = false, hints = false, color = true, kwargs...)
+function threadinfo(; blas = false, hints = false, color = true, masks = false, groupby = :sockets, kwargs...)
     # general info
     jlthreads = Base.Threads.nthreads()
     thread_cpuids = getcpuids()
@@ -17,7 +18,7 @@ function threadinfo(; blas = false, hints = false, color = true, kwargs...)
     cputhreads = Sys.CPU_THREADS
     # visualize current pinning
     println()
-    _visualize_affinity(; thread_cpuids, color, kwargs...)
+    _visualize_affinity(; thread_cpuids, color, groupby, kwargs...)
     print("Julia threads: ")
     if color
         printstyled(jlthreads, "\n"; color = jlthreads > cputhreads ? :red : :green)
@@ -69,6 +70,9 @@ function threadinfo(; blas = false, hints = false, color = true, kwargs...)
             println()
             _color_mkl_num_threads(; hints)
         end
+    end
+    if masks
+        print_affinity_masks(; groupby)
     end
     hints && _general_hints()
     return nothing
