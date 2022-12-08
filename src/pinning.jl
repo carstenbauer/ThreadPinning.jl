@@ -167,6 +167,10 @@ function pinthreads(pinning::PinningStrategy;
     return nothing
 end
 function pinthreads(pinning::Symbol; kwargs...)
+    if !is_valid_pinning_symbol(pinning)
+        throw(ArgumentError("Unknown pinning strategy: $(pinning)"))
+    end
+
     pinthreads(_pinning_symbol2singleton(pinning); kwargs...)
 end
 
