@@ -144,6 +144,17 @@ end
     @test any(x != cpuids[1] for x in cpuids)
 end
 
+@testset "Thread Pinning (firstn)" begin
+    expected_pinning = cpuids_all()[1:nthreads()]
+
+    # Make sure we have a different pinning to start with
+    pinthreads(reverse(expected_pinning))
+
+    @test getcpuids() != expected_pinning
+    pinthreads(:firstn)
+    @test getcpuids() == expected_pinning
+end
+
 @testset "Unpinning" begin
     pinthreads(:compact)
     for tid in 1:nthreads()
@@ -157,5 +168,5 @@ end
     unpinthreads()
     for tid in 1:nthreads()
         @test count(isone, ThreadPinning.uv_thread_getaffinity(tid)) == ncputhreads()
-    end
+    end 
 end

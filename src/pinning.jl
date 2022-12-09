@@ -59,6 +59,7 @@ struct CompactBind <: PinningStrategy end
 struct SpreadBind <: PinningStrategy end
 struct RandomBind <: PinningStrategy end
 struct CurrentBind <: PinningStrategy end
+struct FirstNBind <: PinningStrategy end
 
 # Places logic
 _places_symbol2singleton(s::Symbol) = _places_symbol2singleton(Val{s})
@@ -110,6 +111,7 @@ _pinning_symbol2singleton(::Type{Val{:spread}}) = SpreadBind()
 _pinning_symbol2singleton(::Type{Val{:scatter}}) = SpreadBind()
 _pinning_symbol2singleton(::Type{Val{:random}}) = RandomBind()
 _pinning_symbol2singleton(::Type{Val{:current}}) = CurrentBind()
+_pinning_symbol2singleton(::Type{Val{:firstn}}) = FirstNBind()
 
 is_valid_pinning_symbol(s::Symbol) = !isnothing(_pinning_symbol2singleton(s))
 
@@ -125,6 +127,7 @@ function getcpuids_pinning(::RandomBind, places; kwargs...)
     reduce(vcat, Random.shuffle(getplaces_cpuids(places)))
 end
 getcpuids_pinning(::CurrentBind, args...; kwargs...) = getcpuids()
+getcpuids_pinning(::FirstNBind, args...; kwargs...) = cpuids_all()[1:min(end, nthreads())]
 
 # High-level pinthreads
 """
@@ -137,6 +140,7 @@ Per default, a reasonable value for `places` is chosen based on the given `pinni
 * `:spread` or `scatter`: pins to `places` in an alternating / round robin fashion.
 * `:random`: shuffles the given `places` and then pins to them compactly.
 * `:current`: pins threads to the cpu threads where they are currently running (ignores `places`).
+* `:firstn`: pin threads to the first `nthreads()` cpu ids reported by lscpu.
 
 **Places** (`places`):
 * `:cores` or `Cores()`: all the cores of the system
