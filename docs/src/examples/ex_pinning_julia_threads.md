@@ -75,3 +75,7 @@ If you want to pin the calling thread you can simply use [`pinthread(cpuid)`](@r
 ## Default pinning (for packages)
 
 If you're developing a package you may want to provide a reasonable default pinning. If you would naively use `pinthreads` for this you would enforce a certain pinning irrespective of what the user might have specified manually. This is because `pinthreads` by default has the highest precedence. To lower the latter you can set `force=false`, e.g. `pinthreads(:compact; force=false)`. This way, a user can overwrite your default pinning (`:compact` in this example) by using [environment variables](@ref envvars), [preferences](@ref prefs), or calling `pinthreads` manually before running your package code.
+
+## Unpinning
+
+We provide functions [`unpinthread(threadid)`](@ref) and [`unpinthreads()`](@ref) to unpin a specific or all Julia threads, respectively. This is realized by setting the thread affinity mask to all ones.

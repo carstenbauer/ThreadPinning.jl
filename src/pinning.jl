@@ -178,6 +178,31 @@ function pinthreads(pinning::Symbol; kwargs...)
     pinthreads(_pinning_symbol2singleton(pinning); kwargs...)
 end
 
+"""
+Unpins all Julia threads by setting the affinity mask of all threads to all unity.
+Afterwards, the OS is free to move any Julia thread from one CPU thread to another.
+"""
+function unpinthreads()
+    masksize = uv_cpumask_size()
+    cpumask = zeros(Cchar, masksize)
+    fill!(cpumask, 1)
+    for tid in 1:nthreads()
+        uv_thread_setaffinity(tid, cpumask)
+    end
+    return nothing
+end
+
+"""
+Unpins the Julia thread with the given `threadid` by setting the affinity mask to all unity.
+Afterwards, the OS is free to move the Julia thread from one CPU thread to another.
+"""
+function unpinthread(threadid::Integer)
+    masksize = uv_cpumask_size()
+    cpumask = zeros(Cchar, masksize)
+    fill!(cpumask, 1)
+    return uv_thread_setaffinity(threadid, cpumask)
+end
+
 # Potentially throw warnings if the environment is such that thread pinning might not work.
 function _check_environment()
     if Base.Threads.nthreads() > 1 && mkl_is_loaded() && mkl_get_dynamic() == 1

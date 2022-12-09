@@ -154,3 +154,19 @@ end
     pinthreads(:firstn)
     @test getcpuids() == expected_pinning
 end
+
+@testset "Unpinning" begin
+    pinthreads(:compact)
+    for tid in 1:nthreads()
+        @test count(isone, ThreadPinning.uv_thread_getaffinity(tid)) == 1
+    end
+
+    unpinthread(2)
+    @test count(isone, ThreadPinning.uv_thread_getaffinity(1)) == 1
+    @test count(isone, ThreadPinning.uv_thread_getaffinity(2)) == ncputhreads()
+
+    unpinthreads()
+    for tid in 1:nthreads()
+        @test count(isone, ThreadPinning.uv_thread_getaffinity(tid)) == ncputhreads()
+    end 
+end

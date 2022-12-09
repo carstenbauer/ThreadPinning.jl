@@ -45,10 +45,13 @@ function uv_thread_getaffinity()
     cpumask = zeros(Cchar, masksize)
     err = uv_thread_getaffinity(self_ref, cpumask, masksize)
     @assert err == 0
-    n = findlast(isone, cpumask)
-    @assert !isnothing(n)
-    resize!(cpumask, n)
+    # n = findlast(isone, cpumask)
+    # @assert !isnothing(n)
+    # resize!(cpumask, n)
     return cpumask
+end
+function uv_thread_getaffinity(threadid)
+    return fetch(@tspawnat threadid uv_thread_getaffinity())
 end
 
 """
@@ -83,10 +86,19 @@ function uv_thread_setaffinity(procid::Integer)
     masksize = uv_cpumask_size()
     0 ≤ procid ≤ masksize ||
         throw(ArgumentError("Invalid procid. It must hold 0 ≤ procid ≤ masksize."))
-    self = uv_thread_self()
-    self_ref = Ref(self)
     cpumask = zeros(Cchar, masksize)
     cpumask[procid + 1] = 1
-    err = uv_thread_setaffinity(self_ref, cpumask, C_NULL, masksize)
+    return uv_thread_setaffinity(cpumask)
+end
+function uv_thread_setaffinity(mask)
+    masksize = uv_cpumask_size()
+    length(mask) == masksize ||
+        throw(ArgumentError("Invalid mask size. Must be $(masksize)."))
+    self = uv_thread_self()
+    self_ref = Ref(self)
+    err = uv_thread_setaffinity(self_ref, mask, C_NULL, masksize)
     return err == 0
+end
+function uv_thread_setaffinity(threadid, mask)
+    return fetch(@tspawnat threadid uv_thread_setaffinity(mask))
 end
