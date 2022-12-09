@@ -6,6 +6,5 @@ using ThreadPinning
 @test isnothing(threadinfo(; masks = true))
 @test isnothing(threadinfo(; color = false))
 @test isnothing(threadinfo(; hints = true))
-@test isnothing(threadinfo(; blas = true))
 @test isnothing(threadinfo(; hyperthreading = true))
 @test isnothing(threadinfo(; blocksize = 5))
