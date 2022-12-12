@@ -83,10 +83,10 @@ ncores_per_numa() = count.(!ishyperthread, cpuids_per_numa())
 ncores_per_socket() = count.(!ishyperthread, cpuids_per_socket())
 
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available CPU sockets"
-cpuids_per_socket() = copy(sysinfo().cpuids_sockets)
+cpuids_per_socket() = deepcopy(sysinfo().cpuids_sockets)
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available NUMA nodes"
-cpuids_per_numa() = copy(sysinfo().cpuids_numa)
+cpuids_per_numa() = deepcopy(sysinfo().cpuids_numa)
 "Returns a `Vector{Int}` which lists all valid CPUIDs"
-cpuids_all() = copy(sysinfo().cpuids)
+cpuids_all() = deepcopy(sysinfo().cpuids)
 
 _cpuidx(cpuid) = findfirst(isequal(cpuid), cpuids_all())
