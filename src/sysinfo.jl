@@ -2,10 +2,12 @@
 Base.@kwdef struct SysInfo
     nsockets::Int = 1
     nnuma::Int = 1
+    ncores::Int = Sys.CPU_THREADS
     hyperthreading::Bool = false
     cpuids::Vector{Int} = collect(0:(Sys.CPU_THREADS - 1))
     cpuids_sockets::Vector{Vector{Int}} = [collect(0:(Sys.CPU_THREADS - 1))]
     cpuids_numa::Vector{Vector{Int}} = [collect(0:(Sys.CPU_THREADS - 1))]
+    cpuids_core::Vector{Vector{Int}} = [[i] for i in 0:(Sys.CPU_THREADS - 1)]
     ishyperthread::Vector{Bool} = fill(false, Sys.CPU_THREADS)
 end
 function Base.show(io::IO, sysinfo::SysInfo)
@@ -108,17 +110,24 @@ function _create_sysinfo_obj(cols; verbose = false)
     # count number of numa nodes
     nnuma = length(unique(cols.numa))
     verbose && @show nnuma
+    # count number of cores
+    ncores = length(unique(cols.core))
+    verbose && @show ncores
     # cpuids per socket / numa
     cpuids_sockets = [Int[] for _ in 1:nsockets]
     cpuids_numa = [Int[] for _ in 1:nnuma]
+    cpuids_core = [Int[] for _ in 1:ncores]
     prev_numa = 0
     prev_socket = 0
+    prev_core = 0
     numaidcs = Dict{Int, Int}(0 => 1)
     socketidcs = Dict{Int, Int}(0 => 1)
+    coreidcs = Dict{Int, Int}(0 => 1)
     @inbounds for i in cols.idcs
         cpuid = cols.cpuid[i]
         numa = cols.numa[i]
         socket = cols.socket[i]
+        core = cols.core[i]
         if numa != prev_numa
             if !haskey(numaidcs, numa)
                 numaidcs[numa] = maximum(values(numaidcs)) + 1
@@ -131,14 +140,23 @@ function _create_sysinfo_obj(cols; verbose = false)
             end
             prev_socket = socket
         end
+        if core != prev_core
+            if !haskey(coreidcs, core)
+                coreidcs[core] = maximum(values(coreidcs)) + 1
+            end
+            prev_core = core
+        end
         numaidx = numaidcs[numa]
         socketidx = socketidcs[socket]
+        coreidx = coreidcs[core]
         push!(cpuids_sockets[socketidx], cpuid)
         push!(cpuids_numa[numaidx], cpuid)
+        push!(cpuids_core[coreidx], cpuid)
     end
     # if a coreid is seen for a second time
     # the corresponding cpuid is identified
     # as a hypterthread
+    # TODO: Simplify based on cpuids_core
     ishyperthread = fill(false, length(cols.idcs))
     seen_coreids = Set{Int}()
     @inbounds for i in cols.idcs
@@ -154,7 +172,7 @@ function _create_sysinfo_obj(cols; verbose = false)
     # hyperthreading?
     hyperthreading = any(ishyperthread)
     verbose && @show hyperthreading
-    return SysInfo(nsockets, nnuma, hyperthreading, cpuids, cpuids_sockets, cpuids_numa,
+    return SysInfo(nsockets, nnuma, ncores, hyperthreading, cpuids, cpuids_sockets, cpuids_numa, cpuids_core,
                    ishyperthread)
 end
 

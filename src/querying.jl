@@ -72,20 +72,24 @@ nnuma() = sysinfo().nnuma
 "Number of CPU threads"
 ncputhreads() = length(cpuids_all())
 "Number of CPU threads per NUMA domain"
-ncputhreads_per_numa() = length.(cpuids_per_numa())
+ncputhreads_per_numa() = length.(sysinfo().cpuids_numa)
 "Number of CPU threads per socket"
-ncputhreads_per_socket() = length.(cpuids_per_socket())
+ncputhreads_per_socket() = length.(sysinfo().cpuids_sockets)
+"Number of CPU threads per core"
+ncputhreads_per_core() = length.(sysinfo().cpuids_core)
 "Number of cores (i.e. excluding hyperthreads)"
-ncores() = count(!ishyperthread, cpuids_all())
+ncores() = sysinfo().ncores
 "Number of CPU cores per NUMA domain"
-ncores_per_numa() = count.(!ishyperthread, cpuids_per_numa())
+ncores_per_numa() = count.(!ishyperthread, sysinfo().cpuids_numa)
 "Number of CPU cores per socket"
-ncores_per_socket() = count.(!ishyperthread, cpuids_per_socket())
+ncores_per_socket() = count.(!ishyperthread, sysinfo().cpuids_sockets)
 
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available CPU sockets"
 cpuids_per_socket() = deepcopy(sysinfo().cpuids_sockets)
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available NUMA nodes"
 cpuids_per_numa() = deepcopy(sysinfo().cpuids_numa)
+"Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available physical cores"
+cpuids_per_core() = deepcopy(sysinfo().cpuids_core)
 "Returns a `Vector{Int}` which lists all valid CPUIDs"
 cpuids_all() = deepcopy(sysinfo().cpuids)
 
