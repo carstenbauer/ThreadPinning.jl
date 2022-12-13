@@ -7,7 +7,7 @@ Keyword arguments:
 * `hyperthreading` (default: `true`): If `true`, we (try to) highlight cpu threads associated with hyperthreading in the `color=true` output.
 * `blas` (default: `false`): Show information about BLAS threads as well.
 * `hints` (default: `false`): Give some hints about how to improve the threading related settings.
-* `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, or `:none`.
+* `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, `:cores`, or `:none`.
 * `masks` (default: `false`): Show the affinity masks of all Julia threads.
 """
 function threadinfo(; blas = false, hints = false, color = true, masks = false, groupby = :sockets, kwargs...)
@@ -89,6 +89,8 @@ function _visualize_affinity(;
         cpuids_per_socket()
     elseif groupby in (:numa, :NUMA)
         cpuids_per_numa()
+    elseif groupby in (:core, :cores)
+        cpuids_per_core()
     else
         [cpuids_all()]
     end
@@ -153,9 +155,12 @@ function _visualize_affinity(;
     if groupby in (:sockets, :socket)
         printstyled("|"; bold = true)
         print(" = Socket seperator")
-    elseif groupby == :numa
+    elseif groupby in (:numa, :NUMA)
         printstyled("|"; bold = true)
         print(" = NUMA seperator")
+    elseif groupby in (:core, :cores)
+        printstyled("|"; bold = true)
+        print(" = Core seperator")
     end
     println("\n")
     return nothing
