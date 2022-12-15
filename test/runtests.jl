@@ -12,3 +12,4 @@ Threads.nthreads() ≥ 2 ||
 @testitem "threadinfo" begin include("threadinfo_test.jl") end
 @testitem "OMP" begin include("omp_test.jl") end
 @testitem "Preferences" begin include("preferences_test.jl") end
+@testitem "likwid-pin" begin include("likwid-pin_test.jl") end

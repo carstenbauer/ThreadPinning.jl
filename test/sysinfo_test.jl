@@ -1,5 +1,6 @@
 using Test
 using ThreadPinning
+import ThreadPinning: ICORE, IID, ICPUID, INUMA, ISOCKET, ISMT
 
 @testset "lscpu2sysinfo (NOCTUA2LOGIN)" begin
     sinfo = ThreadPinning.lscpu2sysinfo(ThreadPinning.lscpu_NOCTUA2LOGIN)

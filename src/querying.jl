@@ -61,6 +61,13 @@ Get information about the system like how many sockets or NUMA nodes it has, whe
 function sysinfo()
     return SYSINFO[]
 end
+
+# Unsafe because they directly return the fields instead of copies (be warry when modiying!)
+unsafe_cpuids_per_socket() = sysinfo().cpuids_sockets
+unsafe_cpuids_per_numa() = sysinfo().cpuids_numa
+unsafe_cpuids_per_core() = sysinfo().cpuids_core
+unsafe_cpuids_all() = sysinfo().cpuids
+
 "Check whether hyperthreading is enabled."
 hyperthreading_is_enabled() = sysinfo().hyperthreading
 "Check whether the given cpu thread is a hyperthread (i.e. the second cpu thread associated with a CPU-core)."
@@ -72,25 +79,25 @@ nnuma() = sysinfo().nnuma
 "Number of CPU threads"
 ncputhreads() = length(cpuids_all())
 "Number of CPU threads per NUMA domain"
-ncputhreads_per_numa() = length.(sysinfo().cpuids_numa)
+ncputhreads_per_numa() = length.(unsafe_cpuids_per_numa())
 "Number of CPU threads per socket"
-ncputhreads_per_socket() = length.(sysinfo().cpuids_sockets)
+ncputhreads_per_socket() = length.(unsafe_cpuids_per_socket())
 "Number of CPU threads per core"
-ncputhreads_per_core() = length.(sysinfo().cpuids_core)
+ncputhreads_per_core() = length.(unsafe_cpuids_per_core())
 "Number of cores (i.e. excluding hyperthreads)"
 ncores() = sysinfo().ncores
 "Number of CPU cores per NUMA domain"
-ncores_per_numa() = count.(!ishyperthread, sysinfo().cpuids_numa)
+ncores_per_numa() = count.(!ishyperthread, unsafe_cpuids_per_numa())
 "Number of CPU cores per socket"
-ncores_per_socket() = count.(!ishyperthread, sysinfo().cpuids_sockets)
+ncores_per_socket() = count.(!ishyperthread, unsafe_cpuids_per_socket())
 
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available CPU sockets"
-cpuids_per_socket() = deepcopy(sysinfo().cpuids_sockets)
+cpuids_per_socket() = deepcopy(unsafe_cpuids_per_socket())
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available NUMA nodes"
-cpuids_per_numa() = deepcopy(sysinfo().cpuids_numa)
+cpuids_per_numa() = deepcopy(unsafe_cpuids_per_numa())
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available physical cores"
-cpuids_per_core() = deepcopy(sysinfo().cpuids_core)
+cpuids_per_core() = deepcopy(unsafe_cpuids_per_core())
 "Returns a `Vector{Int}` which lists all valid CPUIDs"
-cpuids_all() = deepcopy(sysinfo().cpuids)
+cpuids_all() = deepcopy(unsafe_cpuids_all())
 
-_cpuidx(cpuid) = findfirst(isequal(cpuid), cpuids_all())
+_cpuidx(cpuid) = findfirst(isequal(cpuid), unsafe_cpuids_all())

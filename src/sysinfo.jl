@@ -1,15 +1,38 @@
 # system information
 Base.@kwdef struct SysInfo
-    nsockets::Int = 1
-    nnuma::Int = 1
+    ncputhreads::Int = Sys.CPU_THREADS
     ncores::Int = Sys.CPU_THREADS
+    nnuma::Int = 1
+    nsockets::Int = 1
     hyperthreading::Bool = false
-    cpuids::Vector{Int} = collect(0:(Sys.CPU_THREADS - 1))
+    cpuids::Vector{Int} = collect(0:(Sys.CPU_THREADS - 1)) # lscpu ordering
     cpuids_sockets::Vector{Vector{Int}} = [collect(0:(Sys.CPU_THREADS - 1))]
     cpuids_numa::Vector{Vector{Int}} = [collect(0:(Sys.CPU_THREADS - 1))]
     cpuids_core::Vector{Vector{Int}} = [[i] for i in 0:(Sys.CPU_THREADS - 1)]
     ishyperthread::Vector{Bool} = fill(false, Sys.CPU_THREADS)
+    # Columns of the sysinfo matrix (in that order):
+    #   * ID (logical, i.e. starts at 1)
+    #   * CPU IDs (as in lscpu, i.e. starts at 0)
+    #   * CORE (logical, i.e. starts at 1)
+    #   * NUMA (logical, i.e. starts at 1)
+    #   * SOCKET (logical, i.e. starts at 1)
+    #   * SMT (logical, i.e. starts at 1): order of SMT threads ("hyperthreads") within their respective core
+    matrix::Matrix{Int} = hcat(1:(Sys.CPU_THREADS), cpuids, 1:(Sys.CPU_THREADS),
+                               ones(Sys.CPU_THREADS),
+                               ones(Sys.CPU_THREADS), ones(Sys.CPU_THREADS))
 end
+
+# helper indices for indexing into the sysinfo matrix
+const IID = 1
+const ICPUID = 2
+const ICORE = 3
+const INUMA = 4
+const ISOCKET = 5
+const ISMT = 6
+function getsortedby(getidx, byidx; matrix = sysinfo().matrix, kwargs...)
+    @views sortslices(matrix; dims = 1, by = x -> x[byidx], kwargs...)[:, getidx]
+end
+
 function Base.show(io::IO, sysinfo::SysInfo)
     return print(io, "SysInfo()")
 end
@@ -104,15 +127,23 @@ end
 function _create_sysinfo_obj(cols; verbose = false)
     cpuids = cols.cpuid
     verbose && @show cpuids
+    @assert issorted(cols.cpuid)
+    @assert length(Set(cols.cpuid)) == length(cols.cpuid) # no duplicates
+    # count number of cputhreads
+    ncputhreads = length(cols.cpuid)
+    verbose && @show ncputhreads
+    # count number of cores
+    ncores = length(unique(cols.core))
+    verbose && @show ncores
     # count number of sockets
     nsockets = length(unique(cols.socket))
     verbose && @show nsockets
     # count number of numa nodes
     nnuma = length(unique(cols.numa))
     verbose && @show nnuma
-    # count number of cores
-    ncores = length(unique(cols.core))
-    verbose && @show ncores
+    # count number of SMT threads per core (assuming its the same for all cores!)
+    nsmt = count(cols.core .== 1)
+
     # cpuids per socket / numa
     cpuids_sockets = [Int[] for _ in 1:nsockets]
     cpuids_numa = [Int[] for _ in 1:nnuma]
@@ -172,8 +203,18 @@ function _create_sysinfo_obj(cols; verbose = false)
     # hyperthreading?
     hyperthreading = any(ishyperthread)
     verbose && @show hyperthreading
-    return SysInfo(nsockets, nnuma, ncores, hyperthreading, cpuids, cpuids_sockets, cpuids_numa, cpuids_core,
-                   ishyperthread)
+
+    # sysinfo matrix
+    matrix = hcat(1:ncputhreads, cols.cpuid, cols.core .+ 1, cols.numa .+ 1,
+                  cols.socket .+ 1,
+                  zeros(Int64, ncputhreads))
+    matrix[getsortedby(IID, ICORE; matrix), ISMT] .= mod1.(1:ncputhreads, nsmt)
+
+    #TODO ensure specific default sorting of sysinfo matrix
+
+    return SysInfo(; ncputhreads, ncores, nnuma, nsockets, hyperthreading, cpuids,
+                   cpuids_sockets,
+                   cpuids_numa, cpuids_core, ishyperthread, matrix)
 end
 
 function lscpu()
