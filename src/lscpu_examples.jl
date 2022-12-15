@@ -688,48 +688,6 @@ const lscpu_TEST_ordered = """CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE
 38  2    2      13   8:8:8:1       yes
 39  2    2      14   9:9:9:1       yes"""
 
-const lscpu_TEST_sortbycore = """CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE
-0   0    0      0    0:0:0:0       yes
-1   0    0      0    0:0:0:0       yes
-2   0    0      0    0:0:0:0       yes
-3   0    0      0    0:0:0:0       yes
-4   0    0      1    1:1:1:0       yes
-5   0    0      1    1:1:1:0       yes
-6   0    0      1    1:1:1:0       yes
-7   0    0      1    1:1:1:0       yes
-8   0    0      2    2:2:2:0       yes
-9   0    0      2    2:2:2:0       yes
-10  0    0      2    2:2:2:0       yes
-11  0    0      2    2:2:2:0       yes
-12  0    0      3    3:3:3:0       yes
-13  0    0      3    3:3:3:0       yes
-14  0    0      3    3:3:3:0       yes
-15  0    0      3    3:3:3:0       yes
-16  0    0      4    4:4:4:0       yes
-17  0    0      4    4:4:4:0       yes
-18  0    0      4    4:4:4:0       yes
-19  0    0      4    4:4:4:0       yes
-20  2    2      10   5:5:5:1       yes
-21  2    2      10   5:5:5:1       yes
-22  2    2      10   5:5:5:1       yes
-23  2    2      10   5:5:5:1       yes
-24  2    2      11   6:6:6:1       yes
-25  2    2      11   6:6:6:1       yes
-26  2    2      11   6:6:6:1       yes
-27  2    2      11   6:6:6:1       yes
-28  2    2      12   7:7:7:1       yes
-29  2    2      12   7:7:7:1       yes
-30  2    2      12   7:7:7:1       yes
-31  2    2      12   7:7:7:1       yes
-32  2    2      13   8:8:8:1       yes
-33  2    2      13   8:8:8:1       yes
-34  2    2      13   8:8:8:1       yes
-35  2    2      13   8:8:8:1       yes
-36  2    2      14   9:9:9:1       yes
-37  2    2      14   9:9:9:1       yes
-38  2    2      14   9:9:9:1       yes
-39  2    2      14   9:9:9:1       yes"""
-
 const lscpu_TEST_unordered = """CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE
 0   2    2      11   6:6:6:1       yes
 1   0    0      1    1:1:1:0       yes
