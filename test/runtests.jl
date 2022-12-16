@@ -1,7 +1,7 @@
 using TestItemRunner
 
-Threads.nthreads() ≥ 2 ||
-    error("Can't run tests with single Julia thread! Forgot to set `JULIA_NUM_THREADS`?")
+Threads.nthreads() ≥ 4 ||
+    error("At least 4 Julia threads necessary. Forgot to set `JULIA_NUM_THREADS`?")
 
 @run_package_tests
 
