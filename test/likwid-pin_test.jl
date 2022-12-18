@@ -95,3 +95,43 @@ end
         end
     end
 end
+
+@testset "likwidpin: @ concatenation" begin
+    let lpstr = "S0:0-1@S0:2-3"
+        pinthreads(:random)
+        pinthreads(lpstr)
+        cs = cpuids_per_socket()
+        @test getcpuids()[1:4] == cs[1][1:4]
+    end
+    let lpstr = "S0:0@S0:1@S0:2@S0:3"
+        pinthreads(:random)
+        pinthreads(lpstr)
+        cs = cpuids_per_socket()
+        @test getcpuids()[1:4] == cs[1][1:4]
+    end
+    if nsockets() > 1
+        let lpstr = "S0:0-1@S1:1-2" # 2 threads per socket
+            pinthreads(:random)
+            pinthreads(lpstr)
+            cs = cpuids_per_socket()
+            @test getcpuids()[1:4] == vcat(cs[1][1:2], cs[2][2:3])
+        end
+    end
+    if nnuma() > 1
+        let lpstr = "M0:0-1@M1:1-2" # 2 threads per memory domain
+            pinthreads(:random)
+            pinthreads(lpstr)
+            cn = cpuids_per_numa()
+            @test getcpuids()[1:4] == vcat(cn[1][1:2], cn[2][2:3])
+        end
+    end
+    if nnuma() > 1 && nsockets() > 1
+        let lpstr = "M0:0-1@S1:1-2"
+            pinthreads(:random)
+            pinthreads(lpstr)
+            cs = cpuids_per_socket()
+            cn = cpuids_per_numa()
+            @test getcpuids()[1:4] == vcat(cn[1][1:2], cs[2][2:3])
+        end
+    end
+end

@@ -4,21 +4,26 @@ function pinthreads(str::AbstractString)
     pinthreads(cpuids)
 end
 
-function likwidpin_to_cpuids(str::AbstractString)
-    sections = split(str, ':')
-    if length(sections) == 1 # no colon
-        @debug "likwid-pin: explicit"
-        cpuids = _explicit2numbers(sections[1])
-    else
-        if sections[1] == "E"
-            @debug "likwid-pin: expression"
-            # TODO
+function likwidpin_to_cpuids(lpstr::AbstractString)
+    blocks = split(lpstr, '@')
+    blocks_cpuids = Vector{Vector{Int}}(undef, length(blocks))
+    for (i, block_str) in pairs(blocks)
+        sections = split(block_str, ':')
+        if length(sections) == 1 # no colon
+            @debug "likwid-pin: explicit"
+            cpuids = _explicit2numbers(sections[1])
         else
-            @debug "likwid-pin: domain-based"
-            cpuids = _domainbased2cpuids(sections)
+            if sections[1] == "E"
+                @debug "likwid-pin: expression"
+                # TODO
+            else
+                @debug "likwid-pin: domain-based"
+                cpuids = _domainbased2cpuids(sections)
+            end
         end
+        blocks_cpuids[i] = cpuids
     end
-    return cpuids
+    return reduce(vcat, blocks_cpuids)
 end
 
 function _explicit2numbers(str)
