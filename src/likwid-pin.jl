@@ -67,38 +67,52 @@ is_valid_likwidpin_domain(domain::AbstractString) = domain in likwidpin_domains(
 is_valid_likwidpin_domain(domain::Symbol) = is_valid_likwidpin_domain(string(domain))
 
 function _likwidpin_scatter_cpuids(domain, numthreads)
-    # TODO out of bounds checks
     if domain == "N"
-        cpuids = cpuids_per_node()[1:numthreads]
+        domain_cpuids = cpuids_per_node()
     elseif domain == "S"
-        cpuids = reduce(interweave, cpuids_per_socket())[1:numthreads]
+        domain_cpuids = reduce(interweave, cpuids_per_socket())
     elseif domain == "M"
-        cpuids = reduce(interweave, cpuids_per_numa())[1:numthreads]
+        domain_cpuids = reduce(interweave, cpuids_per_numa())
     elseif startswith(domain, "S")
         socketid = parse(Int, domain[2:end])
-        cpuids = cpuids_per_socket()[socketid + 1][1:numthreads]
+        domain_cpuids = cpuids_per_socket()[socketid + 1]
     elseif startswith(domain, "M")
         numaid = parse(Int, domain[2:end])
-        cpuids = cpuids_per_numa()[numaid + 1][1:numthreads]
+        domain_cpuids = cpuids_per_numa()[numaid + 1]
     else
         error("Don't know how to handle domain \"$domain\" in domain:scatter[:numthreads] mode.")
+    end
+
+    if length(domain_cpuids) >= numthreads
+        @inbounds cpuids = domain_cpuids[1:numthreads]
+    else
+        error("Not enough CPU threads. Trying to pin $numthreads Julia threads but there are only $(length(domain_cpuids)) CPU threads available given the domain + scattering policy.")
     end
     return cpuids
 end
 
 function _likwidpin_domain_cpuids(domain, lp_idcs)
     idcs = lp_idcs .+ 1 # zero- to one-based
-    # TODO out of bounds checks
     if domain == "N"
-        cpuids = cpuids_per_node()[idcs]
-    elseif startswith(domain, "S")
+        domain_cpuids = cpuids_per_node()
+    elseif startswith(domain, "S") && length(domain) > 1
         socketid = parse(Int, domain[2:end])
-        cpuids = cpuids_per_socket()[socketid + 1][idcs]
-    elseif startswith(domain, "M")
+        domain_cpuids = cpuids_per_socket()[socketid + 1]
+    elseif startswith(domain, "M") && length(domain) > 1
         numaid = parse(Int, domain[2:end])
-        cpuids = cpuids_per_numa()[numaid + 1][idcs]
+        domain_cpuids = cpuids_per_numa()[numaid + 1]
     else
         error("Don't know how to handle domain \"$domain\" in domain:explicit mode.")
+    end
+
+    if length(domain_cpuids) < length(idcs)
+        error("Not enough CPU threads in domain. Specified $(length(idcs)) indices but domain \"$domain\" only has $(length(domain_cpuids)) CPU threads.")
+    else
+        if checkbounds(Bool, domain_cpuids, idcs)
+            @inbounds cpuids = domain_cpuids[idcs]
+        else
+            error("Invalid logical CPU indices provided for domain \"domain\". Valid range: 0 to $(length(domain_cpuids)-1).")
+        end
     end
     return cpuids
 end
