@@ -19,7 +19,8 @@ macro tspawnat(thrdid, expr)
     tid = esc(thrdid)
     quote
         if $tid < 1 || $tid > Base.Threads.nthreads()
-            throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between 1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
+            throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between " *
+                                 "1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
         end
         let $(letargs...)
             local task = Task($thunk)
@@ -63,16 +64,16 @@ function interweave(arrays::AbstractVector...)
     return res
 end
 
-function interweave_uneven(arr1::AbstractVector, arr2::AbstractVector)
+function interweave_binary(arr1::AbstractVector, arr2::AbstractVector)
     if length(arr1) == length(arr2)
         return interweave(arr1, arr2)
     else
         @views if length(arr1) > length(arr2)
             res_smaller = interweave(arr1[1:length(arr2)], arr2)
-            res = vcat(res_smaller, arr1[length(arr2)+1:end])
+            res = vcat(res_smaller, arr1[(length(arr2) + 1):end])
         else
             res_smaller = interweave(arr1, arr2[1:length(arr1)])
-            res = vcat(res_smaller, arr2[length(arr1)+1:end])
+            res = vcat(res_smaller, arr2[(length(arr1) + 1):end])
         end
         return res
     end

@@ -18,6 +18,7 @@ include("omp.jl")
 include("blas.jl")
 include("querying.jl")
 include("pinning.jl")
+include("likwid-pin.jl")
 include("threadinfo.jl")
 include("latency.jl")
 include("preferences.jl")
@@ -31,7 +32,8 @@ function _try_get_autoupdate()
             return x
         end
     catch err
-        @warn("Couldn't parse autoupdate preference \"$x\" (not a boolean?). Falling back to default (true).")
+        @warn("Couldn't parse autoupdate preference \"$x\" (not a boolean?). Falling "*
+              "back to default (true).")
         return true # default
     end
 end
@@ -76,49 +78,49 @@ function __init__()
         end
         maybe_autopin()
     else
-        error("Operating system not supported. ThreadPinning.jl currently only supports Linux.")
+        error("Operating system not supported. ThreadPinning.jl currently only supports " *
+              "Linux.")
     end
     return nothing
 end
 
 # precompile
 import SnoopPrecompile
-SnoopPrecompile.@precompile_all_calls begin
-    @static if Sys.islinux()
-        ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
-        update_sysinfo!()
-        lscpu_string()
-        sysinfo()
-        pinthread(0)
-        pinthreads(0:(nthreads() - 1))
-        pinthreads(collect(0:(nthreads() - 1)))
-        pinthreads(:compact; nthreads=1)
-        pinthreads(:spread; nthreads=1)
-        pinthreads(:random; nthreads=1)
-        pinthreads(:current; nthreads=1)
-        pinthreads(:compact; places = Cores(), nthreads=1)
-        pinthreads(:compact; places = CPUThreads(), nthreads=1)
-        pinthreads(:spread; places = NUMA(), nthreads=1)
-        pinthreads(:spread; places = Sockets(), nthreads=1)
-        getcpuid()
-        getcpuids()
-        nsockets()
-        nnuma()
-        cpuids_all()
-        cpuids_per_socket()
-        cpuids_per_numa()
-        ncputhreads()
-        ncputhreads_per_socket()
-        ncputhreads_per_numa()
-        ncores()
-        ncores_per_socket()
-        ncores_per_numa()
-    end
-end
+SnoopPrecompile.@precompile_all_calls begin @static if Sys.islinux()
+    ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
+    update_sysinfo!()
+    lscpu_string()
+    sysinfo()
+    pinthread(0)
+    pinthreads(0:(nthreads() - 1))
+    pinthreads(collect(0:(nthreads() - 1)))
+    pinthreads(:compact; nthreads = 1)
+    pinthreads(:spread; nthreads = 1)
+    pinthreads(:random; nthreads = 1)
+    pinthreads(:current; nthreads = 1)
+    pinthreads(:compact; places = Cores(), nthreads = 1)
+    pinthreads(:compact; places = CPUThreads(), nthreads = 1)
+    pinthreads(:spread; places = NUMA(), nthreads = 1)
+    pinthreads(:spread; places = Sockets(), nthreads = 1)
+    getcpuid()
+    getcpuids()
+    nsockets()
+    nnuma()
+    cpuids_all()
+    cpuids_per_socket()
+    cpuids_per_numa()
+    ncputhreads()
+    ncputhreads_per_socket()
+    ncputhreads_per_numa()
+    ncores()
+    ncores_per_socket()
+    ncores_per_numa()
+end end
 
 # exports
 export threadinfo,
        pinthreads,
+       pinthreads_likwidpin,
        pinthread,
        maybe_pinthreads,
        getcpuids,
@@ -127,21 +129,22 @@ export threadinfo,
        unpinthread,
        @tspawnat,
        sysinfo,
-       nsockets,
-       nnuma,
        ncputhreads,
+       ncores,
+       nnuma,
+       nsockets,
+       ncputhreads_per_core,
        ncputhreads_per_numa,
        ncputhreads_per_socket,
-       ncputhreads_per_core,
-       ncores,
        ncores_per_numa,
        ncores_per_socket,
        hyperthreading_is_enabled,
        ishyperthread,
-       cpuids_per_socket,
-       cpuids_per_numa,
-       cpuids_per_core,
        cpuids_all,
+       cpuids_per_core,
+       cpuids_per_numa,
+       cpuids_per_socket,
+       cpuids_per_node,
        CPUThreads,
        Cores,
        Sockets,
