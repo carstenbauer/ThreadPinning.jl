@@ -1,16 +1,20 @@
 """
-Print information about Julia threads, e.g. on which cpu threads (i.e. cores if hyperthreading is disabled) they are running.
+Print information about Julia threads, e.g. on which cpu threads (i.e. cores if
+hyperthreading is disabled) they are running.
 
 Keyword arguments:
 * `color` (default: `true`): Toggle between colored and black-and-white output.
 * `blocksize` (default: `32`): Wrap to a new line after `blocksize` many cpu threads.
-* `hyperthreading` (default: `true`): If `true`, we (try to) highlight cpu threads associated with hyperthreading in the `color=true` output.
+* `hyperthreading` (default: `true`): If `true`, we (try to) highlight cpu threads
+  associated with hyperthreading in the `color=true` output.
 * `blas` (default: `false`): Show information about BLAS threads as well.
-* `hints` (default: `false`): Give some hints about how to improve the threading related settings.
+* `hints` (default: `false`): Give some hints about how to improve the threading related
+  settings.
 * `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, `:cores`, or `:none`.
 * `masks` (default: `false`): Show the affinity masks of all Julia threads.
 """
-function threadinfo(; blas = false, hints = false, color = true, masks = false, groupby = :sockets, kwargs...)
+function threadinfo(; blas = false, hints = false, color = true, masks = false,
+                    groupby = :sockets, kwargs...)
     # general info
     jlthreads = Base.Threads.nthreads()
     thread_cpuids = getcpuids()
@@ -174,24 +178,31 @@ function _color_mkl_num_threads(; hints = false)
     if blasthreads_per_jlthread == 1
         if jlthreads < Sys.CPU_THREADS
             hints &&
-                @info("blasthreads_per_jlthread == 1 && jlthreads < cputhreads. You should set BLAS.set_num_threads($cputhreads_per_jlthread) or try to increase the number of Julia threads to $cputhreads.")
+                @info("blasthreads_per_jlthread == 1 && jlthreads < cputhreads. You "*
+                      "should set BLAS.set_num_threads($cputhreads_per_jlthread) or try "*
+                      "to increase the number of Julia threads to $cputhreads.")
             return :yellow
         elseif jlthreads == cputhreads
             return :green
         else
             hints &&
-                @warn("jlthreads > cputhreads. You should decrease the number of Julia threads to $cputhreads.")
+                @warn("jlthreads > cputhreads. You should decrease the number of Julia "*
+                      "threads to $cputhreads.")
             return :red
         end
     elseif blasthreads_per_jlthread < cputhreads_per_jlthread
         hints &&
-            @info("blasthreads_per_jlthread < cputhreads_per_jlthread. You should increase the number of MKL threads, i.e. BLAS.set_num_threads($cputhreads_per_jlthread).")
+            @info("blasthreads_per_jlthread < cputhreads_per_jlthread. You should "*
+                  "increase the number of MKL threads, i.e. "*
+                  "BLAS.set_num_threads($cputhreads_per_jlthread).")
         return :yellow
     elseif blasthreads_per_jlthread == cputhreads_per_jlthread
         return :green
     else
         hints &&
-            @warn("blasthreads_per_jlthread > cputhreads_per_jlthread. You should decrease the number of MKL threads, i.e. BLAS.set_num_threads($cputhreads_per_jlthread).")
+            @warn("blasthreads_per_jlthread > cputhreads_per_jlthread. You should "*
+                  "decrease the number of MKL threads, i.e. "*
+                  "BLAS.set_num_threads($cputhreads_per_jlthread).")
         return :red
     end
 end
@@ -208,19 +219,25 @@ function _color_openblas_num_threads(; hints = false)
             # Not sure about this case...
             if blasthreads < jlthreads
                 hints &&
-                    @warn("jlthreads != 1 && blasthreads < jlthreads. You should set BLAS.set_num_threads(1).")
+                    @warn("jlthreads != 1 && blasthreads < jlthreads. You should set "*
+                          "BLAS.set_num_threads(1).")
                 return :red
             elseif blasthreads < cputhreads
                 hints &&
-                    @info("jlthreads != 1 && blasthreads < cputhreads. You should either set BLAS.set_num_threads(1) (recommended!) or at least BLAS.set_num_threads($cputhreads).")
+                    @info("jlthreads != 1 && blasthreads < cputhreads. You should either "*
+                          "set BLAS.set_num_threads(1) (recommended!) or at least "*
+                          "BLAS.set_num_threads($cputhreads).")
                 return :yellow
             elseif blasthreads == cputhreads
                 hints &&
-                    @info("For jlthreads != 1 we strongly recommend to set BLAS.set_num_threads(1).")
+                    @info("For jlthreads != 1 we strongly recommend to set "*
+                          "BLAS.set_num_threads(1).")
                 return :green
             else
                 hints &&
-                    @warn("jlthreads != 1 && blasthreads > cputhreads. You should set BLAS.set_num_threads(1) (recommended!) or at least BLAS.set_num_threads($cputhreads).")
+                    @warn("jlthreads != 1 && blasthreads > cputhreads. You should set "*
+                          "BLAS.set_num_threads(1) (recommended!) or at least "*
+                          "BLAS.set_num_threads($cputhreads).")
                 return :red
             end
         end
@@ -228,13 +245,15 @@ function _color_openblas_num_threads(; hints = false)
         # single Julia thread
         if blasthreads < cputhreads
             hints &&
-                @info("blasthreads < cputhreads. You should increase the number of OpenBLAS threads, i.e. BLAS.set_num_threads($cputhreads).")
+                @info("blasthreads < cputhreads. You should increase the number of "*
+                      "OpenBLAS threads, i.e. BLAS.set_num_threads($cputhreads).")
             return :yellow
         elseif blasthreads == cputhreads
             return :green
         else
             hints &&
-                @warn("blasthreads > cputhreads. You should decrease the number of OpenBLAS threads, i.e. BLAS.set_num_threads($cputhreads).")
+                @warn("blasthreads > cputhreads. You should decrease the number of "*
+                      "OpenBLAS threads, i.e. BLAS.set_num_threads($cputhreads).")
             return :red
         end
     end
@@ -245,9 +264,11 @@ function _general_hints()
     cputhreads = Sys.CPU_THREADS
     thread_cpuids = getcpuids()
     if jlthreads > cputhreads
-        @warn("jlthreads > cputhreads. You should decrease the number of Julia threads to $cputhreads.")
+        @warn("jlthreads > cputhreads. You should decrease the number of Julia threads "*
+              "to $cputhreads.")
     elseif jlthreads < cputhreads
-        @info("jlthreads < cputhreads. Perhaps increase number of Julia threads to $cputhreads?")
+        @info("jlthreads < cputhreads. Perhaps increase number of Julia threads to "*
+              "$cputhreads?")
     end
     if length(unique(thread_cpuids)) < jlthreads
         @warn("Overlap: Some Julia threads are running on the same cpu threads")

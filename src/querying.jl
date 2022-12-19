@@ -56,7 +56,8 @@ function _affinity_mask_to_string(mask; groupby = :sockets)
 end
 
 """
-Get information about the system like how many sockets or NUMA nodes it has, whether hyperthreading is enabled, etc.
+Get information about the system like how many sockets or NUMA nodes it has, whether
+hyperthreading is enabled, etc.
 """
 function sysinfo()
     return SYSINFO[]
@@ -71,7 +72,8 @@ unsafe_cpuids_per_node() = sysinfo().cpuids_node
 
 "Check whether hyperthreading is enabled."
 hyperthreading_is_enabled() = sysinfo().hyperthreading
-"Check whether the given cpu thread is a hyperthread (i.e. the second cpu thread associated with a CPU-core)."
+"Check whether the given cpu thread is a hyperthread (i.e. the second cpu thread associated
+with a CPU-core)."
 ishyperthread(cpuid::Integer) = sysinfo().ishyperthread[_cpuidx(cpuid)]
 "Number of CPU threads"
 ncputhreads() = length(cpuids_all())
@@ -97,7 +99,8 @@ ncores_per_socket() = count.(!ishyperthread, unsafe_cpuids_per_socket())
 "Returns a `Vector{Int}` which lists all valid CPUIDs. There is no guarantee about the
 order except that it is the same as in `lscpu`."
 cpuids_all() = deepcopy(unsafe_cpuids_all())
-"Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available physical cores"
+"Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available
+physical cores"
 cpuids_per_core() = deepcopy(unsafe_cpuids_per_core())
 """
 Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available

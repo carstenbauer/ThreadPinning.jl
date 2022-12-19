@@ -7,7 +7,8 @@ Pin the calling Julia thread to the CPU with id `cpuid`.
 function pinthread(cpuid::Integer; warn::Bool = true)
     if warn
         (minimum(cpuids_all()) ≤ cpuid ≤ maximum(cpuids_all())) ||
-            throw(ArgumentError("cpuid is out of bounds ($(minimum(cpuids_all())) ≤ cpuid ≤ $(maximum(cpuids_all())))."))
+            throw(ArgumentError("cpuid is out of bounds ($(minimum(cpuids_all())) ≤ " *
+                                "cpuid ≤ $(maximum(cpuids_all())))."))
         _check_environment()
     end
     FIRST_PIN[] = false
@@ -37,9 +38,11 @@ function pinthreads(cpuids::AbstractVector{<:Integer}; warn::Bool = true, force 
         ncpuids = length(cpuids)
         ncpuids ≤ nthreads() ||
             throw(ArgumentError("length(cpuids) must be ≤ Threads.nthreads()"))
-        (minimum(cpuids) ≥ minimum(cpuids_all()) && maximum(cpuids) ≤ maximum(cpuids_all())) ||
-            throw(ArgumentError("All cpuids must be ≤ $(maximum(cpuids_all())) and ≥ $(minimum(cpuids_all()))."))
-
+        if !(minimum(cpuids) ≥ minimum(cpuids_all()) &&
+             maximum(cpuids) ≤ maximum(cpuids_all()))
+            throw(ArgumentError("All cpuids must be ≤ $(maximum(cpuids_all())) and ≥ " *
+                                "$(minimum(cpuids_all()))."))
+        end
         @threads :static for tid in 1:ncpuids
             pinthread(cpuids[tid]; warn = false)
         end
@@ -132,8 +135,9 @@ getcpuids_pinning(::FirstNBind, args...; kwargs...) = cpuids_all()[1:min(end, nt
 # High-level pinthreads
 """
     pinthreads(pinning[; places, nthreads=Threads.nthreads(), warn=true, force=true, kwargs...])
-Pins the first `1:nthreads` Julia threads according to the given `pinning` strategy to the given `places`.
-Per default, a reasonable value for `places` is chosen based on the given `pinning` strategy.
+Pins the first `1:nthreads` Julia threads according to the given `pinning` strategy to the
+given `places`. Per default, a reasonable value for `places` is chosen based on the given
+`pinning` strategy.
 
 **Pinning strategies** (`pinning`):
 * `:compact` or `:close`: pins to `places` one after another.
@@ -144,13 +148,16 @@ Per default, a reasonable value for `places` is chosen based on the given `pinni
 
 **Places** (`places`):
 * `:cores` or `Cores()`: all the cores of the system
-* `:threads`, `:cputhreads`, or `CPUThreads()`: all the cpu threads of the system (equal to `:cores` if there is one cpu thread per core, e.g. no hyperthreading)
+* `:threads`, `:cputhreads`, or `CPUThreads()`: all the cpu threads of the system
+  (equal to `:cores` if there is one cpu thread per core, e.g. no hyperthreading)
 * `:sockets` or `Sockets()`: the sockets of the system
 * `:numa` or `NUMA()`: the NUMA domains of the system
-* An `AbstractVector{<:AbstractVector{<:Integer}}` of cpu ids that defines the places explicitly
+* An `AbstractVector{<:AbstractVector{<:Integer}}` of cpu ids that defines the places
+  explicitly
 
-If `force=false` the `pinthreads` call will only pin threads if this is the first attempt to pin threads with ThreadPinning.jl.
-Otherwise it will be a no-op. This may be particularly useful for packages that merely want to specify a "default pinning".
+If `force=false` the `pinthreads` call will only pin threads if this is the first attempt
+to pin threads with ThreadPinning.jl. Otherwise it will be a no-op. This may be particularly
+useful for packages that merely want to specify a "default pinning".
 """
 function pinthreads(pinning::PinningStrategy;
                     places::Union{Places, Symbol,
@@ -163,7 +170,8 @@ function pinthreads(pinning::PinningStrategy;
         if nthreads <= length(cpuids)
             @views pinthreads(cpuids[1:nthreads]; warn = false)
         else
-            @warn("More Julia threads than CPU IDs to bind to. Some CPU threads will host multiple Julia threads!")
+            @warn("More Julia threads than CPU IDs to bind to. Some CPU threads will host "*
+                  "multiple Julia threads!")
             idcs = mod1.(1:nthreads, length(cpuids)) # PBC
             @views pinthreads(cpuids[idcs]; warn = false)
         end
@@ -206,7 +214,9 @@ end
 # Potentially throw warnings if the environment is such that thread pinning might not work.
 function _check_environment()
     if Base.Threads.nthreads() > 1 && mkl_is_loaded() && mkl_get_dynamic() == 1
-        @warn("Found MKL_DYNAMIC == true. Be aware that calling an MKL function can spoil the pinning of Julia threads! Use `ThreadPinning.mkl_set_dynamic(0)` to be safe. See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
+        @warn("Found MKL_DYNAMIC == true. Be aware that calling an MKL function can "*
+              "spoil the pinning of Julia threads! Use `ThreadPinning.mkl_set_dynamic(0)` "*
+              "to be safe. See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
     end
     return nothing
 end

@@ -32,7 +32,8 @@ function _try_get_autoupdate()
             return x
         end
     catch err
-        @warn("Couldn't parse autoupdate preference \"$x\" (not a boolean?). Falling back to default (true).")
+        @warn("Couldn't parse autoupdate preference \"$x\" (not a boolean?). Falling "*
+              "back to default (true).")
         return true # default
     end
 end
@@ -77,7 +78,8 @@ function __init__()
         end
         maybe_autopin()
     else
-        error("Operating system not supported. ThreadPinning.jl currently only supports Linux.")
+        error("Operating system not supported. ThreadPinning.jl currently only supports " *
+              "Linux.")
     end
     return nothing
 end
