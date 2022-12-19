@@ -143,6 +143,10 @@ _cpuidx(cpuid) = findfirst(isequal(cpuid), unsafe_cpuids_all())
 
 function cpuid2core(cpuid::Integer)
     M = sysinfo().matrix
-    row_idx = findfirst(r->r[ICPUID]==cpuid, eachrow(M))
+    @static if VERSION < v"1.7"
+        row_idx = findfirst(r -> r[ICPUID] == cpuid, collect(eachrow(M)))
+    else
+        row_idx = findfirst(r -> r[ICPUID] == cpuid, eachrow(M))
+    end
     return M[row_idx, ICORE]
 end
