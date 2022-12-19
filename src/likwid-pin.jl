@@ -1,4 +1,19 @@
-function pinthreads(str::AbstractString; onebased = false)
+"""
+Pins Julia threads to CPU threads based on the given `likwid-pin` compatible string.
+Checkout the [LIKWID documentation](https://github.com/RRZE-HPC/likwid/wiki/Likwid-Pin)
+for more information.
+
+If the keyword argument `onebased` is set to `true`, logical indices as well as domain
+indices start at one instead of zero (likwid-pin default). Note, though, that this doesn't
+affect the explicit pinning mode where "physical" CPU IDs always start at zero.
+
+**Examples**
+* `pinthreads_likwidpin("S0:0-3")`
+* `pinthreads_likwidpin("M1:0,2,4")`
+* `pinthreads_likwidpin("S:scatter")`
+* `pinthreads_likwidpin("E:N:4:1:2")`
+"""
+function pinthreads_likwidpin(str::AbstractString; onebased = false)
     cpuids = likwidpin_to_cpuids(str; onebased)
     @debug "CPU IDs" cpuids
     pinthreads(cpuids)
@@ -11,14 +26,14 @@ function likwidpin_to_cpuids(lpstr::AbstractString; onebased = false)
         sections = split(block_str, ':')
         if length(sections) == 1 # no colon
             @debug "likwid-pin: explicit"
-            cpuids = _explicit2numbers(sections[1])
+            cpuids = _lp_explicit2numbers(sections[1])
         else
             if sections[1] == "E"
                 @debug "likwid-pin: expression"
-                cpuids = _expression2cpuids(sections; onebased)
+                cpuids = _lp_expression2cpuids(sections; onebased)
             else
                 @debug "likwid-pin: domain-based"
-                cpuids = _domainbased2cpuids(sections; onebased)
+                cpuids = _lp_domainbased2cpuids(sections; onebased)
             end
         end
         blocks_cpuids[i] = cpuids
@@ -26,7 +41,7 @@ function likwidpin_to_cpuids(lpstr::AbstractString; onebased = false)
     return reduce(vcat, blocks_cpuids)
 end
 
-function _explicit2numbers(str)
+function _lp_explicit2numbers(str)
     sections = split(str, ',')
     numbers = Int64[]
     for s in sections
@@ -46,27 +61,27 @@ function _explicit2numbers(str)
     return numbers
 end
 
-function _domainbased2cpuids(sections; onebased = false)
+function _lp_domainbased2cpuids(sections; onebased = false)
     @assert length(sections) > 1
     domain = sections[1]
-    check_likwidpin_domain(domain; onebased)
+    _lp_check_domain(domain; onebased)
     policy = sections[2]
     # TODO "balanced" and "cbalanced" policies
     if policy == "scatter"
         numthreads = length(sections) > 2 ? parse(Int, sections[3]) : Threads.nthreads()
-        cpuids = _likwidpin_scatter_cpuids(domain, numthreads; onebased)
+        cpuids = _lp_scatter_cpuids(domain, numthreads; onebased)
     else
-        idcs = _explicit2numbers(policy) # logical indices, starting at 0(!)
-        cpuids = _likwidpin_domain_cpuids(domain, idcs; onebased)
+        idcs = _lp_explicit2numbers(policy) # logical indices, starting at 0(!)
+        cpuids = _lp_domain_cpuids(domain, idcs; onebased)
     end
     return cpuids
 end
 
-function _expression2cpuids(sections; onebased = false)
+function _lp_expression2cpuids(sections; onebased = false)
     @assert sections[1] == "E"
     if length(sections) == 3 || length(sections) == 5
         domain = sections[2]
-        check_likwidpin_domain(domain; onebased)
+        _lp_check_domain(domain; onebased)
         numthreads = parse(Int, sections[3])
         if length(sections) == 5
             chunk_size = parse(Int, sections[4])
@@ -75,15 +90,15 @@ function _expression2cpuids(sections; onebased = false)
             chunk_size = 1
             stride = 1
         end
-        _likwidpin_expression_cpuids(domain, numthreads, chunk_size, stride; onebased)
+        _lp_expression_cpuids(domain, numthreads, chunk_size, stride; onebased)
     else
         throw(ArgumentError("Unknown expression format. Allowed syntax is " *
                             "\"E:domain:nthreads[:chunk_size:stride]\"."))
     end
 end
 
-function check_likwidpin_domain(domain; onebased = false)
-    if !is_valid_likwidpin_domain(domain; onebased)
+function _lp_check_domain(domain; onebased = false)
+    if !_lp_is_valid_domain(domain; onebased)
         throw(ArgumentError("Unknown domain \"$domain\". Valid domains are " *
                             "$(likwidpin_domains(; onebased))."))
     end
@@ -100,14 +115,14 @@ function likwidpin_domains(; onebased = false)
     return domains
 end
 
-function is_valid_likwidpin_domain(domain::AbstractString; kwargs...)
+function _lp_is_valid_domain(domain::AbstractString; kwargs...)
     domain in likwidpin_domains(; kwargs...)
 end
-function is_valid_likwidpin_domain(domain::Symbol; kwargs...)
-    is_valid_likwidpin_domain(string(domain); kwargs...)
+function _lp_is_valid_domain(domain::Symbol; kwargs...)
+    _lp_is_valid_domain(string(domain); kwargs...)
 end
 
-function _likwidpin_scatter_cpuids(domain, numthreads; onebased = false)
+function _lp_scatter_cpuids(domain, numthreads; onebased = false)
     offset = onebased ? 0 : 1
     if domain == "N"
         domain_cpuids = cpuids_per_node()
@@ -136,7 +151,7 @@ function _likwidpin_scatter_cpuids(domain, numthreads; onebased = false)
     return cpuids
 end
 
-function _likwidpin_domain_cpuids(domain, lp_idcs; onebased = false)
+function _lp_domain_cpuids(domain, lp_idcs; onebased = false)
     offset = onebased ? 0 : 1
     idcs = lp_idcs .+ offset
     if domain == "N"
@@ -168,7 +183,7 @@ function _likwidpin_domain_cpuids(domain, lp_idcs; onebased = false)
     return cpuids
 end
 
-function _likwidpin_expression_cpuids(domain, numthreads, chunk_size, stride; onebased)
+function _lp_expression_cpuids(domain, numthreads, chunk_size, stride; onebased)
     # Note: compact order!
     offset = onebased ? 0 : 1
     if domain == "N"

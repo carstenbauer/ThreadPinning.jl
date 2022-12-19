@@ -120,6 +120,7 @@ end
 # exports
 export threadinfo,
        pinthreads,
+       pinthreads_likwidpin,
        pinthread,
        maybe_pinthreads,
        getcpuids,
