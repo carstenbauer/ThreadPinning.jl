@@ -1,7 +1,6 @@
 # system information
 Base.@kwdef struct SysInfo
     ncputhreads::Int = Sys.CPU_THREADS
-    nsmt::Int = 1
     ncores::Int = Sys.CPU_THREADS
     nnuma::Int = 1
     nsockets::Int = 1
@@ -142,16 +141,12 @@ function _create_sysinfo_obj(cols; verbose = false)
     # count number of cores
     ncores = length(unique(cols.core))
     verbose && @show ncores
-    # count number of SMT threads per core (assuming its the same for all cores! TODO: generalize)
-    nsmt = count(cols.core .== 1)
     # count number of sockets
     nsockets = length(unique(cols.socket))
     verbose && @show nsockets
     # count number of numa nodes
     nnuma = length(unique(cols.numa))
     verbose && @show nnuma
-    # hyperthreading enabled?
-    hyperthreading = nsmt > 1
 
     # sysinfo matrix
     coreids = unique(cols.core)
@@ -166,8 +161,16 @@ function _create_sysinfo_obj(cols; verbose = false)
                   [numamap[n] for n in cols.numa],
                   [socketmap[s] for s in cols.socket],
                   zeros(Int64, ncputhreads))
+
     # enumerate hyperthreads
-    matrix[getsortedby(IID, ICORE; matrix), ISMT] .= mod1.(1:ncputhreads, nsmt)
+    counters = ones(Int, ncores)
+    @views coreordering = sortperm(matrix[:, ICORE])
+    @views for i in eachindex(coreordering)
+        row = coreordering[i]
+        core = matrix[row, ICORE]
+        matrix[row, ISMT] = counters[core]
+        counters[core] += 1
+    end
 
     # TODO ensure specific default sorting of sysinfo matrix
 
@@ -184,9 +187,10 @@ function _create_sysinfo_obj(cols; verbose = false)
     cpuids_node = getsortedby(ICPUID, (ISMT, ICORE, ISOCKET); matrix)
 
     # hyperthread == thread that has ISMT > 1, i.e. isn't the first thread in this core
-    ishyperthread = matrix[:, ISMT] .!= 1
+    @views ishyperthread = matrix[:, ISMT] .!= 1
+    hyperthreading = any(ishyperthread)
 
-    return SysInfo(; ncputhreads, nsmt, ncores, nnuma, nsockets, hyperthreading, cpuids,
+    return SysInfo(; ncputhreads, ncores, nnuma, nsockets, hyperthreading, cpuids,
                    cpuids_sockets,
                    cpuids_numa, cpuids_cores, cpuids_node, ishyperthread, matrix)
 end

@@ -14,7 +14,6 @@ pinthreads(:random)
 @test ncores() >= 1
 @test nnuma() >= 1
 @test nsockets() >= 1
-@test nsmt() >= 1
 @test sum(ncputhreads_per_socket()) >= nsockets()
 @test sum(ncputhreads_per_numa()) >= nnuma()
 @test sum(ncores_per_socket()) >= nsockets()

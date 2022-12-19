@@ -141,11 +141,11 @@ end
     @test cpuids_all() == 0:ncputhreads()-1
     cpuids_socket = cpuids_per_socket()
     @test length(cpuids_socket) == nsockets()
-    @test_broken cpuids_socket[1] == 0:19
+    @test cpuids_socket[1] == [0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 16, 17, 18, 19, 1, 3, 5, 7, 9, 11]
     cpuids_numa = cpuids_per_numa()
     @test length(cpuids_numa) == nnuma()
-    @test_broken cpuids_numa[1] == 0:19
-    @test_broken ishyperthread.(cpuids_all()) == Bool[0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+    @test cpuids_numa[1] == [0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 16, 17, 18, 19, 1, 3, 5, 7, 9, 11]
+    @test ishyperthread.(cpuids_all()) == Bool[0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
     @test cpuids_per_core() == [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10, 11], [12], [13], [14], [15], [16], [17], [18], [19]]
 end
 

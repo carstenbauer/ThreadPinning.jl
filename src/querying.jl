@@ -75,8 +75,6 @@ hyperthreading_is_enabled() = sysinfo().hyperthreading
 ishyperthread(cpuid::Integer) = sysinfo().ishyperthread[_cpuidx(cpuid)]
 "Number of CPU threads"
 ncputhreads() = length(cpuids_all())
-"Number of SMT-threads (\"hyperthreads\") per core (as determined from first core!)"
-nsmt() = sysinfo().nsmt
 "Number of cores (i.e. excluding hyperthreads)"
 ncores() = sysinfo().ncores
 "Number of NUMA nodes"
