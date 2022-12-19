@@ -39,7 +39,7 @@ function print_affinity_masks(; kwargs...)
     end
     return nothing
 end
-function _affinity_mask_to_string(mask; groupby=:sockets)
+function _affinity_mask_to_string(mask; groupby = :sockets)
     bitstr = join(mask)[1:ncputhreads()]
     if groupby == :numa
         cpuids_per_X = cpuids_per_numa
@@ -50,7 +50,7 @@ function _affinity_mask_to_string(mask; groupby=:sockets)
     end
     str = "|"
     for s in 1:nX()
-        str = string(str, bitstr[cpuids_per_X()[s].+1], "|")
+        str = string(str, bitstr[cpuids_per_X()[s] .+ 1], "|")
     end
     return str
 end
@@ -96,15 +96,53 @@ ncores_per_numa() = count.(!ishyperthread, unsafe_cpuids_per_numa())
 "Number of CPU cores per socket"
 ncores_per_socket() = count.(!ishyperthread, unsafe_cpuids_per_socket())
 
-"Returns a `Vector{Int}` which lists all valid CPUIDs"
+"Returns a `Vector{Int}` which lists all valid CPUIDs. There is no guarantee about the
+order except that it is the same as in `lscpu`."
 cpuids_all() = deepcopy(unsafe_cpuids_all())
 "Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available physical cores"
 cpuids_per_core() = deepcopy(unsafe_cpuids_per_core())
-"Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available NUMA nodes"
-cpuids_per_numa() = deepcopy(unsafe_cpuids_per_numa())
-"Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available CPU sockets"
-cpuids_per_socket() = deepcopy(unsafe_cpuids_per_socket())
-"Returns a `Vector{Int}` which indicates the CPUIDs associated with the available node"
-cpuids_per_node() = deepcopy(unsafe_cpuids_per_node())
+"""
+Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available
+NUMA domains. Within each memory domain, physical cores come first. Set `compact=true` to
+get compact ordering instead.
+"""
+function cpuids_per_numa(; compact = false)
+    if !compact # default
+        return deepcopy(unsafe_cpuids_per_numa())
+    else
+        data = getsortedby([ICPUID, INUMA], (INUMA, ICORE))
+        return Vector{Int}[data[data[:, 2] .== n, 1] for n in 1:nnuma()]
+    end
+end
+"""
+Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available
+CPU sockets. Within each socket, physical cores come first. Set `compact=true` to get
+compact ordering instead.
+"""
+function cpuids_per_socket(; compact = false)
+    if !compact # default
+        return deepcopy(unsafe_cpuids_per_socket())
+    else
+        data = getsortedby([ICPUID, ISOCKET], (ISOCKET, ICORE))
+        return Vector{Int}[data[data[:, 2] .== s, 1] for s in 1:nsockets()]
+    end
+end
+"""
+Returns a `Vector{Int}` which indicates the CPUIDs associated with the available node.
+Physical cores come first. Set `compact=true` to get compact ordering.
+"""
+function cpuids_per_node(; compact = false)
+    if !compact # default
+        return deepcopy(unsafe_cpuids_per_node())
+    else
+        return Vector{Int}(getsortedby(ICPUID, (ICORE, ISMT, ISOCKET)))
+    end
+end
 
 _cpuidx(cpuid) = findfirst(isequal(cpuid), unsafe_cpuids_all())
+
+function cpuid2core(cpuid::Integer)
+    M = sysinfo().matrix
+    row_idx = findfirst(r->r[ICPUID]==cpuid, eachrow(M))
+    return M[row_idx, ICORE]
+end

@@ -5,10 +5,6 @@ using Statistics
 Threads.nthreads() ≥ 4 ||
     error("Need at least 4 Julia threads! Forgot to set `JULIA_NUM_THREADS`?")
 
-# lp_expression = "E:N:4:2:4" # E:<domain>:<nthreads>(:<chunk size>:<stride>). 2 threads pinned two first two cpu threads (logical, incl. SMT) and 2 threads pinned to 5th and 6th cpu threads.
-# lp_scatter_policy = "M:scatter" # scatter threads among all NUMA domains, phyical cores come first
-# lp_domains = "S0:0-1@S1:0-1" # 2 threads per socket
-
 @testset "likwid-pin: explicit" begin
     # physical / OS order
     pinthreads(:random)
@@ -25,6 +21,11 @@ Threads.nthreads() ≥ 4 ||
     lp_explicit_ranges = "2-3,5-6"
     pinthreads(lp_explicit_ranges)
     @test getcpuids()[1:4] == vcat(2:3, 5:6)
+
+    @testset "Errors" begin
+        @test_throws ArgumentError pinthreads("0,-1,2")
+        @test_throws ArgumentError pinthreads("0,10,12345")
+    end
 end
 
 @testset "likwid-pin: domain-based" begin
@@ -93,6 +94,33 @@ end
             @test getcpuids()[1:2] == cpuids[1:2]
             @test getcpuids()[3:4] != cpuids[3:4]
         end
+    end
+
+    @testset "Errors" begin
+        @test_throws ArgumentError pinthreads("N:whatever")
+        @test_throws ArgumentError pinthreads("X:scatter")
+        @test_throws ArgumentError pinthreads("N:-1")
+        @test_throws ArgumentError pinthreads("N:0,10,12345")
+        @test_throws ArgumentError pinthreads("N:0-12345")
+    end
+end
+
+@testset "likwid-pin: expression" begin
+    @testset "E:domain:numthreads" begin for lpstr in ("E:N:3", "E:S0:3", "E:M0:3")
+        pinthreads(:random)
+        pinthreads(lpstr)
+        @test getcpuids()[1:3] == cpuids_per_node(; compact = true)[1:3]
+    end end
+
+    @testset "E:domain:numthreads:chunk_size:stride" begin
+        # TODO
+        # lp_expression = "E:N:4:2:4" # E:<domain>:<nthreads>(:<chunk size>:<stride>). 2 threads pinned two first two cpu threads (logical, incl. SMT) and 2 threads pinned to 5th and 6th cpu threads.
+    end
+
+    @testset "Errors" begin
+        @test_throws ArgumentError pinthreads("E:N:12345")
+        @test_throws ArgumentError pinthreads("E:X:3")
+        @test_throws ArgumentError pinthreads("E:N:3:4:5:10")
     end
 end
 

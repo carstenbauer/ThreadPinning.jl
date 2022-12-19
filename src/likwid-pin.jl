@@ -15,7 +15,7 @@ function likwidpin_to_cpuids(lpstr::AbstractString; onebased = false)
         else
             if sections[1] == "E"
                 @debug "likwid-pin: expression"
-                # TODO
+                cpuids = _expression2cpuids(sections; onebased)
             else
                 @debug "likwid-pin: domain-based"
                 cpuids = _domainbased2cpuids(sections; onebased)
@@ -31,8 +31,13 @@ function _explicit2numbers(str)
     numbers = Int64[]
     for s in sections
         if contains(s, '-')
-            r = parse.(Int64, split(s, '-'))
-            append!(numbers, r[1]:r[2])
+            substrs = split(s, '-')
+            if isempty(substrs[1])
+                throw(ArgumentError("Illegal number or range. Maybe a negative CPU ID?"))
+            else
+                r = parse.(Int64, substrs)
+                append!(numbers, r[1]:r[2])
+            end
         else
             id = parse(Int64, s)
             push!(numbers, id)
@@ -44,10 +49,9 @@ end
 function _domainbased2cpuids(sections; onebased = false)
     @assert length(sections) > 1
     domain = sections[1]
-    if !is_valid_likwidpin_domain(domain; onebased)
-        throw(ArgumentError("Unknown domain \"$domain\". Valid domains are $(likwidpin_domains(; onebased))."))
-    end
+    check_likwidpin_domain(domain; onebased)
     policy = sections[2]
+    # TODO "balanced" and "cbalanced" policies
     if policy == "scatter"
         numthreads = length(sections) > 2 ? parse(Int, sections[3]) : Threads.nthreads()
         cpuids = _likwidpin_scatter_cpuids(domain, numthreads; onebased)
@@ -56,6 +60,34 @@ function _domainbased2cpuids(sections; onebased = false)
         cpuids = _likwidpin_domain_cpuids(domain, idcs; onebased)
     end
     return cpuids
+end
+
+function _expression2cpuids(sections; onebased = false)
+    @assert sections[1] == "E"
+    if length(sections) == 3 || length(sections) == 5
+        domain = sections[2]
+        check_likwidpin_domain(domain; onebased)
+        numthreads = parse(Int, sections[3])
+        if length(sections) == 5
+            chunk_size = parse(Int, sections[4])
+            stride = parse(Int, sections[5])
+        else
+            chunk_size = 1
+            stride = 1
+        end
+        _likwidpin_expression_cpuids(domain, numthreads, chunk_size, stride; onebased)
+    else
+        throw(ArgumentError("Unknown expression format. Allowed syntax is " *
+                            "\"E:domain:nthreads[:chunk_size:stride]\"."))
+    end
+end
+
+function check_likwidpin_domain(domain; onebased = false)
+    if !is_valid_likwidpin_domain(domain; onebased)
+        throw(ArgumentError("Unknown domain \"$domain\". Valid domains are " *
+                            "$(likwidpin_domains(; onebased))."))
+    end
+    return nothing
 end
 
 function likwidpin_domains(; onebased = false)
@@ -90,13 +122,16 @@ function _likwidpin_scatter_cpuids(domain, numthreads; onebased = false)
         numaid = parse(Int, domain[2:end])
         domain_cpuids = cpuids_per_numa()[numaid + offset]
     else
-        error("Don't know how to handle domain \"$domain\" in domain:scatter[:numthreads] mode.")
+        throw(ArgumentError("Don't know how to handle domain \"$domain\" in " *
+                            "domain:scatter mode."))
     end
 
     if length(domain_cpuids) >= numthreads
         @inbounds cpuids = domain_cpuids[1:numthreads]
     else
-        error("Not enough CPU threads. Trying to pin $numthreads Julia threads but there are only $(length(domain_cpuids)) CPU threads available given the domain + scattering policy.")
+        throw(ArgumentError("Not enough CPU threads. Trying to pin $numthreads Julia " *
+                            "threads but there are only $(length(domain_cpuids)) CPU " *
+                            "threads available given the domain + scattering policy."))
     end
     return cpuids
 end
@@ -113,16 +148,72 @@ function _likwidpin_domain_cpuids(domain, lp_idcs; onebased = false)
         numaid = parse(Int, domain[2:end])
         domain_cpuids = cpuids_per_numa()[numaid + offset]
     else
-        error("Don't know how to handle domain \"$domain\" in domain:explicit mode.")
+        throw(ArgumentError("Don't know how to handle domain \"$domain\" in " *
+                            "domain:explicit mode."))
     end
 
     if length(domain_cpuids) < length(idcs)
-        error("Not enough CPU threads in domain. Specified $(length(idcs)) indices but domain \"$domain\" only has $(length(domain_cpuids)) CPU threads.")
+        throw(ArgumentError("Not enough CPU threads in domain. Specified $(length(idcs)) " *
+                            "indices but domain \"$domain\" only has " *
+                            "$(length(domain_cpuids)) CPU threads."))
     else
         if checkbounds(Bool, domain_cpuids, idcs)
             @inbounds cpuids = domain_cpuids[idcs]
         else
-            error("Invalid logical CPU indices provided for domain \"domain\". Valid range: $(0 + onebased) to $(length(domain_cpuids)-offset).")
+            throw(ArgumentError("Invalid logical CPU indices provided for domain " *
+                                "\"domain\". Valid range: $(0 + onebased) to " *
+                                "$(length(domain_cpuids)-offset)."))
+        end
+    end
+    return cpuids
+end
+
+function _likwidpin_expression_cpuids(domain, numthreads, chunk_size, stride; onebased)
+    # Note: compact order!
+    offset = onebased ? 0 : 1
+    if domain == "N"
+        domain_cpuids = cpuids_per_node(; compact = true)
+    elseif startswith(domain, "S") && length(domain) > 1
+        socketid = parse(Int, domain[2:end])
+        domain_cpuids = cpuids_per_socket(; compact = true)[socketid + offset]
+    elseif startswith(domain, "M") && length(domain) > 1
+        numaid = parse(Int, domain[2:end])
+        domain_cpuids = cpuids_per_numa(; compact = true)[numaid + offset]
+    else
+        throw(ArgumentError("Don't know how to handle domain \"$domain\" in expression."))
+    end
+
+    if length(domain_cpuids) < numthreads
+        throw(ArgumentError("Not enough CPU threads in domain. Specified $(numthreads) " *
+                            "for the number of threads but domain \"$domain\" only has " *
+                            "$(length(domain_cpuids)) CPU threads."))
+    else
+        if chunk_size == stride == 1
+            @inbounds cpuids = domain_cpuids[1:numthreads]
+        else
+            # chunk size + stride case
+            @debug "E:numthreads:chunk_size:stride" numthreads chunk_size stride
+            nchunks, rem = divrem(numthreads, chunk_size)
+            if rem != 0
+                throw(ArgumentError("Ratio of given number of threads ($numthreads) and " *
+                                    "chunk size ($chunk_size) must be integer."))
+            end
+            stride_range = range(start = 1, step = stride, stop = nchunks * stride)
+            if last(stride_range) + chunk_size - 1 > length(domain_cpuids)
+                throw(ArgumentError("Not enough CPU threads in domain. Combination of " *
+                                    "stride and chunk_size exceeds the number of CPU " *
+                                    "threads ($(length(domain_cpuids))) in the domain " *
+                                    "\"$domain\"."))
+            end
+            cpuids = Vector{Int}(undef, numthreads)
+            i = 1
+            for s in stride_range
+                for c in 0:(chunk_size - 1)
+                    cpuids[i] = domain_cpuids[s + c]
+                    i += 1
+                end
+            end
+            return cpuids
         end
     end
     return cpuids
