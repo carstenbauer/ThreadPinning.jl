@@ -53,7 +53,7 @@ function Base.show(io::IO, mime::MIME{Symbol("text/plain")}, sysinfo::SysInfo)
 end
 
 # lscpu parsing
-function update_sysinfo!(; fromscratch = false, lscpustr = nothing, verbose = false,
+function update_sysinfo!(; fromscratch = false, lscpustr = nothing,
                          clear = false)
     if clear
         SYSINFO[] = SysInfo()
@@ -62,14 +62,14 @@ function update_sysinfo!(; fromscratch = false, lscpustr = nothing, verbose = fa
         try
             if !isnothing(lscpustr)
                 # explicit lscpu string given
-                sysinfo = lscpu2sysinfo(lscpustr; verbose)
+                sysinfo = lscpu2sysinfo(lscpustr)
             else
                 if !fromscratch
                     # use precompiled lscpu string
-                    sysinfo = lscpu2sysinfo(LSCPU_STRING; verbose)
+                    sysinfo = lscpu2sysinfo(LSCPU_STRING)
                 else
                     # from scratch: query lscpu again
-                    sysinfo = lscpu2sysinfo(lscpu_string(); verbose)
+                    sysinfo = lscpu2sysinfo(lscpu_string())
                 end
             end
         catch err
@@ -80,22 +80,19 @@ function update_sysinfo!(; fromscratch = false, lscpustr = nothing, verbose = fa
     return nothing
 end
 
-function lscpu2sysinfo(lscpustr = nothing; verbose = false)
+function lscpu2sysinfo(lscpustr = nothing)
     table = _lscpu2table(lscpustr)
-    cols = _lscpu_table_to_columns(table; verbose)
-    verbose && @show cols
-    sysinfo = _create_sysinfo_obj(cols; verbose)
+    cols = _lscpu_table_to_columns(table)
+    @debug "lscpu2sysinfo" cols
+    sysinfo = _create_sysinfo_obj(cols)
     return sysinfo
 end
 
 _lscpu2table(lscpustr = nothing)::Union{Nothing, Matrix{String}} = readdlm(IOBuffer(lscpustr),
                                                                            String)
 
-function _lscpu_table_to_columns(table;
-                                 verbose = false)::NamedTuple{
-                                                              (:idcs, :cpuid, :socket,
-                                                               :numa, :core),
-                                                              NTuple{5, Vector{Int}}}
+function _lscpu_table_to_columns(table)::NamedTuple{(:idcs, :cpuid, :socket, :numa, :core),
+                                                    NTuple{5, Vector{Int}}}
     colid_cpu = @views findfirst(isequal("CPU"), table[1, :])
     colid_socket = @views findfirst(isequal("SOCKET"), table[1, :])
     colid_numa = @views findfirst(isequal("NODE"), table[1, :])
@@ -104,9 +101,10 @@ function _lscpu_table_to_columns(table;
 
     # only consider online cpus
     online_cpu_tblidcs = @views findall(isequal("yes"), table[:, colid_online])
-    verbose && @show online_cpu_tblidcs
+    @debug "_lscpu_table_to_columns" online_cpu_tblidcs
     if length(online_cpu_tblidcs) != Sys.CPU_THREADS
-        @warn("Number of online CPUs ($(length(online_cpu_tblidcs))) doesn't match Sys.CPU_THREADS ($(Sys.CPU_THREADS)).")
+        @warn("Number of online CPUs ($(length(online_cpu_tblidcs))) doesn't match "*
+              "Sys.CPU_THREADS ($(Sys.CPU_THREADS)).")
     end
 
     col_cpuid = @views parse.(Int, table[online_cpu_tblidcs, colid_cpu])
@@ -129,24 +127,18 @@ function _lscpu_table_to_columns(table;
             core = col_core)
 end
 
-function _create_sysinfo_obj(cols; verbose = false)
+function _create_sysinfo_obj(cols)
     cpuids = cols.cpuid
-    verbose && @show cpuids
+    @debug "_create_sysinfo_obj" cpuids
     @assert issorted(cols.cpuid)
     @assert length(Set(cols.cpuid)) == length(cols.cpuid) # no duplicates
 
-    # count number of cputhreads
     ncputhreads = length(cols.cpuid)
-    verbose && @show ncputhreads
-    # count number of cores
     ncores = length(unique(cols.core))
-    verbose && @show ncores
-    # count number of sockets
     nsockets = length(unique(cols.socket))
-    verbose && @show nsockets
     # count number of numa nodes
     nnuma = length(unique(cols.numa))
-    verbose && @show nnuma
+    @debug "_create_sysinfo_obj" ncputhreads ncores nsockets nnuma
 
     # sysinfo matrix
     coreids = unique(cols.core)
