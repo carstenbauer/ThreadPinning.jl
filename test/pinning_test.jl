@@ -168,5 +168,5 @@ end
     unpinthreads()
     for tid in 1:nthreads()
         @test count(isone, ThreadPinning.uv_thread_getaffinity(tid)) == ncputhreads()
-    end 
+    end
 end
