@@ -19,6 +19,9 @@ function pinthreads_likwidpin(str::AbstractString; onebased = false)
     pinthreads(cpuids)
 end
 
+"""
+Convert the given likwid-pin compatible string into a CPU ID list.
+"""
 function likwidpin_to_cpuids(lpstr::AbstractString; onebased = false)
     blocks = split(lpstr, '@')
     blocks_cpuids = Vector{Vector{Int}}(undef, length(blocks))
@@ -105,6 +108,9 @@ function _lp_check_domain(domain; onebased = false)
     return nothing
 end
 
+"""
+The likwid-pin compatible domains that are available for the system.
+"""
 function likwidpin_domains(; onebased = false)
     # ('N','S','D','M','C')
     domains = ["N", "S", "M"]
