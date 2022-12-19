@@ -28,12 +28,14 @@ pinthreads(:random)
         cpuids = cpuids_per_node(; compact)
         @test typeof(cpuids) == Vector{Int}
         @test length(cpuids) == ncputhreads()
-        if !compact
-            @test issorted(cpuids, by = ishyperthread) # physical cores first
-            @test !issorted(ThreadPinning.cpuid2core.(cpuids), by = ishyperthread)
-        else
-            @test !issorted(cpuids, by = ishyperthread)
-            @test issorted(ThreadPinning.cpuid2core.(cpuids), by = ishyperthread)
+        if hyperthreading_is_enabled()
+            if !compact
+                @test issorted(cpuids, by = ishyperthread) # physical cores first
+                @test !issorted(ThreadPinning.cpuid2core.(cpuids), by = ishyperthread)
+            else
+                @test !issorted(cpuids, by = ishyperthread)
+                @test issorted(ThreadPinning.cpuid2core.(cpuids), by = ishyperthread)
+            end
         end
     end
     for f in (cpuids_per_socket, cpuids_per_numa)
@@ -41,13 +43,15 @@ pinthreads(:random)
             cpuids = f(; compact)
             @test typeof(cpuids) == Vector{Vector{Int}}
             @test sum(length, cpuids) == ncputhreads()
-            if !compact
-                for i in eachindex(cpuids)
-                    @test issorted(cpuids[i], by = ishyperthread) # physical cores first
-                end
-            else
-                for i in eachindex(cpuids)
-                    @test !issorted(cpuids[i], by = ishyperthread)
+            if hyperthreading_is_enabled()
+                if !compact
+                    for i in eachindex(cpuids)
+                        @test issorted(cpuids[i], by = ishyperthread) # physical cores first
+                    end
+                else
+                    for i in eachindex(cpuids)
+                        @test !issorted(cpuids[i], by = ishyperthread)
+                    end
                 end
             end
         end

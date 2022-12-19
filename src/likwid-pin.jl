@@ -133,9 +133,9 @@ function _lp_scatter_cpuids(domain, numthreads; onebased = false)
     if domain == "N"
         domain_cpuids = cpuids_per_node()
     elseif domain == "S"
-        domain_cpuids = reduce(interweave, cpuids_per_socket())
+        domain_cpuids = interweave(cpuids_per_socket()...)
     elseif domain == "M"
-        domain_cpuids = reduce(interweave, cpuids_per_numa())
+        domain_cpuids = interweave(cpuids_per_numa()...)
     elseif startswith(domain, "S")
         socketid = parse(Int, domain[2:end])
         domain_cpuids = cpuids_per_socket()[socketid + offset]
@@ -147,13 +147,13 @@ function _lp_scatter_cpuids(domain, numthreads; onebased = false)
                             "domain:scatter mode."))
     end
 
-    if length(domain_cpuids) >= numthreads
-        @inbounds cpuids = domain_cpuids[1:numthreads]
-    else
-        throw(ArgumentError("Not enough CPU threads. Trying to pin $numthreads Julia " *
-                            "threads but there are only $(length(domain_cpuids)) CPU " *
-                            "threads available given the domain + scattering policy."))
-    end
+    # if length(domain_cpuids) >= numthreads
+    cpuids = domain_cpuids[mod1.(1:numthreads, length(domain_cpuids))]
+    # else
+    #     throw(ArgumentError("Not enough CPU threads. Trying to pin $numthreads Julia " *
+    #                         "threads but there are only $(length(domain_cpuids)) CPU " *
+    #                         "threads available given the domain + scattering policy."))
+    # end
     return cpuids
 end
 

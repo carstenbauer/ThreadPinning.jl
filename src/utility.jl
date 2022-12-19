@@ -63,7 +63,7 @@ function interweave(arrays::AbstractVector...)
     return res
 end
 
-function interweave_uneven(arr1::AbstractVector, arr2::AbstractVector)
+function interweave_binary(arr1::AbstractVector, arr2::AbstractVector)
     if length(arr1) == length(arr2)
         return interweave(arr1, arr2)
     else
