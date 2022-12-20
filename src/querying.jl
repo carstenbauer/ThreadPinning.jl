@@ -151,3 +151,41 @@ function cpuid2core(cpuid::Integer)
     end
     return M[row_idx, ICORE]
 end
+
+# High-level API for direct usage with `pinthreads`
+const T_idcs = Union{Colon, AbstractVector{<:Integer}}
+function core(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    cpuids = cpuids_per_core(; kwargs...)[i][idcs]
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
+end
+function numa(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    cpuids = cpuids_per_numa(; kwargs...)[i][idcs]
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
+end
+function socket(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    cpuids = cpuids_per_socket(; kwargs...)[i][idcs]
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
+end
+function node(idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    cpuids = cpuids_per_node(; kwargs...)[idcs]
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
+end
+# function cores(idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+#     cpuids = @views interweave(cpuids_per_core(; kwargs...)[idcs]...)
+#     shuffle && Random.shuffle!(cpuids)
+#     return cpuids
+# end
+function sockets(idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    cpuids = @views interweave(cpuids_per_socket(; kwargs...)[idcs]...)
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
+end
+function numas(idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    cpuids = @views interweave(cpuids_per_numa(; kwargs...)[idcs]...)
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
+end

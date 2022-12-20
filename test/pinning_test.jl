@@ -8,28 +8,6 @@ Threads.nthreads() ≥ 2 ||
 
 ThreadPinning.update_sysinfo!(; fromscratch = true)
 
-function check_compact_within_socket(cpuids)
-    socket_cpuids = cpuids_per_socket()
-    for s in 1:nsockets()
-        cpuids_filtered = filter(x -> x in socket_cpuids[s], cpuids)
-        if cpuids_filtered != socket_cpuids[s][1:length(cpuids_filtered)]
-            return false
-        end
-    end
-    return true
-end
-
-function check_compact_within_numa(cpuids)
-    numa_cpuids = cpuids_per_numa()
-    for s in 1:nnuma()
-        cpuids_filtered = filter(x -> x in numa_cpuids[s], cpuids)
-        if cpuids_filtered != numa_cpuids[s][1:length(cpuids_filtered)]
-            return false
-        end
-    end
-    return true
-end
-
 @testset "Thread Pinning (explicit)" begin
     cpuid_before = getcpuid()
     cpuid_new = cpuid_before != 1 ? 1 : 0
@@ -49,73 +27,77 @@ end
     end
 end
 
-@testset "Thread Pinning (compact)" begin for binding in (:compact, :close)
-    pinthreads(:random; places = :threads)
-    @test isnothing(pinthreads(binding; nthreads = 2))
-    @test getcpuids()[1:2] == filter(!ishyperthread, cpuids_all())[1:2]
-    @test isnothing(pinthreads(binding))
-    idcs = mod1.(1:Threads.nthreads(), ncores())
-    @test getcpuids() == filter(!ishyperthread, cpuids_all())[idcs]
-end end
-
-@testset "Thread Pinning (spread)" begin for binding in (:spread, :scatter)
-    pinthreads(:random; places = :threads)
-    @test isnothing(pinthreads(binding))
-    cpuids_after = getcpuids()
-    @test check_compact_within_socket(cpuids_after)
-end end
-
-@testset "Thread Pinning (numa)" begin for places in (:numa, :NUMA)
-    pinthreads(:random; places = :threads)
-    @test isnothing(pinthreads(:compact; places))
-    cpuids_after = getcpuids()
-    @test check_compact_within_numa(cpuids_after)
-end end
-
-@testset "Thread Pinning (current)" begin
-    pinthreads(:random; places = :threads)
-    cpuids_before = getcpuids()
-    @test isnothing(pinthreads(:current))
-    cpuids_after = getcpuids()
-    @test cpuids_before == cpuids_after
+@testset "Thread Pinning (symbols)" begin
+    @testset ":random" begin
+        cpuids = Vector{Vector{Int64}}()
+        for _ in 1:10
+            pinthreads(:random)
+            push!(cpuids, getcpuids())
+        end
+        # Check that at least some of the pinning settings were different
+        @test any(x != cpuids[1] for x in cpuids)
+    end
+    @testset ":current" begin
+        pinthreads(:random)
+        cpuids_before = getcpuids()
+        @test isnothing(pinthreads(:current))
+        cpuids_after = getcpuids()
+        @test cpuids_before == cpuids_after
+    end
+    @testset ":firstn" begin
+        expected_pinning = cpuids_all()[1:nthreads()]
+        # Make sure we have a different pinning to start with
+        pinthreads(reverse(expected_pinning))
+        @test getcpuids() != expected_pinning
+        pinthreads(:firstn)
+        @test getcpuids() == expected_pinning
+    end
+    @testset ":cputhreads" begin
+        pinthreads(:random)
+        @test isnothing(pinthreads(:cputhreads; nthreads = 2))
+        @test getcpuid.(1:2) == cpuids_per_node(; compact = true)[1:2]
+    end
+    @testset ":cores" begin
+        pinthreads(:random)
+        @test isnothing(pinthreads(:cores; nthreads = 2))
+        @test getcpuid.(1:2) == cpuids_per_node(; compact = false)[1:2]
+    end
+    @testset ":numa" begin
+        pinthreads(:random)
+        @test isnothing(pinthreads(:numa; nthreads = 2))
+        @test getcpuid.(1:2) == vcat(numa(1, 1:1), numa(2, 1:1))
+    end
+    @testset ":sockets" begin
+        pinthreads(:random)
+        @test isnothing(pinthreads(:sockets; nthreads = 2))
+        @test getcpuid.(1:2) == vcat(socket(1, 1:1), socket(2, 1:1))
+    end
 end
 
-@testset "Environment variables" begin
-    julia = Base.julia_cmd()
-    pkgdir = joinpath(@__DIR__, "..")
+@testset "Thread Pinning (logical specification)" begin
+    @testset "domains" begin
+        pinthreads(:random)
+        @test isnothing(pinthreads(core(1, 1:1)))
+        @test getcpuid.(1:1) == core(1, 1:1)
+        for f in (numa, socket)
+            for compact in (false, true)
+                pinthreads(:random)
+                @test isnothing(pinthreads(f(1, 1:2; compact)))
+                @test getcpuid.(1:2) == f(1, 1:2; compact)
+            end
+        end
+        pinthreads(:random)
+        @test isnothing(pinthreads(node(1:2)))
+        @test getcpuid.(1:2) == node(1:2)
+    end
 
-    exec(s; nthreads=ncores()) = run(`$julia --project=$(pkgdir) -t $nthreads -e $s`).exitcode == 0
-    withenv("JULIA_PIN" => "compact") do
-        @test exec(`'using ThreadPinning, Test;
-            @test getcpuids() == filter(!ishyperthread, cpuids_all())[1:Threads.nthreads()]'`)
-    end
-    withenv("JULIA_PIN" => "spread") do
-        @test exec(`'using ThreadPinning, Test;
-        function check_compact_within_socket(cpuids)
-            socket_cpuids = cpuids_per_socket()
-            for s in 1:nsockets()
-                cpuids_filtered = filter(x -> x in socket_cpuids[s], cpuids)
-                if cpuids_filtered != socket_cpuids[s][1:length(cpuids_filtered)]
-                    return false
-                end
-            end
-            return true
-        end
-        @test check_compact_within_socket(getcpuids())'`)
-    end
-    withenv("JULIA_PIN" => "spread", "JULIA_PLACES" => "numa") do
-        @test exec(`'using ThreadPinning, Test;
-        function check_compact_within_numa(cpuids)
-            numa_cpuids = cpuids_per_numa()
-            for s in 1:nnuma()
-                cpuids_filtered = filter(x -> x in numa_cpuids[s], cpuids)
-                if cpuids_filtered != numa_cpuids[s][1:length(cpuids_filtered)]
-                    return false
-                end
-            end
-            return true
-        end
-        @test check_compact_within_numa(getcpuids())'`)
+    @testset "concatenation" begin
+        pinthreads(:random)
+        @test isnothing(pinthreads(core(1, 1:1), core(2, 1:1)))
+        @test getcpuid.(1:2) == vcat(core(1, 1:1), core(2, 1:1))
+        pinthreads(:random)
+        @test isnothing(pinthreads([core(1, 1:1), core(2, 1:1)]))
+        @test getcpuid.(1:2) == vcat(core(1, 1:1), core(2, 1:1))
     end
 end
 
@@ -135,28 +117,6 @@ end
     @test getcpuids() == cpuids
 end
 
-@testset "Thread Pinning (random)" begin
-    cpuids = Vector{Vector{Int64}}()
-    for _ in 1:10
-        pinthreads(:random)
-        push!(cpuids, getcpuids())
-    end
-
-    # Check that at least some of the pinning settings were different
-    @test any(x != cpuids[1] for x in cpuids)
-end
-
-@testset "Thread Pinning (firstn)" begin
-    expected_pinning = cpuids_all()[1:nthreads()]
-
-    # Make sure we have a different pinning to start with
-    pinthreads(reverse(expected_pinning))
-
-    @test getcpuids() != expected_pinning
-    pinthreads(:firstn)
-    @test getcpuids() == expected_pinning
-end
-
 @testset "Unpinning" begin
     pinthreads(:compact)
     for tid in 1:nthreads()
@@ -172,3 +132,43 @@ end
         @test count(isone, ThreadPinning.uv_thread_getaffinity(tid)) == ncputhreads()
     end
 end
+
+# TODO
+# @testset "Environment variables" begin
+#     julia = Base.julia_cmd()
+#     pkgdir = joinpath(@__DIR__, "..")
+
+#     exec(s; nthreads=ncores()) = run(`$julia --project=$(pkgdir) -t $nthreads -e $s`).exitcode == 0
+#     withenv("JULIA_PIN" => "compact") do
+#         @test exec(`'using ThreadPinning, Test;
+#             @test getcpuids() == filter(!ishyperthread, cpuids_all())[1:Threads.nthreads()]'`)
+#     end
+#     withenv("JULIA_PIN" => "spread") do
+#         @test exec(`'using ThreadPinning, Test;
+#         function check_compact_within_socket(cpuids)
+#             socket_cpuids = cpuids_per_socket()
+#             for s in 1:nsockets()
+#                 cpuids_filtered = filter(x -> x in socket_cpuids[s], cpuids)
+#                 if cpuids_filtered != socket_cpuids[s][1:length(cpuids_filtered)]
+#                     return false
+#                 end
+#             end
+#             return true
+#         end
+#         @test check_compact_within_socket(getcpuids())'`)
+#     end
+#     withenv("JULIA_PIN" => "spread", "JULIA_PLACES" => "numa") do
+#         @test exec(`'using ThreadPinning, Test;
+#         function check_compact_within_numa(cpuids)
+#             numa_cpuids = cpuids_per_numa()
+#             for s in 1:nnuma()
+#                 cpuids_filtered = filter(x -> x in numa_cpuids[s], cpuids)
+#                 if cpuids_filtered != numa_cpuids[s][1:length(cpuids_filtered)]
+#                     return false
+#                 end
+#             end
+#             return true
+#         end
+#         @test check_compact_within_numa(getcpuids())'`)
+#     end
+# end

@@ -78,6 +78,29 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
             M = sysinfo().matrix
             @test @views ThreadPinning.cpuid2core.(M[:, ICPUID]) == M[:, ICORE]
         end
+
+        @testset "Logical specification" begin
+            @test node() == cpuids_per_node()
+            @test node(; compact = true) == cpuids_per_node(; compact = true)
+            for i in 1:nsockets()
+                @test socket(i) == cpuids_per_socket()[i]
+                @test socket(i, 1:1) == cpuids_per_socket()[i][1:1]
+                @test socket(i, [1]) == cpuids_per_socket()[i][[1]]
+            end
+            for i in 1:nnuma()
+                @test numa(i) == cpuids_per_numa()[i]
+                @test numa(i, 1:1) == cpuids_per_numa()[i][1:1]
+                @test numa(i, [1]) == cpuids_per_numa()[i][[1]]
+            end
+            for i in 1:ncores()
+                @test core(i) == cpuids_per_core()[i]
+                @test core(i, 1:1) == cpuids_per_core()[i][1:1]
+                @test core(i, [1]) == cpuids_per_core()[i][[1]]
+            end
+
+            @test issorted(sockets(); by = ishyperthread)
+            @test issorted(numas(); by = ishyperthread)
+        end
     end
 end
 
