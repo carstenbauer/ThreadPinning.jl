@@ -6,6 +6,8 @@ using Random: shuffle
 Threads.nthreads() ≥ 2 ||
     error("Can't run tests with single Julia thread! Forgot to set `JULIA_NUM_THREADS`?")
 
+ThreadPinning.update_sysinfo!(; fromscratch = true)
+
 function check_compact_within_socket(cpuids)
     socket_cpuids = cpuids_per_socket()
     for s in 1:nsockets()

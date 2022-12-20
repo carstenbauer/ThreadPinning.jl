@@ -5,11 +5,12 @@ Threads.nthreads() ≥ 4 ||
 
 @run_package_tests
 
-@testitem "Helper" begin include("helper_test.jl") end
-@testitem "Pinning" begin include("pinning_test.jl") end
-@testitem "Querying" begin include("querying_test.jl") end
+@testitem "helper" begin include("helper_test.jl") end
+@testitem "preferences" begin include("preferences_test.jl") end
+
+@testitem "querying" begin include("querying_test.jl") end
 @testitem "threadinfo" begin include("threadinfo_test.jl") end
-@testitem "OMP" begin include("omp_test.jl") end
-@testitem "Preferences" begin include("preferences_test.jl") end
-@testitem "Systems Info" begin include("systems_test.jl") end
+@testitem "pinning" begin include("pinning_test.jl") end
+
 @testitem "likwid-pin" begin include("likwid-pin_test.jl") end
+@testitem "OMP" begin include("omp_test.jl") end
