@@ -386,7 +386,6 @@ const lscpu_i912900H = """CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE    MAXMHZ   
 18    0      0   12 30:30:7:0        yes 3800.0000 400.0000 2900.000
 19    0      0   13 31:31:7:0        yes 3800.0000 400.0000 2900.000"""
 
-
 const lscpu_OokamiThunderX2 = """CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE
 0   0    0      0    0:0:0:0       yes
 1   0    0      1    1:1:1:0       yes
@@ -645,7 +644,6 @@ const lscpu_OokamiThunderX2 = """CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE
 254 1    1      62   62:62:62:1    yes
 255 1    1      63   63:63:63:1    yes"""
 
-
 const lscpu_TEST_ordered = """CPU NODE SOCKET CORE L1d:L1i:L2:L3 ONLINE
 0   0    0      0    0:0:0:0       yes
 1   0    0      1    1:1:1:0       yes
@@ -771,3 +769,12 @@ const lscpu_TEST_unordered_not_renumbered = """CPU NODE SOCKET CORE L1d:L1i:L2:L
 29  2    2      14   9:9:9:1       yes
 36  2    2      11   6:6:6:1       yes
 39  2    2      14   9:9:9:1       yes"""
+
+const lscpu_SYSTEMS = Dict{String, String}(
+    "Noctua1" => lscpu_NOCTUA1,
+    "Noctua2Login" => lscpu_NOCTUA2LOGIN,
+    "Noctua2" => lscpu_NOCTUA2,
+    "FUGAKU" => lscpu_FUGAKU,
+    "OokamiThunderX2" => lscpu_OokamiThunderX2,
+    "Inteli912900H" => lscpu_i912900H,
+)
