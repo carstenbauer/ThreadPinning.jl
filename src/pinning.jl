@@ -49,7 +49,7 @@ Simply provide an `AbstractVector{<:Integer}` of CPU ids. The latter are expecte
 
 **2) Predefined Symbols**
 
-* `cputhreads` or `:compact`: successively pin to all available CPU threads.
+* `:cputhreads` or `:compact`: successively pin to all available CPU threads.
 * `:cores`: spread threads across all available cores, only use hyperthreads if necessary.
 * `:sockets`: spread threads across sockets (round-robin), only use hyperthreads if
               necessary. Set `compact=true` to get compact pinning within each socket.
