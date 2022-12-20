@@ -2,36 +2,38 @@ module Prefs
 
 using Preferences
 
-const ALL_PREFERENCES = ("autoupdate",)
+const ALL_PREFERENCES = ("autoupdate", "pin", "likwidpin")
 
-# "Query whether the pinning strategy preference is set"
-# function has_pinning()
-#     @has_preference("pinning")
-# end
+"Query whether the pin preference is set"
+has_pin() = @has_preference("pin")
+"Query whether the likwidpin preference is set"
+has_likwidpin() = @has_preference("likwidpin")
 
-# "Get the pinning strategy. Returns `nothing` if not set."
-# function get_pinning()
-#     p = @load_preference("pinning")
-#     if isnothing(p)
-#         return nothing
-#     else
-#         s = Symbol(p)
-#         if !is_valid_pinning_symbol(s)
-#             error("`$s` is not a valid pinning strategy preference")
-#         else
-#             return s
-#         end
-#     end
-# end
+"Get the pin preference. Returns `nothing` if not set."
+function get_pin()
+    p = @load_preference("pin")
+    # TODO check if valid?
+    return p
+end
+"Get the likwidpin preference. Returns `nothing` if not set."
+function get_likwidpin()
+    p = @load_preference("likwidpin")
+    # TODO check if valid?
+    return p
+end
 
-# "Set the pinning strategy preference"
-# function set_pinning(s::Symbol)
-#     if !is_valid_pinning_symbol(s)
-#         throw(ArgumentError("`$s` is not a valid pinning strategy"))
-#     end
-#     @set_preferences!("pinning"=>String(s))
-#     return nothing
-# end
+"Set the pin preference"
+function set_pin(s::Union{Symbol, AbstractString})
+    # TODO check if valid?
+    @set_preferences!("pin"=>String(s))
+    return nothing
+end
+"Set the likwidpin preference"
+function set_likwidpin(s::AbstractString)
+    # TODO check if valid?
+    @set_preferences!("likwidpin"=>s)
+    return nothing
+end
 
 "Clear all ThreadPinning.jl related preferences"
 function clear()
@@ -48,9 +50,7 @@ function showall()
 end
 
 "Query whether the autoupdate preference is set"
-function has_autoupdate()
-    @has_preference("autoupdate")
-end
+has_autoupdate() = @has_preference("autoupdate")
 
 "Get the autoupdate preference. Returns `nothing` if not set."
 function get_autoupdate()

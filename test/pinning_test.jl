@@ -133,42 +133,29 @@ end
     end
 end
 
-# TODO
-# @testset "Environment variables" begin
-#     julia = Base.julia_cmd()
-#     pkgdir = joinpath(@__DIR__, "..")
+@testset "Environment variables" begin
+    julia = Base.julia_cmd()
+    pkgdir = joinpath(@__DIR__, "..")
 
-#     exec(s; nthreads=ncores()) = run(`$julia --project=$(pkgdir) -t $nthreads -e $s`).exitcode == 0
-#     withenv("JULIA_PIN" => "compact") do
-#         @test exec(`'using ThreadPinning, Test;
-#             @test getcpuids() == filter(!ishyperthread, cpuids_all())[1:Threads.nthreads()]'`)
-#     end
-#     withenv("JULIA_PIN" => "spread") do
-#         @test exec(`'using ThreadPinning, Test;
-#         function check_compact_within_socket(cpuids)
-#             socket_cpuids = cpuids_per_socket()
-#             for s in 1:nsockets()
-#                 cpuids_filtered = filter(x -> x in socket_cpuids[s], cpuids)
-#                 if cpuids_filtered != socket_cpuids[s][1:length(cpuids_filtered)]
-#                     return false
-#                 end
-#             end
-#             return true
-#         end
-#         @test check_compact_within_socket(getcpuids())'`)
-#     end
-#     withenv("JULIA_PIN" => "spread", "JULIA_PLACES" => "numa") do
-#         @test exec(`'using ThreadPinning, Test;
-#         function check_compact_within_numa(cpuids)
-#             numa_cpuids = cpuids_per_numa()
-#             for s in 1:nnuma()
-#                 cpuids_filtered = filter(x -> x in numa_cpuids[s], cpuids)
-#                 if cpuids_filtered != numa_cpuids[s][1:length(cpuids_filtered)]
-#                     return false
-#                 end
-#             end
-#             return true
-#         end
-#         @test check_compact_within_numa(getcpuids())'`)
-#     end
-# end
+    exec(s; nthreads=ncores()) = run(`$julia --project=$(pkgdir) -t $nthreads -e $s`).exitcode == 0
+    @testset "JULIA_PIN" begin
+        withenv("JULIA_PIN" => "cputhreads") do
+            @test exec(`'using ThreadPinning, Test;
+                @test getcpuids() == node(1:Threads.nthreads(); compact=true)'`)
+        end
+        withenv("JULIA_PIN" => "cores") do
+            @test exec(`'using ThreadPinning, Test;
+                @test getcpuids() == node(1:Threads.nthreads(); compact=false)'`)
+        end
+    end
+    @testset "JULIA_LIKWID_PIN" begin
+        withenv("JULIA_LIKWID_PIN" => "N:0-$(ncores()-1)") do
+            @test exec(`'using ThreadPinning, Test;
+                @test getcpuids() == node(1:Threads.nthreads(); compact=false)'`)
+        end
+        withenv("JULIA_LIKWID_PIN" => "E:N:$(ncores())") do
+            @test exec(`'using ThreadPinning, Test;
+                @test getcpuids() == node(1:Threads.nthreads(); compact=true)'`)
+        end
+    end
+end

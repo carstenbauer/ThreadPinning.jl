@@ -41,31 +41,24 @@ end
 const AUTOUPDATE = _try_get_autoupdate() # compile-time preference
 
 function maybe_autopin()
-    # JULIA_PIN = get(ENV, "JULIA_PIN", nothing)
-    # JULIA_PLACES = get(ENV, "JULIA_PLACES", nothing)
-    # if !isnothing(JULIA_PIN)
-    #     try
-    #         pinning = Symbol(lowercase(JULIA_PIN))
-    #         if !isnothing(JULIA_PLACES)
-    #             pinthreads(pinning; places = Symbol(lowercase(JULIA_PLACES)))
-    #         else
-    #             pinthreads(pinning)
-    #         end
-    #     catch err
-    #         @warn("Ignoring unsupported settings:", JULIA_PIN,
-    #               JULIA_PLACES)
-    #     end
-    # else
-    #     pinning = Prefs.get_pinning()
-    #     if !isnothing(pinning)
-    #         places = Prefs.get_places()
-    #         if !isnothing(places)
-    #             pinthreads(pinning; places)
-    #         else
-    #             pinthreads(pinning)
-    #         end
-    #     end
-    # end
+    JULIA_PIN = get(ENV, "JULIA_PIN", Prefs.get_pin())
+    JULIA_LIKWID_PIN = get(ENV, "JULIA_LIKWID_PIN", Prefs.get_likwidpin())
+    if !isnothing(JULIA_PIN)
+        @debug "Autopinning" JULIA_PIN
+        try
+            str = startswith(JULIA_PIN, ':') ? JULIA_PIN[2:end] : JULIA_PIN
+            pinthreads(Symbol(lowercase(str)))
+        catch err
+            error("Unsupported value for environment variable JULIA_PIN: ", JULIA_PIN)
+        end
+    elseif !isnothing(JULIA_LIKWID_PIN)
+        @debug "Autopinning" JULIA_LIKWID_PIN
+        try
+            pinthreads_likwidpin(JULIA_LIKWID_PIN)
+        catch err
+            error("Unsupported value for environment variable JULIA_PIN: ", JULIA_PIN)
+        end
+    end
     return nothing
 end
 

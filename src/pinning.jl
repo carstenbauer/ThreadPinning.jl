@@ -63,7 +63,8 @@ Simply provide an `AbstractVector{<:Integer}` of CPU ids. The latter are expecte
 **3) Logical Specification**
 
 The functions `node`, `socket`, `numa`, and `core` can be used to to specify CPU ids
-of/within a certain domain.`
+of/within a certain domain. Moreover, the functions `sockets` and `numas` can be used to
+express a scatter policy (round-robin) between sockets or NUMA domains, respectively.
 
 *Examples (domains):*
 * `pinthreads(socket(1, 1:3))` # pin to the first 3 cores in the first socket
@@ -73,6 +74,7 @@ of/within a certain domain.`
   the second NUMA/memory domain
 * `pinthreads(node(ncores():-1:1))` # pin threads to cores in reversing order (starting at
   the end of the node)
+* `pinthreads(sockets())` # scatter threads between sockets, cores before hyperthreads
 
 Different domains can be concatenated by providing them in a vector or as separate
 arguments to `pinthreads`.
