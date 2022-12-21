@@ -92,10 +92,7 @@ function pinthreads(cpuids::AbstractVector{<:Integer};
     # TODO: maybe add `periodic` kwarg for PBC as alternative to strict `min` below.
     if force || first_pin_attempt()
         warn && _check_environment()
-        if !all(c -> c in cpuids_all(), cpuids)
-            throw(ArgumentError("Inavlid cpuid encountered. See `cpuids_all()` for all " *
-                                "valid CPU IDs on the system."))
-        end
+        _check_cpuids(cpuids)
         limit = min(length(cpuids), nthreads)
         @threads :static for tid in 1:limit
             pinthread(cpuids[tid]; warn = false)
@@ -165,6 +162,14 @@ function _check_environment()
         @warn("Found MKL_DYNAMIC == true. Be aware that calling an MKL function can "*
               "spoil the pinning of Julia threads! Use `ThreadPinning.mkl_set_dynamic(0)` "*
               "to be safe. See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
+    end
+    return nothing
+end
+
+function _check_cpuids(cpuids)
+    if !all(c -> c in cpuids_all(), cpuids)
+        throw(ArgumentError("Inavlid cpuid encountered. See `cpuids_all()` for all " *
+                            "valid CPU IDs on the system."))
     end
     return nothing
 end
