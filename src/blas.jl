@@ -11,8 +11,12 @@ end
 Check whether Intel MKL is currently loaded (via libblastrampoline).
 """
 function mkl_is_loaded()
-    any(x -> startswith(x, "libmkl_rt"),
-        basename(lib.libname) for lib in BLAS.get_config().loaded_libs)
+    @static if VERSION <= v"1.7-"
+        mkl_is_available()
+    else
+        any(x -> startswith(x, "libmkl_rt"),
+            basename(lib.libname) for lib in BLAS.get_config().loaded_libs)
+    end
 end
 
 """
