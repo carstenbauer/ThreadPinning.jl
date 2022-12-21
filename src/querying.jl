@@ -1,20 +1,18 @@
 """
-Returns the ID of the CPU on which the calling thread
-is currently executing.
+Returns the ID of the CPU thread on which the calling thread is currently running.
 
 See `sched_getcpu` for more information.
 """
 getcpuid() = Int(sched_getcpu())
 
 """
-Returns the ID of the CPU on which the given Julia thread
-(`threadid`) is currently executing.
+Returns the ID of the CPU thread on which the given Julia thread (`threadid`) is currently
+running.
 """
 getcpuid(threadid::Integer) = fetch(@tspawnat threadid getcpuid())
 
 """
-Returns the ID of the CPUs on which the Julia threads
-are currently running.
+Returns the IDs of the CPU threads on which the Julia threads are currently running.
 
 See `getcpuid` for more information.
 """

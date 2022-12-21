@@ -32,7 +32,7 @@ makedocs(;
              ],
              "References" => [
                  "API" => "refs/api.md",
-                 "BLAS/LAPACK" => "refs/blas.md",
+                 "BLAS/LAPACK" => "refs/blaslapack.md",
                  "Latency" => "refs/latency.md",
                  "LibX" => "refs/libX.md",
                  "Likwid-Pin" => "refs/likwidpin.md",

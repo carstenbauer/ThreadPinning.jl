@@ -6,7 +6,7 @@
 ## Index
 
 ```@index
-Pages   = ["blas.md"]
+Pages   = ["blaslapack.md"]
 Order   = [:function, :type]
 ```
 
