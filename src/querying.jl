@@ -55,14 +55,6 @@ function _affinity_mask_to_string(mask; groupby = :sockets)
     return str
 end
 
-"""
-Get information about the system like how many sockets or NUMA nodes it has, whether
-hyperthreading is enabled, etc.
-"""
-function sysinfo()
-    return SYSINFO[]
-end
-
 # Unsafe because they directly return the fields instead of copies (be warry when modiying!)
 unsafe_cpuids_all() = sysinfo().cpuids
 unsafe_cpuids_per_core() = sysinfo().cpuids_cores
@@ -150,4 +142,114 @@ function cpuid2core(cpuid::Integer)
         row_idx = findfirst(r -> r[ICPUID] == cpuid, eachrow(M))
     end
     return M[row_idx, ICORE]
+end
+
+# High-level API for direct usage with `pinthreads`
+const T_idcs = Union{Colon, AbstractVector{<:Integer}, Integer}
+"""
+Represents the CPU id domain of core `i` (logical index, starts at 1). Uses compact ordering
+by default. Set `shuffle=true` to randomize.
+
+Optional second argument: Logical indices to select a subset of the domain.
+
+To be used as input argument for [`pinthreads`](@ref). What it actually returns is an
+implementation detail!
+"""
+function core(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    idcs = idcs isa Integer ? [idcs] : idcs
+    cpuids = cpuids_per_core(; kwargs...)[i][idcs]
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
+end
+"""
+Represents the CPU id domain of NUMA/memory domain `i` (logical index, starts at 1). By
+default, cores will be used first and hyperthreads will only be used if necessary. Provide
+`compact=true` to get compact ordering instead. Set `shuffle=true` to randomize.
+
+Optional second argument: Logical indices to select a subset of the domain.
+
+To be used as input argument for [`pinthreads`](@ref). What it actually returns is an
+implementation detail!
+"""
+function numa(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    idcs = idcs isa Integer ? [idcs] : idcs
+    cpuids = cpuids_per_numa(; kwargs...)[i][idcs]
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
+end
+"""
+Represents the CPU id domain of socket `i` (logical index, starts at 1). By default, cores
+will be used first and hyperthreads will only be used if necessary. Provide `compact=true`
+to get compact ordering instead. Set `shuffle=true` to randomize.
+
+Optional second argument: Logical indices to select a subset of the domain.
+
+To be used as input argument for [`pinthreads`](@ref). What it actually returns is an
+implementation detail!
+"""
+function socket(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    idcs = idcs isa Integer ? [idcs] : idcs
+    cpuids = cpuids_per_socket(; kwargs...)[i][idcs]
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
+end
+"""
+Represents the CPU id domain of the entire node/system. By default, cores will be used first
+and hyperthreads will only be used if necessary. Provide `compact=true` to get compact
+ordering instead. Set `shuffle=true` to randomize. Set `shuffle=true` to randomize.
+
+Optional first argument: Logical indices to select a subset of the domain.
+
+To be used as input argument for [`pinthreads`](@ref). What it actually returns is an
+implementation detail!
+"""
+function node(idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    idcs = idcs isa Integer ? [idcs] : idcs
+    cpuids = cpuids_per_node(; kwargs...)[idcs]
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
+end
+# function cores(idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+#     cpuids = @views interweave(cpuids_per_core(; kwargs...)[idcs]...)
+#     shuffle && Random.shuffle!(cpuids)
+#     return cpuids
+# end
+"""
+Represents the CPU ids of the system as obtained by a round-robin scattering
+between sockets. By default, within each socket, cores will be used first and hyperthreads
+will only be used if necessary. Provide `compact=true` to get compact ordering within each
+socket. Set `shuffle=true` to randomize.
+
+Optional first argument: Logical indices to select a subset of the domain.
+
+To be used as input argument for [`pinthreads`](@ref). What it actually returns is an
+implementation detail!
+"""
+function sockets(idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    if idcs isa Integer
+        throw(ArgumentError("At least two socket indices needed for round-robin scattering."))
+    end
+    cpuids = @views interweave(cpuids_per_socket(; kwargs...)[idcs]...)
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
+end
+"""
+Represents the CPU ids of the system as obtained by a round-robin scattering
+between NUMA/memory domain. By default, within each memory domain, cores will be used first
+and hyperthreads will only be used if necessary. Provide `compact=true` to get compact
+ordering within each memory domain. Set `shuffle=true` to randomize.
+
+Optional first argument: Logical indices to select a subset of the domain.
+
+To be used as input argument for [`pinthreads`](@ref). What it actually returns is an
+implementation detail!
+"""
+function numas(idcs::T_idcs = Colon(); shuffle = false, kwargs...)
+    if idcs isa Integer
+        throw(ArgumentError("At least two NUMA domain indices needed for round-robin " *
+                            "scattering."))
+    end
+    cpuids = @views interweave(cpuids_per_numa(; kwargs...)[idcs]...)
+    shuffle && Random.shuffle!(cpuids)
+    return cpuids
 end

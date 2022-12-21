@@ -1,15 +1,13 @@
-# "Low-level" pinthreads
 """
     pinthread(cpuid::Integer; warn::Bool = true)
 
 Pin the calling Julia thread to the CPU with id `cpuid`.
 """
 function pinthread(cpuid::Integer; warn::Bool = true)
-    if warn
-        (minimum(cpuids_all()) ≤ cpuid ≤ maximum(cpuids_all())) ||
-            throw(ArgumentError("cpuid is out of bounds ($(minimum(cpuids_all())) ≤ " *
-                                "cpuid ≤ $(maximum(cpuids_all())))."))
-        _check_environment()
+    warn && _check_environment()
+    if !(cpuid in cpuids_all())
+        throw(ArgumentError("Inavlid cpuid encountered. See `cpuids_all()` for all " *
+                            "valid CPU IDs on the system."))
     end
     FIRST_PIN[] = false
     return uv_thread_setaffinity(cpuid)
@@ -26,165 +24,112 @@ function pinthread(threadid::Integer, cpuid::Integer; kwargs...)
 end
 
 """
-    pinthreads(cpuids::AbstractVector{<:Integer}[; warn])
-Pins the first `1:length(cpuids)` Julia threads to the CPUs with ids `cpuids`.
-Note that `length(cpuids)` may not be larger than `Threads.nthreads()`.
+    pinthreads(cpuids[; nthreads=Threads.nthreads(), force=true, warn=true])
+Pin the first `min(length(cpuids), nthreads)` Julia threads to an explicit or implicit list
+of CPU ids. The latter can be specified in three ways:
 
-For more information see `pinthread`.
+1) explicitly (e.g. `0:3` or `[0,12,4]`),
+2) by passing one of several predefined symbols (e.g. `:cores` or `:sockets`),
+3) by providing a logical specification via helper functions (e.g. `node` and `socket`).
+
+See below for more information.
+
+If `force=false` the `pinthreads` call will only pin threads
+if this is the first attempt to pin threads with ThreadPinning.jl. Otherwise it will be a
+no-op. This may be particularly useful for packages that merely want to specify a
+"default pinning".
+
+The option `warn` toggles general warnings, such as unwanted interference with BLAS thread
+settings.
+
+**1) Explicit**
+
+Simply provide an `AbstractVector{<:Integer}` of CPU ids. The latter are expected to be the
+"physical" ids, i.e. as provided by `lscpu`, and thus start at zero!
+
+**2) Predefined Symbols**
+
+* `:cputhreads` or `:compact`: successively pin to all available CPU threads.
+* `:cores`: spread threads across all available cores, only use hyperthreads if necessary.
+* `:sockets`: spread threads across sockets (round-robin), only use hyperthreads if
+              necessary. Set `compact=true` to get compact pinning within each socket.
+* `:numa`: spread threads across NUMA/memory domains (round-robin), only use hyperthreads
+           if necessary. Set `compact=true` to get compact pinning within each NUMA/memory
+           domain.
+* `:random`: pin threads randomly to CPU threads
+* `:current`: pin threads to the CPU threads they are currently running on
+* `:firstn`: pin threads to CPU threads in "physical" order (as specified by lscpu).
+
+**3) Logical Specification**
+
+The functions [`node`](@ref), [`socket`](@ref), [`numa`](@ref), and [`core`](@ref) can be
+used to to specify CPU ids of/within a certain domain. Moreover, the functions
+[`sockets`](@ref) and [`numas`](@ref) can be used to express a round-robin scatter policy
+between sockets or NUMA domains, respectively.
+
+*Examples (domains):*
+* `pinthreads(socket(1, 1:3))` # pin to the first 3 cores in the first socket
+* `pinthreads(socket(1, 1:3; compact=true))` # pin to the first 3 CPU threads in the first
+  socket
+* `pinthreads(numa(2, [2,4,6]))` # pin to the second, the fourth, and the sixth cores in
+  the second NUMA/memory domain
+* `pinthreads(node(ncores():-1:1))` # pin threads to cores in reversing order (starting at
+  the end of the node)
+* `pinthreads(sockets())` # scatter threads between sockets, cores before hyperthreads
+
+Different domains can be concatenated by providing them in a vector or as separate
+arguments to `pinthreads`.
+
+*Examples (concatenation):*
+
+* `pinthreads([socket(1, 1:3), numa(2, 4:6)])`
+* `pinthreads(socket(1, 1:3), numa(2, 4:6))`
 """
-function pinthreads(cpuids::AbstractVector{<:Integer}; warn::Bool = true, force = true)
+function pinthreads end
+
+function pinthreads(cpuids::AbstractVector{<:Integer};
+                    warn::Bool = true, force = true, nthreads = Threads.nthreads())
+    # TODO: maybe add `periodic` kwarg for PBC as alternative to strict `min` below.
     if force || first_pin_attempt()
         warn && _check_environment()
-        ncpuids = length(cpuids)
-        ncpuids ≤ nthreads() ||
-            throw(ArgumentError("length(cpuids) must be ≤ Threads.nthreads()"))
-        if !(minimum(cpuids) ≥ minimum(cpuids_all()) &&
-             maximum(cpuids) ≤ maximum(cpuids_all()))
-            throw(ArgumentError("All cpuids must be ≤ $(maximum(cpuids_all())) and ≥ " *
-                                "$(minimum(cpuids_all()))."))
+        if !all(c -> c in cpuids_all(), cpuids)
+            throw(ArgumentError("Inavlid cpuid encountered. See `cpuids_all()` for all " *
+                                "valid CPU IDs on the system."))
         end
-        @threads :static for tid in 1:ncpuids
+        limit = min(length(cpuids), nthreads)
+        @threads :static for tid in 1:limit
             pinthread(cpuids[tid]; warn = false)
         end
     end
     return nothing
 end
 
-# Types
-abstract type Places end
-struct CPUThreads <: Places end
-struct Cores <: Places end
-struct NUMA <: Places end
-struct Sockets <: Places end
-
-abstract type PinningStrategy end
-struct CompactBind <: PinningStrategy end
-struct SpreadBind <: PinningStrategy end
-struct RandomBind <: PinningStrategy end
-struct CurrentBind <: PinningStrategy end
-struct FirstNBind <: PinningStrategy end
-
-# Places logic
-_places_symbol2singleton(s::Symbol) = _places_symbol2singleton(Val{s})
-_places_symbol2singleton(::Type{Val{T}}) where {T} = nothing # fallback
-_places_symbol2singleton(::Type{Val{:threads}}) = CPUThreads()
-_places_symbol2singleton(::Type{Val{:cputhreads}}) = CPUThreads()
-_places_symbol2singleton(::Type{Val{:cores}}) = Cores()
-_places_symbol2singleton(::Type{Val{:numa}}) = NUMA()
-_places_symbol2singleton(::Type{Val{:NUMA}}) = NUMA()
-_places_symbol2singleton(::Type{Val{:sockets}}) = Sockets()
-
-is_valid_places_symbol(s::Symbol) = !isnothing(_places_symbol2singleton(s))
-
-getplaces_cpuids(s::Symbol) = getplaces_cpuids(_places_symbol2singleton(s))
-function getplaces_cpuids(::CPUThreads)
-    # if hyperthreading_is_enabled()
-    #     cpuids_nonht = filter(!ishyperthread, cpuids_all())
-    #     cpuids_ht = filter(ishyperthread, cpuids_all())
-    #     [[cpuid] for cpuid in interweave_uneven(cpuids_nonht, cpuids_ht)]
-    # else
-    #     [[cpuid] for cpuid in cpuids_all()]
-    # end
-    return [[cpuid] for cpuid in cpuids_all()]
+# concatenation
+function pinthreads(cpuids_vec::AbstractVector{T};
+                    kwargs...) where {T <: AbstractVector{<:Integer}}
+    return pinthreads(reduce(vcat, cpuids_vec); kwargs...)
 end
-function getplaces_cpuids(::Cores)
-    if hyperthreading_is_enabled()
-        [[cpuid] for cpuid in filter(!ishyperthread, cpuids_all())] # should HT be entirely ignored here?
-    else
-        [[cpuid] for cpuid in cpuids_all()]
-    end
+function pinthreads(cpuids_args::AbstractVector{<:Integer}...; kwargs...)
+    return pinthreads(reduce(vcat, cpuids_args); kwargs...)
 end
-getplaces_cpuids(::NUMA) = cpuids_per_numa()
-getplaces_cpuids(::Sockets) = cpuids_per_socket()
-getplaces_cpuids(v::AbstractVector{<:AbstractVector{<:Integer}}) = v
 
-_default_places(::PinningStrategy) = Cores() # fallback
-_default_places(::CompactBind) = Cores()
-_default_places(::SpreadBind) = Sockets()
-_default_places(::RandomBind) = CPUThreads()
-
-# Binding strategy logic
-_pinning_symbol2singleton(s::Symbol)::Union{PinningStrategy, Nothing} = _pinning_symbol2singleton(Val{
-                                                                                                      s
-                                                                                                      })
-_pinning_symbol2singleton(::Type{Val{T}}) where {T} = nothing # fallback
-_pinning_symbol2singleton(::Type{Val{:compact}}) = CompactBind()
-_pinning_symbol2singleton(::Type{Val{:close}}) = CompactBind()
-_pinning_symbol2singleton(::Type{Val{:spread}}) = SpreadBind()
-_pinning_symbol2singleton(::Type{Val{:scatter}}) = SpreadBind()
-_pinning_symbol2singleton(::Type{Val{:random}}) = RandomBind()
-_pinning_symbol2singleton(::Type{Val{:current}}) = CurrentBind()
-_pinning_symbol2singleton(::Type{Val{:firstn}}) = FirstNBind()
-
-is_valid_pinning_symbol(s::Symbol) = !isnothing(_pinning_symbol2singleton(s))
-
-function getcpuids_pinning(s::Symbol, places; kwargs...)
-    getcpuids_pinning(_pinning_symbol2singleton(s), places; kwargs...)
+# convenience symbols
+pinthreads(symb::Symbol; kwargs...) = pinthreads(Val(symb); kwargs...)
+function pinthreads(::Union{Val{:compact}, Val{:threads}, Val{:cputhreads}}; kwargs...)
+    pinthreads(node(; compact = true); kwargs...)
 end
-function getcpuids_pinning(::PinningStrategy, places; kwargs...)
-    throw(ArgumentError("Unknown pinning strategy."))
+function pinthreads(::Union{Val{:cores}}; kwargs...)
+    pinthreads(node(; compact = false); kwargs...)
 end
-getcpuids_pinning(::CompactBind, places; kwargs...) = reduce(vcat, getplaces_cpuids(places))
-getcpuids_pinning(::SpreadBind, places; kwargs...) = interweave(getplaces_cpuids(places)...)
-function getcpuids_pinning(::RandomBind, places; kwargs...)
-    reduce(vcat, Random.shuffle(getplaces_cpuids(places)))
+function pinthreads(::Val{:sockets}; compact = false, kwargs...)
+    pinthreads(sockets(; compact); kwargs...)
 end
-getcpuids_pinning(::CurrentBind, args...; kwargs...) = getcpuids()
-getcpuids_pinning(::FirstNBind, args...; kwargs...) = cpuids_all()[1:min(end, nthreads())]
-
-# High-level pinthreads
-"""
-    pinthreads(pinning[; places, nthreads=Threads.nthreads(), warn=true, force=true, kwargs...])
-Pins the first `1:nthreads` Julia threads according to the given `pinning` strategy to the
-given `places`. Per default, a reasonable value for `places` is chosen based on the given
-`pinning` strategy.
-
-**Pinning strategies** (`pinning`):
-* `:compact` or `:close`: pins to `places` one after another.
-* `:spread` or `scatter`: pins to `places` in an alternating / round robin fashion.
-* `:random`: shuffles the given `places` and then pins to them compactly.
-* `:current`: pins threads to the cpu threads where they are currently running (ignores `places`).
-* `:firstn`: pin threads to the first `nthreads()` cpu ids reported by lscpu.
-
-**Places** (`places`):
-* `:cores` or `Cores()`: all the cores of the system
-* `:threads`, `:cputhreads`, or `CPUThreads()`: all the cpu threads of the system
-  (equal to `:cores` if there is one cpu thread per core, e.g. no hyperthreading)
-* `:sockets` or `Sockets()`: the sockets of the system
-* `:numa` or `NUMA()`: the NUMA domains of the system
-* An `AbstractVector{<:AbstractVector{<:Integer}}` of cpu ids that defines the places
-  explicitly
-
-If `force=false` the `pinthreads` call will only pin threads if this is the first attempt
-to pin threads with ThreadPinning.jl. Otherwise it will be a no-op. This may be particularly
-useful for packages that merely want to specify a "default pinning".
-"""
-function pinthreads(pinning::PinningStrategy;
-                    places::Union{Places, Symbol,
-                                  AbstractVector{<:AbstractVector{<:Integer}}} = _default_places(pinning),
-                    nthreads = Base.Threads.nthreads(), warn::Bool = true, force = true,
-                    kwargs...)
-    if force || first_pin_attempt()
-        warn && _check_environment()
-        cpuids = getcpuids_pinning(pinning, places; kwargs...)
-        if nthreads <= length(cpuids)
-            @views pinthreads(cpuids[1:nthreads]; warn = false)
-        else
-            @warn("More Julia threads than CPU IDs to bind to. Some CPU threads will host "*
-                  "multiple Julia threads!")
-            idcs = mod1.(1:nthreads, length(cpuids)) # PBC
-            @views pinthreads(cpuids[idcs]; warn = false)
-        end
-    end
-    return nothing
+function pinthreads(::Union{Val{:numa}, Val{:numas}}; compact = false, kwargs...)
+    pinthreads(numas(; compact); kwargs...)
 end
-function pinthreads(pinning::Symbol; kwargs...)
-    if !is_valid_pinning_symbol(pinning)
-        throw(ArgumentError("Unknown pinning strategy: $(pinning)"))
-    end
-
-    pinthreads(_pinning_symbol2singleton(pinning); kwargs...)
-end
+pinthreads(::Val{:random}; kwargs...) = pinthreads(node(; shuffle = true); kwargs...)
+pinthreads(::Val{:firstn}; kwargs...) = pinthreads(cpuids_all(); kwargs...)
+pinthreads(::Val{:current}; kwargs...) = pinthreads(getcpuids(); kwargs...)
 
 """
 Unpins all Julia threads by setting the affinity mask of all threads to all unity.
@@ -205,6 +150,9 @@ Unpins the Julia thread with the given `threadid` by setting the affinity mask t
 Afterwards, the OS is free to move the Julia thread from one CPU thread to another.
 """
 function unpinthread(threadid::Integer)
+    if !(1 ≤ threadid ≤ Threads.nthreads())
+        throw(ArgumentError("Invalid thread id (out of bounds)."))
+    end
     masksize = uv_cpumask_size()
     cpumask = zeros(Cchar, masksize)
     fill!(cpumask, 1)

@@ -2,26 +2,25 @@ using ThreadPinning
 using Test
 
 @testset "Preferences" begin
-    @test isnothing(ThreadPinning.Prefs.set_pinning(:spread))
-    @test isnothing(ThreadPinning.Prefs.set_places(:numa))
-
-    @test ThreadPinning.Prefs.get_pinning() == :spread
-    @test ThreadPinning.Prefs.get_places() == :numa
-
-    @test_throws ArgumentError ThreadPinning.Prefs.set_pinning(:asd)
-    @test_throws ArgumentError ThreadPinning.Prefs.set_places(:asd)
-
     @test isnothing(ThreadPinning.Prefs.set_autoupdate(false))
     @test ThreadPinning.Prefs.get_autoupdate() == false
     @test isnothing(ThreadPinning.Prefs.set_autoupdate(true))
 
+    @test isnothing(ThreadPinning.Prefs.set_pin(:sockets))
+    @test ThreadPinning.Prefs.get_pin() == "sockets"
+    @test isnothing(ThreadPinning.Prefs.set_pin("cores"))
+    @test ThreadPinning.Prefs.get_pin() == "cores"
+
+    @test isnothing(ThreadPinning.Prefs.set_likwidpin("S:scatter"))
+    @test ThreadPinning.Prefs.get_likwidpin() == "S:scatter"
+
     @test isnothing(ThreadPinning.Prefs.showall())
 
-    @test ThreadPinning.Prefs.has_pinning()
-    @test ThreadPinning.Prefs.has_places()
     @test ThreadPinning.Prefs.has_autoupdate()
+    @test ThreadPinning.Prefs.has_pin()
+    @test ThreadPinning.Prefs.has_likwidpin()
     @test isnothing(ThreadPinning.Prefs.clear())
-    @test !ThreadPinning.Prefs.has_pinning()
-    @test !ThreadPinning.Prefs.has_places()
     @test !ThreadPinning.Prefs.has_autoupdate()
+    @test !ThreadPinning.Prefs.has_pin()
+    @test !ThreadPinning.Prefs.has_likwidpin()
 end

@@ -1,65 +1,37 @@
 module Prefs
 
 using Preferences
-using ..ThreadPinning: is_valid_pinning_symbol, is_valid_places_symbol
 
-const ALL_PREFERENCES = ("pinning", "places", "autoupdate")
+const ALL_PREFERENCES = ("autoupdate", "pin", "likwidpin")
 
-"Query whether the pinning strategy preference is set"
-function has_pinning()
-    @has_preference("pinning")
+"Query whether the pin preference is set"
+has_pin() = @has_preference("pin")
+"Query whether the likwidpin preference is set"
+has_likwidpin() = @has_preference("likwidpin")
+
+"Get the pin preference. Returns `nothing` if not set."
+function get_pin()
+    p = @load_preference("pin")
+    # TODO check if valid?
+    return p
+end
+"Get the likwidpin preference. Returns `nothing` if not set."
+function get_likwidpin()
+    p = @load_preference("likwidpin")
+    # TODO check if valid?
+    return p
 end
 
-"Get the pinning strategy. Returns `nothing` if not set."
-function get_pinning()
-    p = @load_preference("pinning")
-    if isnothing(p)
-        return nothing
-    else
-        s = Symbol(p)
-        if !is_valid_pinning_symbol(s)
-            error("`$s` is not a valid pinning strategy preference")
-        else
-            return s
-        end
-    end
-end
-
-"Set the pinning strategy preference"
-function set_pinning(s::Symbol)
-    if !is_valid_pinning_symbol(s)
-        throw(ArgumentError("`$s` is not a valid pinning strategy"))
-    end
-    @set_preferences!("pinning"=>String(s))
+"Set the pin preference"
+function set_pin(s::Union{Symbol, AbstractString})
+    # TODO check if valid?
+    @set_preferences!("pin"=>String(s))
     return nothing
 end
-
-"Query whether the places preference is set"
-function has_places()
-    @has_preference("places")
-end
-
-"Get the places preference. Returns `nothing` if not set."
-function get_places()
-    p = @load_preference("places")
-    if isnothing(p)
-        return nothing
-    else
-        s = Symbol(p)
-        if !is_valid_places_symbol(s)
-            error("`$s` is not a valid places preference")
-        else
-            return s
-        end
-    end
-end
-
-"Set the places preference"
-function set_places(s::Symbol)
-    if !is_valid_places_symbol(s)
-        throw(ArgumentError("`$s` is not a valid places symbol"))
-    end
-    @set_preferences!("places"=>String(s))
+"Set the likwidpin preference"
+function set_likwidpin(s::AbstractString)
+    # TODO check if valid?
+    @set_preferences!("likwidpin"=>s)
     return nothing
 end
 
@@ -78,9 +50,7 @@ function showall()
 end
 
 "Query whether the autoupdate preference is set"
-function has_autoupdate()
-    @has_preference("autoupdate")
-end
+has_autoupdate() = @has_preference("autoupdate")
 
 "Get the autoupdate preference. Returns `nothing` if not set."
 function get_autoupdate()

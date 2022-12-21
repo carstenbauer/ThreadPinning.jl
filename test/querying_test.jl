@@ -75,8 +75,37 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
         end
 
         @testset "cpuid2core" begin
-            M = sysinfo().matrix
+            M = ThreadPinning.sysinfo().matrix
             @test @views ThreadPinning.cpuid2core.(M[:, ICPUID]) == M[:, ICORE]
+        end
+
+        @testset "Logical specification" begin
+            @test node() == cpuids_per_node()
+            @test node(; compact = true) == cpuids_per_node(; compact = true)
+            for i in 1:nsockets()
+                @test socket(i) == cpuids_per_socket()[i]
+                @test socket(i, 1:1) == cpuids_per_socket()[i][1:1]
+                @test socket(i, [1]) == cpuids_per_socket()[i][[1]]
+                @test socket(i, 1) == cpuids_per_socket()[i][[1]]
+            end
+            for i in 1:nnuma()
+                @test numa(i) == cpuids_per_numa()[i]
+                @test numa(i, 1:1) == cpuids_per_numa()[i][1:1]
+                @test numa(i, [1]) == cpuids_per_numa()[i][[1]]
+                @test numa(i, 1) == cpuids_per_numa()[i][[1]]
+            end
+            for i in 1:ncores()
+                @test core(i) == cpuids_per_core()[i]
+                @test core(i, 1:1) == cpuids_per_core()[i][1:1]
+                @test core(i, [1]) == cpuids_per_core()[i][[1]]
+                @test core(i, 1) == cpuids_per_core()[i][[1]]
+            end
+
+            @test issorted(sockets(); by = ishyperthread)
+            @test issorted(numas(); by = ishyperthread)
+
+            @test_throws ArgumentError sockets(1)
+            @test_throws ArgumentError numas(1)
         end
     end
 end
@@ -84,7 +113,6 @@ end
 # Test different systems individually
 @testset "lscpu2sysinfo (NOCTUA2LOGIN)" begin
     ThreadPinning.update_sysinfo!(; lscpustr = ThreadPinning.lscpu_NOCTUA2LOGIN)
-    @test typeof(sysinfo()) == ThreadPinning.SysInfo
     @test ncputhreads() == 128
     @test ncores() == 64
     @test nnuma() == 4
@@ -172,7 +200,6 @@ end
 
 @testset "lscpu2sysinfo (NOCTUA2)" begin
     ThreadPinning.update_sysinfo!(; lscpustr = ThreadPinning.lscpu_NOCTUA2)
-    @test typeof(sysinfo()) == ThreadPinning.SysInfo
     @test ncputhreads() == 128
     @test ncores() == 128
     @test nnuma() == 8
@@ -200,7 +227,6 @@ end
 
 @testset "lscpu2sysinfo (NOCTUA1)" begin
     ThreadPinning.update_sysinfo!(; lscpustr = ThreadPinning.lscpu_NOCTUA1)
-    @test typeof(sysinfo()) == ThreadPinning.SysInfo
     @test ncputhreads() == 40
     @test ncores() == 40
     @test nnuma() == 2
@@ -222,7 +248,6 @@ end
 
 @testset "lscpu2sysinfo (FUGAKU)" begin
     ThreadPinning.update_sysinfo!(; lscpustr = ThreadPinning.lscpu_FUGAKU)
-    @test typeof(sysinfo()) == ThreadPinning.SysInfo
     @test ncputhreads() == 50
     @test ncores() == 50
     @test nnuma() == 6
@@ -298,7 +323,6 @@ end
 
 @testset "lscpu2sysinfo (Ookami ThunderX2)" begin
     ThreadPinning.update_sysinfo!(; lscpustr = ThreadPinning.lscpu_OokamiThunderX2)
-    @test typeof(sysinfo()) == ThreadPinning.SysInfo
     @test ncputhreads() == 256
     @test ncores() == 64
     @test nnuma() == 2
@@ -386,7 +410,6 @@ end
 
 @testset "lscpu2sysinfo (i912900H)" begin
     ThreadPinning.update_sysinfo!(; lscpustr = ThreadPinning.lscpu_i912900H)
-    @test typeof(sysinfo()) == ThreadPinning.SysInfo
     @test ncputhreads() == 20
     @test ncores() == 14
     @test nnuma() == 1

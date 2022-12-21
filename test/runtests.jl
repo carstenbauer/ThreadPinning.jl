@@ -13,4 +13,4 @@ Threads.nthreads() ≥ 4 ||
 @testitem "pinning" begin include("pinning_test.jl") end
 
 @testitem "likwid-pin" begin include("likwid-pin_test.jl") end
-@testitem "OMP" begin include("omp_test.jl") end
+# @testitem "OMP" begin include("omp_test.jl") end

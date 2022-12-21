@@ -41,29 +41,22 @@ end
 const AUTOUPDATE = _try_get_autoupdate() # compile-time preference
 
 function maybe_autopin()
-    JULIA_PIN = get(ENV, "JULIA_PIN", nothing)
-    JULIA_PLACES = get(ENV, "JULIA_PLACES", nothing)
+    JULIA_PIN = get(ENV, "JULIA_PIN", Prefs.get_pin())
+    JULIA_LIKWID_PIN = get(ENV, "JULIA_LIKWID_PIN", Prefs.get_likwidpin())
     if !isnothing(JULIA_PIN)
+        @debug "Autopinning" JULIA_PIN
         try
-            pinning = Symbol(lowercase(JULIA_PIN))
-            if !isnothing(JULIA_PLACES)
-                pinthreads(pinning; places = Symbol(lowercase(JULIA_PLACES)))
-            else
-                pinthreads(pinning)
-            end
+            str = startswith(JULIA_PIN, ':') ? JULIA_PIN[2:end] : JULIA_PIN
+            pinthreads(Symbol(lowercase(str)))
         catch err
-            @warn("Ignoring unsupported settings:", JULIA_PIN,
-                  JULIA_PLACES)
+            error("Unsupported value for environment variable JULIA_PIN: ", JULIA_PIN)
         end
-    else
-        pinning = Prefs.get_pinning()
-        if !isnothing(pinning)
-            places = Prefs.get_places()
-            if !isnothing(places)
-                pinthreads(pinning; places)
-            else
-                pinthreads(pinning)
-            end
+    elseif !isnothing(JULIA_LIKWID_PIN)
+        @debug "Autopinning" JULIA_LIKWID_PIN
+        try
+            pinthreads_likwidpin(JULIA_LIKWID_PIN)
+        catch err
+            error("Unsupported value for environment variable JULIA_PIN: ", JULIA_PIN)
         end
     end
     return nothing
@@ -90,18 +83,17 @@ SnoopPrecompile.@precompile_all_calls begin @static if Sys.islinux()
     ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
     update_sysinfo!()
     lscpu_string()
-    sysinfo()
     pinthread(0)
     pinthreads(0:(nthreads() - 1))
     pinthreads(collect(0:(nthreads() - 1)))
     pinthreads(:compact; nthreads = 1)
-    pinthreads(:spread; nthreads = 1)
+    pinthreads(:cores; nthreads = 1)
+    pinthreads(:sockets; nthreads = 1)
+    pinthreads(:sockets; nthreads = 1, compact = true)
+    pinthreads(:numa; nthreads = 1)
+    pinthreads(:numa; nthreads = 1, compact = true)
     pinthreads(:random; nthreads = 1)
     pinthreads(:current; nthreads = 1)
-    pinthreads(:compact; places = Cores(), nthreads = 1)
-    pinthreads(:compact; places = CPUThreads(), nthreads = 1)
-    pinthreads(:spread; places = NUMA(), nthreads = 1)
-    pinthreads(:spread; places = Sockets(), nthreads = 1)
     getcpuid()
     getcpuids()
     nsockets()
@@ -109,12 +101,24 @@ SnoopPrecompile.@precompile_all_calls begin @static if Sys.islinux()
     cpuids_all()
     cpuids_per_socket()
     cpuids_per_numa()
+    cpuids_per_node()
+    cpuids_per_core()
     ncputhreads()
     ncputhreads_per_socket()
     ncputhreads_per_numa()
+    ncputhreads_per_core()
     ncores()
     ncores_per_socket()
     ncores_per_numa()
+    socket(1, 1:1)
+    socket(1, [1])
+    numa(1, 1:1)
+    numa(1, [1])
+    node(1:1)
+    node([1])
+    core(1, [1])
+    sockets()
+    numas()
 end end
 
 # exports
@@ -128,7 +132,6 @@ export threadinfo,
        unpinthreads,
        unpinthread,
        @tspawnat,
-       sysinfo,
        ncputhreads,
        ncores,
        nnuma,
@@ -145,12 +148,11 @@ export threadinfo,
        cpuids_per_numa,
        cpuids_per_socket,
        cpuids_per_node,
-       CPUThreads,
-       Cores,
-       Sockets,
-       NUMA,
-       CompactBind,
-       SpreadBind,
-       RandomBind,
-       CurrentBind
+       node,
+       socket,
+       sockets,
+       numa,
+       numas,
+       core
+#    cores
 end
