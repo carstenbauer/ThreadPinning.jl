@@ -86,20 +86,26 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
                 @test socket(i) == cpuids_per_socket()[i]
                 @test socket(i, 1:1) == cpuids_per_socket()[i][1:1]
                 @test socket(i, [1]) == cpuids_per_socket()[i][[1]]
+                @test socket(i, 1) == cpuids_per_socket()[i][[1]]
             end
             for i in 1:nnuma()
                 @test numa(i) == cpuids_per_numa()[i]
                 @test numa(i, 1:1) == cpuids_per_numa()[i][1:1]
                 @test numa(i, [1]) == cpuids_per_numa()[i][[1]]
+                @test numa(i, 1) == cpuids_per_numa()[i][[1]]
             end
             for i in 1:ncores()
                 @test core(i) == cpuids_per_core()[i]
                 @test core(i, 1:1) == cpuids_per_core()[i][1:1]
                 @test core(i, [1]) == cpuids_per_core()[i][[1]]
+                @test core(i, 1) == cpuids_per_core()[i][[1]]
             end
 
             @test issorted(sockets(); by = ishyperthread)
             @test issorted(numas(); by = ishyperthread)
+
+            @test_throws ArgumentError sockets(1)
+            @test_throws ArgumentError numas(1)
         end
     end
 end

@@ -33,8 +33,9 @@ makedocs(;
              "References" => [
                  "API" => "refs/api.md",
                  "Latency" => "refs/latency.md",
-                 "Preferences" => "refs/prefs.md",
                  "LibX" => "refs/libX.md",
+                 "Likwid-Pin" => "refs/likwidpin.md",
+                 "Preferences" => "refs/prefs.md",
                  "Utility" => "refs/utility.md",
              ],
          ],

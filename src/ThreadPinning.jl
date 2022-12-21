@@ -83,7 +83,6 @@ SnoopPrecompile.@precompile_all_calls begin @static if Sys.islinux()
     ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
     update_sysinfo!()
     lscpu_string()
-    sysinfo()
     pinthread(0)
     pinthreads(0:(nthreads() - 1))
     pinthreads(collect(0:(nthreads() - 1)))
@@ -133,7 +132,6 @@ export threadinfo,
        unpinthreads,
        unpinthread,
        @tspawnat,
-       sysinfo,
        ncputhreads,
        ncores,
        nnuma,

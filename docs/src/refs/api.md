@@ -7,9 +7,14 @@ Pages   = ["api.md"]
 Order   = [:function, :type]
 ```
 
-### References
-
+## References - Pinning
 ```@autodocs
 Modules = [ThreadPinning]
-Pages   = ["querying.jl", "pinning.jl", "threadinfo.jl"]
+Pages   = ["pinning.jl"]
+```
+
+## References - Querying
+```@autodocs
+Modules = [ThreadPinning]
+Pages   = ["querying.jl", "threadinfo.jl"]
 ```

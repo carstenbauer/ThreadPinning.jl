@@ -21,6 +21,7 @@ end
 
 """
 Convert the given likwid-pin compatible string into a CPU ID list.
+See [`pinthreads_likwidpin`](@ref) for more information.
 """
 function likwidpin_to_cpuids(lpstr::AbstractString; onebased = false)
     blocks = split(lpstr, '@')

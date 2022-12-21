@@ -19,16 +19,19 @@ to add the package to your Julia environment.
 
 ### Prerequisites
 
-
 To gather information about the hardware topology of the system (e.g. sockets and memory domains), ThreadPinning.jl uses [`lscpu`](https://man7.org/linux/man-pages/man1/lscpu.1.html). The latter must therefore be available (i.e. be on `PATH`), which should automatically be the case on virtually all linux systems.
 
 In the unlikely case that `lscpu` isn't already installed on your system, here are a few ways to get it
 * install `util-linux` via your system's package manager or manually from [here](https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/)
 * download the same as a Julia artifact: [util\_linux\_jll.jl](https://github.com/JuliaBinaryWrappers/util_linux_jll.jl)
 
+### Autoupdate setting
+
+By default, ThreadPinning.jl queries the system topology using `lscpu` on startup (i.e. at runtime). This is quite costly but is unfortunately necessary since you might have precompiled the package on one machine and use it from another (think e.g. login and compute nodes of a HPC cluster). However, you can tell ThreadPinning.jl to permanently skip this autoupdate at runtime and to always use the system topology that was present at compile time (i.e. when precompiling the package). This is perfectly save if you don't use the same Julia depot on different machines, in particular if you're a "standard user" that uses Julia on a desktop computer or laptop, and can reduce the package load time significantly. To do so, simply call `ThreadPinning.Prefs.set_autoupdate(false)`.
+
 ## Noteworthy Alternatives
 
-* Simply setting `JULIA_EXCLUSIVE=1` will pin Julia threads to CPU threads in "physical order" (i.e. as specified by `lscpu`), which might or might not include hyperthreads.
+* Simply setting [`JULIA_EXCLUSIVE=1`](https://docs.julialang.org/en/v1/manual/environment-variables/#JULIA_EXCLUSIVE) will pin Julia threads to CPU threads in "physical order" (i.e. as specified by `lscpu`), which might or might not include hyperthreads.
 * [`pinthreads`](https://juliaperf.github.io/LIKWID.jl/dev/examples/dynamic_pinning/) or `likwid-pin` (CLI tool) from [LIKWID.jl](https://github.com/JuliaPerf/LIKWID.jl)
 * [This discourse thread](https://discourse.julialang.org/t/thread-affinitization-pinning-julia-threads-to-cores/58069/5) discusses issues with alternatives like `numactl`
 

@@ -26,20 +26,19 @@
 ![Lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)
 -->
 
-*Interactively pin Julia threads to specific cores at runtime*
+*Pin Julia threads to CPU processors ("hardware threads")*
 
 | **Documentation**                                                               | **Build Status**                                                                                |  **Quality**                                                                                |
 |:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
 | [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][cov-img]][cov-url] | ![][lifecycle-img] [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle) |
 
+## Demonstration
 
-## Why pin Julia threads?
+Dual-socket system where each CPU has 128 hardware threads (64 CPU-cores + hyperthreading).
 
-Because
-* [it effects performance (MFlops/s), in particular on HPC clusters with multiple NUMA domains](https://github.com/JuliaPerf/BandwidthBenchmark.jl#flopsscaling)
-* [it allows you to utilize performance counters inside of CPU cores for hardware-performance monitoring](https://www.youtube.com/watch?v=l2fTNfEDPC0)
-* it makes performance benchmarks more reliable (i.e. less random/noisy)
-* ...
+<img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/examples/threadinfo_ht_long.png" width=900px>
+
+Check out the [documentation](https://carstenbauer.github.io/ThreadPinning.jl/stable) to learn how to use ThreadPinning.jl.
 
 ## Installation
 
@@ -53,17 +52,23 @@ to add the package to your Julia environment.
 
 ### Prerequisites
 
-For ThreadPinning.jl to properly work, [`lscpu`](https://man7.org/linux/man-pages/man1/lscpu.1.html) must be available. This should be the case on virtually all linux systems. Only then can ThreadPinning.jl query relevant system information (sockets, NUMA nodes, hyperthreading, ...).
+To gather information about the hardware topology of the system (e.g. sockets and memory domains), ThreadPinning.jl uses [`lscpu`](https://man7.org/linux/man-pages/man1/lscpu.1.html). The latter must therefore be available (i.e. be on `PATH`), which should automatically be the case on virtually all linux systems.
 
 In the unlikely case that `lscpu` isn't already installed on your system, here are a few ways to get it
 * install `util-linux` via your system's package manager or manually from [here](https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/)
-* download the same as a Julia artifact: [util_linux_jll.jl](https://github.com/JuliaBinaryWrappers/util_linux_jll.jl)
+* download the same as a Julia artifact: [util\_linux\_jll.jl](https://github.com/JuliaBinaryWrappers/util_linux_jll.jl)
 
-## Example
+### Autoupdate setting
 
-Dual-socket system where each CPU has 128 hardware threads (64 CPU-cores + hyperthreading).
+By default, ThreadPinning.jl queries the system topology using `lscpu` on startup (i.e. at runtime). This is quite costly but is unfortunately necessary since you might have precompiled the package on one machine and use it from another (think e.g. login and compute nodes of a HPC cluster). However, you can tell ThreadPinning.jl to permanently skip this autoupdate at runtime and to always use the system topology that was present at compile time (i.e. when precompiling the package). This is perfectly save if you don't use the same Julia depot on different machines, in particular if you're a "standard user" that uses Julia on a desktop computer or laptop, and can reduce the package load time significantly. To do so, simply call `ThreadPinning.Prefs.set_autoupdate(false)`.
 
-<img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/assets/threadinfo.png" width=900px>
+## Why pin Julia threads?
+
+Because
+* [it effects performance (MFlops/s), in particular on HPC clusters with multiple NUMA domains](https://github.com/JuliaPerf/BandwidthBenchmark.jl#flopsscaling)
+* [it allows you to utilize performance counters inside of CPU cores for hardware-performance monitoring](https://www.youtube.com/watch?v=l2fTNfEDPC0)
+* it makes performance benchmarks more reliable (i.e. less random/noisy)
+* ...
 
 ## Documentation
 

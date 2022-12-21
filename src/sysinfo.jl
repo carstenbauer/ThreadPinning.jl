@@ -207,3 +207,11 @@ const LSCPU_STRING = @static if Sys.islinux()
 else
     "nolinux"
 end
+
+"""
+Get information about the system like how many sockets or NUMA nodes it has, whether
+hyperthreading is enabled, etc.
+"""
+function sysinfo()
+    return SYSINFO[]
+end

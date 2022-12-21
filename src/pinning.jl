@@ -62,9 +62,10 @@ Simply provide an `AbstractVector{<:Integer}` of CPU ids. The latter are expecte
 
 **3) Logical Specification**
 
-The functions `node`, `socket`, `numa`, and `core` can be used to to specify CPU ids
-of/within a certain domain. Moreover, the functions `sockets` and `numas` can be used to
-express a scatter policy (round-robin) between sockets or NUMA domains, respectively.
+The functions [`node`](@ref), [`socket`](@ref), [`numa`](@ref), and [`core`](@ref) can be
+used to to specify CPU ids of/within a certain domain. Moreover, the functions
+[`sockets`](@ref) and [`numas`](@ref) can be used to express a round-robin scatter policy
+between sockets or NUMA domains, respectively.
 
 *Examples (domains):*
 * `pinthreads(socket(1, 1:3))` # pin to the first 3 cores in the first socket
