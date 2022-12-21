@@ -12,12 +12,34 @@ Keyword arguments:
   settings.
 * `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, `:cores`, or `:none`.
 * `masks` (default: `false`): Show the affinity masks of all Julia threads.
+* `threadpool` (default: `:all`): Only consider Julia threads in the given thread pool.
+                                  Supported values are `:all`, `:default`, and
+                                  `:interactive`. Only works for Julia >= 1.9.
 """
 function threadinfo(; blas = false, hints = false, color = true, masks = false,
-                    groupby = :sockets, kwargs...)
+                    groupby = :sockets, threadpool = :all, kwargs...)
     # general info
-    jlthreads = Base.Threads.nthreads()
-    thread_cpuids = getcpuids()
+    @static if VERSION >= v"1.9-"
+        if threadpool == :default || threadpool == :interactive
+            jlthreads = Base.Threads.nthreads(threadpool)
+            if jlthreads == 0
+                println("No threads in threadpool $threadpool found.")
+                return nothing
+            end
+            thread_cpuids = filter(i -> Threads.threadpool(i) == threadpool,
+                                   1:Threads.nthreads())
+        elseif threadpool == :all
+            jlthreads = Base.Threads.nthreads()
+            thread_cpuids = getcpuids()
+        else
+            throw(ArgumentError("Unknown value for `threadpool` keyword argument. Supported " *
+                                "values are `:all`, `:default`, and `:interactive`."))
+        end
+    else
+        jlthreads = Base.Threads.nthreads()
+        thread_cpuids = getcpuids()
+    end
+    @assert length(thread_cpuids) == jlthreads
     occupied_cputhreads = length(unique(thread_cpuids))
     cputhreads = Sys.CPU_THREADS
     # visualize current pinning
