@@ -37,6 +37,13 @@ function _openblas_setaffinity(thread_idx, cpusetsize, cpu_set::Ref{Ccpu_set_t})
 end
 
 """
+Get thread affinity for OpenBLAS threads. `thread_idx` is in [0, openblas_get_num_threads()-1].
+"""
+function _openblas_getaffinity(thread_idx, cpusetsize, cpu_set::Ref{Ccpu_set_t})
+    @ccall "libopenblas64_.so".openblas_getaffinity(thread_idx::Cint, cpusetsize::Csize_t, cpu_set::Ptr{Ccpu_set_t})::Cint
+end
+
+"""
 The input `mask` should be either of the following:
 * a `BitArray` indicating the mask directly
 * a vector of cpuids (the mask will be constructed automatically)
@@ -50,6 +57,60 @@ function openblas_set_affinity_mask(threadid, mask; juliathread=1)
     end
     return nothing
 end
+
+"Query the affinity of an OpenBLAS thread"
+function openblas_get_affinity_mask(threadid; convert=true, juliathread=1)
+    cpuset = Ref{Ccpu_set_t}()
+    ret = fetch(@tspawnat juliathread _openblas_getaffinity(threadid-1, sizeof(cpuset), cpuset))
+    if ret != 0
+        @warn "_openblas_getaffinity call returned a non-zero value (indicating failure)"
+    end
+    return convert ? Base.convert(BitArray, cpuset[]) : cpuset[]
+end
+
+function openblas_print_affinity_mask(threadid; groupby=:sockets, juliathread=1)
+    mask = openblas_get_affinity_mask(threadid; juliathread, convert=false)
+    bitstr = reverse(join(bitstring.(reverse(mask.bits))))[1:ncputhreads()]
+    if groupby == :numa
+        cpuids_per_X = cpuids_per_numa
+        nX = nnuma
+    else
+        cpuids_per_X = cpuids_per_socket
+        nX = nsockets
+    end
+    print("|")
+    for s in 1:nX()
+        print(bitstr[cpuids_per_X()[s].+1],"|")
+    end
+    print("\n")
+    return nothing
+end
+function openblas_print_affinity_masks(; kwargs...)
+    for i in 1:openblas_nthreads()
+        openblas_print_affinity_mask(i; kwargs...)
+    end
+    return nothing
+end
+
+
+
+function openblas_getcpuid(threadid; juliathread=1)
+    mask = openblas_get_affinity_mask(threadid; juliathread)
+    if count(mask) == 1 # exactly one bit set
+        return findfirst(mask)-1
+    else
+        error("The affinity mask of OpenBLAS thread $threadid includes multiple cpu threads. Use `TheadPinning.openblas_print_affinity_mask($threadid)` to print the mask.")
+    end
+end
+function openblas_getcpuids(; kwargs...)
+    nt = openblas_nthreads()
+    cpuids = zeros(Int, nt)
+    for i in 1:nt
+        cpuids[i] = openblas_getcpuid(i; kwargs...)
+    end
+    return cpuids
+end
+
 function openblas_pinthread(threadid, cpuid; juliathread=1)
     openblas_set_affinity_mask(threadid, [cpuid]; juliathread)
 end
@@ -62,21 +123,27 @@ function openblas_pinthreads(threadids, cpuids; juliathread=1)
 end
 openblas_pinthreads(cpuids; juliathread=1) = openblas_pinthreads(1:length(cpuids), cpuids; juliathread)
 
-function openblas_pinthreads(strategy::Symbol; nthreads=nblasthreads(), juliathread=1, kwargs...)
-    cpuids = if strategy == :compact
-        _strategy_compact(; kwargs...)
-    elseif strategy in (:scatter, :spread, :sockets)
-        _strategy_scatter(; kwargs...)
-    elseif strategy == :numa
-        _strategy_numa(; kwargs...)
-    elseif strategy in (:rand, :random)
-        _strategy_random(; kwargs...)
-    elseif strategy == :firstn
-        _strategy_firstn(nthreads)
+function openblas_pinthreads(pinning::PinningStrategy;
+                    places::Union{Places, Symbol,
+                                AbstractVector{<:AbstractVector{<:Integer}}} = _default_places(pinning),
+                    nthreads = openblas_nthreads(), juliathread = 1,
+                    kwargs...)
+    cpuids = getcpuids_pinning(pinning, places; kwargs...)
+    if nthreads <= length(cpuids)
+        @views openblas_pinthreads(cpuids[1:nthreads])
     else
-        throw(ArgumentError("Unknown pinning strategy."))
+        @warn("More OpenBLAS threads than CPU IDs to bind to. Some CPU threads will host multiple OpenBLAS threads!")
+        idcs = mod1.(1:nthreads, length(cpuids)) # PBC
+        @views openblas_pinthreads(cpuids[idcs])
     end
-    openblas_pinthreads(@view(cpuids[1:nthreads]); juliathread)
+    return nothing
+end
+function openblas_pinthreads(pinning::Symbol; kwargs...)
+    openblas_pinthreads(_pinning_symbol2singleton(pinning); kwargs...)
 end
 
 nblasthreads() = BLAS.get_num_threads()
+
+function openblas_nthreads()
+    Int(@ccall "libopenblas64_.so".openblas_get_num_threads64_()::Cint)
+end

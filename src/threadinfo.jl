@@ -14,10 +14,18 @@ Keyword arguments:
 * `masks` (default: `false`): Show the affinity masks of all Julia threads.
 """
 function threadinfo(; blas = false, hints = false, color = true, masks = false,
-                    groupby = :sockets, kwargs...)
+                    groupby = :sockets, threadpool = :all, kwargs...)
     # general info
     jlthreads = Base.Threads.nthreads()
-    thread_cpuids = getcpuids()
+    if threadpool == :default || threadpool == :interactive
+        thread_cpuids = filter(i->Threads.threadpool(i) == threadpool, 1:Threads.nthreads())
+        if isnothing(thread_cpuids)
+            println("No threads in threadpool $threadpool found.")
+            return nothing
+        end
+    else
+        thread_cpuids = getcpuids()
+    end
     occupied_cputhreads = length(unique(thread_cpuids))
     cputhreads = Sys.CPU_THREADS
     # visualize current pinning
