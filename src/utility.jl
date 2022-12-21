@@ -90,3 +90,9 @@ function interweave_binary(arr1::AbstractVector, arr2::AbstractVector)
 end
 
 hasduplicates(xs::AbstractVector) = length(xs) != length(Set(xs))
+
+"Returns the name of the loaded BLAS library (the first, if multiple are loaded)."
+BLAS_lib() = basename(first(BLAS.get_config().loaded_libs).libname)
+
+"Number of BLAS threads."
+nblasthreads() = BLAS.get_num_threads()
