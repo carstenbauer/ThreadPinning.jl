@@ -1,6 +1,11 @@
 """
     @tspawnat tid -> task
-Mimics `Base.Threads.@spawn`, but assigns the task to thread `tid` (with `sticky = true`).
+Mimics `Threads.@spawn`, but assigns the task to thread `tid` (with `sticky = true`).
+
+Note for Julia >= 1.9: Threads in the `:interactive` thread pool come after those in
+`:default`. Hence, use a thread id `tid > nthreads(:default)` to spawn computations on
+"interactive" threads.
+
 # Example
 ```julia
 julia> t = @tspawnat 4 Threads.threadid()
@@ -17,10 +22,15 @@ macro tspawnat(thrdid, expr)
     thunk = esc(:(() -> ($expr)))
     var = esc(Base.sync_varname)
     tid = esc(thrdid)
+    @static if VERSION < v"1.9-"
+        nt = Threads.nthreads()
+    else
+        nt = Threads.nthreads(:default) + Threads.nthreads(:interactive)
+    end
     quote
-        if $tid < 1 || $tid > Base.Threads.nthreads()
-            throw(AssertionError("@tspawnat thread assignment ($($tid)) must be between " *
-                                 "1 and Threads.nthreads() (1:$(Threads.nthreads()))"))
+        if $tid < 1 || $tid > $nt
+            throw(ArgumentError("Invalid thread id. Must be between in " *
+                                "1:(total number of threads), i.e. $(1:$nt)."))
         end
         let $(letargs...)
             local task = Task($thunk)
