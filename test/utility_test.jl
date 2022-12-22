@@ -37,7 +37,7 @@ end
 end
 
 @testset "BLAS utility" begin
-    @test startswith(ThreadPinning.BLAS_lib(), "libopenblas64")
+    @test contains(ThreadPinning.BLAS_lib(), "openblas")
     @test ThreadPinning.nblasthreads() == BLAS.get_num_threads()
 end
 
