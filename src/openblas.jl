@@ -47,6 +47,31 @@ end
 
 # TODO unpin openblas threads
 
+"""
+Print the affinity masks of all OpenBLAS threads.
+
+!!! note
+    Available as of Julia 1.9.
+"""
+function openblas_print_affinity_masks end
+
+"""
+Returns the ID of the CPU thread on which the `i`-th OpenBLAS thread is currently
+running.
+
+!!! note
+    Available as of Julia 1.9.
+"""
+function openblas_getcpuid end
+
+"""
+Returns the IDs of the CPU threads on which the OpenBLAS threads are currently running.
+
+!!! note
+    Available as of Julia 1.9.
+"""
+function openblas_getcpuids end
+
 @static if VERSION >= v"1.9-"
     # `openblas_getaffinity` isn't available in the OpenBLAS versions that older Julia
     # versions ship with. The following functions don't work without it.
@@ -86,12 +111,6 @@ end
         return str
     end
 
-    """
-    Print the affinity masks of all OpenBLAS threads.
-
-    !!! note
-        Available as of Julia 1.9.
-    """
     function openblas_print_affinity_masks(; juliathread = Threads.threadid(), kwargs...)
         println("Julia threadid: ", juliathread)
         for i in 1:openblas_nthreads()
@@ -104,13 +123,6 @@ end
         return nothing
     end
 
-    """
-    Returns the ID of the CPU thread on which the `i`-th OpenBLAS thread is currently
-    running.
-
-    !!! note
-        Available as of Julia 1.9.
-    """
     function openblas_getcpuid(i; juliathread = Threads.threadid())
         mask = _openblas_get_affinity_mask(i; juliathread)
         if count(mask) == 1 # exactly one bit set
@@ -121,12 +133,6 @@ end
         end
     end
 
-    """
-    Returns the IDs of the CPU threads on which the OpenBLAS threads are currently running.
-
-    !!! note
-        Available as of Julia 1.9.
-    """
     function openblas_getcpuids(; kwargs...)
         nt = openblas_nthreads()
         cpuids = zeros(Int, nt)
