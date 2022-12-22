@@ -68,7 +68,7 @@ build-and-deploy:
   #   job: julia/1.8
   script:
     - /bin/bash -l
-    - export PATH=$HOME/.juliaup/bin:$PATH
+    - module load lang/JuliaHPC/1.8.3-foss-2022a-CUDA-11.7.0
     - cd docs
-    - julia +1.9 --color=yes build_docs.jl
+    - julia --color=yes build_docs.jl
   allow_failure: false
