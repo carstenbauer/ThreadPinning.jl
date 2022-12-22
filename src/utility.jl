@@ -25,7 +25,7 @@ macro tspawnat(thrdid, expr)
     @static if VERSION < v"1.9-"
         nt = :(Threads.nthreads())
     else
-        nt = :(Threads.nthreads(:default) + Threads.nthreads(:interactive))
+        nt = :(Threads.maxthreadid())
     end
     quote
         if $tid < 1 || $tid > $nt
