@@ -27,6 +27,12 @@ ThreadPinning.update_sysinfo!(; fromscratch = true)
     @test ishyperthread(0) == false
 end
 
+@testset "Internals / sysinfo (host system)" begin
+    @test isnothing(ThreadPinning.lscpu())
+    @test ThreadPinning.lscpu_string() isa String
+    @test ThreadPinning.sysinfo() isa ThreadPinning.SysInfo
+end
+
 # Test different systems in loop
 for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
     @testset "$system" begin

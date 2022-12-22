@@ -11,4 +11,5 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
     @test isnothing(threadinfo(; hints = true))
     @test isnothing(threadinfo(; hyperthreading = true))
     @test isnothing(threadinfo(; blocksize = 5))
+    @test isnothing(threadinfo(; blas = true))
 end

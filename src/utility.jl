@@ -23,13 +23,13 @@ macro tspawnat(thrdid, expr)
     var = esc(Base.sync_varname)
     tid = esc(thrdid)
     @static if VERSION < v"1.9-"
-        nt = Threads.nthreads()
+        nt = :(Threads.nthreads())
     else
-        nt = Threads.nthreads(:default) + Threads.nthreads(:interactive)
+        nt = :(Threads.nthreads(:default) + Threads.nthreads(:interactive))
     end
     quote
         if $tid < 1 || $tid > $nt
-            throw(ArgumentError("Invalid thread id. Must be between in " *
+            throw(ArgumentError("Invalid thread id ($($tid)). Must be between in " *
                                 "1:(total number of threads), i.e. $(1:$nt)."))
         end
         let $(letargs...)
@@ -89,7 +89,7 @@ function interweave_binary(arr1::AbstractVector, arr2::AbstractVector)
     end
 end
 
-hasduplicates(xs::AbstractVector) = length(xs) != length(Set(xs))
+hasduplicates(xs) = length(xs) != length(Set(xs))
 
 "Returns the name of the loaded BLAS library (the first, if multiple are loaded)."
 BLAS_lib() = basename(first(BLAS.get_config().loaded_libs).libname)

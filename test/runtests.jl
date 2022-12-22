@@ -5,7 +5,7 @@ Threads.nthreads() ≥ 4 ||
 
 @run_package_tests
 
-@testitem "helper" begin include("helper_test.jl") end
+@testitem "utility" begin include("utility_test.jl") end
 @testitem "preferences" begin include("preferences_test.jl") end
 
 @testitem "querying" begin include("querying_test.jl") end
@@ -13,4 +13,5 @@ Threads.nthreads() ≥ 4 ||
 @testitem "pinning" begin include("pinning_test.jl") end
 
 @testitem "likwid-pin" begin include("likwid-pin_test.jl") end
-# @testitem "OMP" begin include("omp_test.jl") end
+@testitem "openblas" begin include("openblas_test.jl") end
+@testitem "core2core latency" begin include("latency_test.jl") end
