@@ -5,8 +5,9 @@ variables:
   SCHEDULER_PARAMETERS: "-N 1 -n 1 -c 40 -t 00:15:00 -A pc2-mitarbeiter -p all --exclusive"
   JULIA_DEPOT_PATH: "/scratch/pc2-mitarbeiter/bauerc/.julia-ci"
   JULIA_NUM_THREADS: "20"
-tags:
-  - bauerc-noctua
+default:
+  tags:
+    - bauerc-noctua
 
 julia/1.6:
   stage: test
