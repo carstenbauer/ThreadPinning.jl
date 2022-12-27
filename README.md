@@ -26,7 +26,7 @@
 ![Lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)
 -->
 
-*Pin Julia threads to CPU processors ("hardware threads")*
+*Readily pin Julia threads to CPU processors*
 
 | **Documentation**                                                               | **Build Status**                                                                                |  **Quality**                                                                                |
 |:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
@@ -34,7 +34,7 @@
 
 ## Demonstration
 
-Dual-socket system where each CPU has 40 hardware threads (20 CPU-cores with 2-way SMT).
+Dual-socket system where each CPU has 40 hardware threads (20 CPU-cores with 2-way [SMT](https://en.wikipedia.org/wiki/Simultaneous_multithreading)).
 
 <img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/examples/threadinfo_ht_long.png" width=900px>
 
