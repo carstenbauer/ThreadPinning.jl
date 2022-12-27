@@ -34,7 +34,7 @@
 
 ## Demonstration
 
-Dual-socket system where each CPU has 128 hardware threads (64 CPU-cores + hyperthreading).
+Dual-socket system where each CPU has 40 hardware threads (20 CPU-cores with 2-way SMT).
 
 <img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/examples/threadinfo_ht_long.png" width=900px>
 
