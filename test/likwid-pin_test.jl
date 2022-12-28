@@ -106,7 +106,7 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
 
             @testset "E:domain:numthreads:chunk_size:stride" begin
                 # TODO
-                # lp_expression = "E:N:4:2:4" # E:<domain>:<nthreads>(:<chunk size>:<stride>). 2 threads pinned two first two cpu threads (logical, incl. SMT) and 2 threads pinned to 5th and 6th cpu threads.
+                # lp_expression = "E:N:4:2:4" # E:<domain>:<nthreads>(:<chunk size>:<stride>). 2 threads pinned two first two CPU-threads (logical, incl. SMT) and 2 threads pinned to 5th and 6th CPU-threads.
             end
 
             @testset "Errors" begin

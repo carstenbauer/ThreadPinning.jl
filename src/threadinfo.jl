@@ -1,11 +1,11 @@
 """
-Print information about Julia threads, e.g. on which cpu threads (i.e. cores if
+Print information about Julia threads, e.g. on which CPU-threads (i.e. cores if
 hyperthreading is disabled) they are running.
 
 Keyword arguments:
 * `color` (default: `true`): Toggle between colored and black-and-white output.
-* `blocksize` (default: `32`): Wrap to a new line after `blocksize` many cpu threads.
-* `hyperthreading` (default: `true`): If `true`, we (try to) highlight cpu threads
+* `blocksize` (default: `32`): Wrap to a new line after `blocksize` many CPU-threads.
+* `hyperthreading` (default: `true`): If `true`, we (try to) highlight CPU-threads
   associated with hyperthreading in the `color=true` output.
 * `blas` (default: `false`): Show information about BLAS threads as well.
 * `hints` (default: `false`): Give some hints about how to improve the threading related
@@ -293,7 +293,7 @@ function _general_hints()
               "$cputhreads?")
     end
     if length(unique(thread_cpuids)) < jlthreads
-        @warn("Overlap: Some Julia threads are running on the same cpu threads")
+        @warn("Overlap: Some Julia threads are running on the same CPU-threads")
     end
     return nothing
 end

@@ -1,5 +1,5 @@
 """
-Pins Julia threads to CPU threads based on the given `likwid-pin` compatible string.
+Pins Julia threads to CPU-threads based on the given `likwid-pin` compatible string.
 Checkout the [LIKWID documentation](https://github.com/RRZE-HPC/likwid/wiki/Likwid-Pin)
 for more information.
 
@@ -151,7 +151,7 @@ function _lp_scatter_cpuids(domain, numthreads; onebased = false)
     # if length(domain_cpuids) >= numthreads
     cpuids = domain_cpuids[mod1.(1:numthreads, length(domain_cpuids))]
     # else
-    #     throw(ArgumentError("Not enough CPU threads. Trying to pin $numthreads Julia " *
+    #     throw(ArgumentError("Not enough CPU-threads. Trying to pin $numthreads Julia " *
     #                         "threads but there are only $(length(domain_cpuids)) CPU " *
     #                         "threads available given the domain + scattering policy."))
     # end
@@ -175,9 +175,9 @@ function _lp_domain_cpuids(domain, lp_idcs; onebased = false)
     end
 
     if length(domain_cpuids) < length(idcs)
-        throw(ArgumentError("Not enough CPU threads in domain. Specified $(length(idcs)) " *
+        throw(ArgumentError("Not enough CPU-threads in domain. Specified $(length(idcs)) " *
                             "indices but domain \"$domain\" only has " *
-                            "$(length(domain_cpuids)) CPU threads."))
+                            "$(length(domain_cpuids)) CPU-threads."))
     else
         if checkbounds(Bool, domain_cpuids, idcs)
             @inbounds cpuids = domain_cpuids[idcs]
@@ -206,9 +206,9 @@ function _lp_expression_cpuids(domain, numthreads, chunk_size, stride; onebased)
     end
 
     if length(domain_cpuids) < numthreads
-        throw(ArgumentError("Not enough CPU threads in domain. Specified $(numthreads) " *
+        throw(ArgumentError("Not enough CPU-threads in domain. Specified $(numthreads) " *
                             "for the number of threads but domain \"$domain\" only has " *
-                            "$(length(domain_cpuids)) CPU threads."))
+                            "$(length(domain_cpuids)) CPU-threads."))
     else
         if chunk_size == stride == 1
             @inbounds cpuids = domain_cpuids[1:numthreads]
@@ -222,7 +222,7 @@ function _lp_expression_cpuids(domain, numthreads, chunk_size, stride; onebased)
             end
             stride_range = range(start = 1, step = stride, stop = nchunks * stride)
             if last(stride_range) + chunk_size - 1 > length(domain_cpuids)
-                throw(ArgumentError("Not enough CPU threads in domain. Combination of " *
+                throw(ArgumentError("Not enough CPU-threads in domain. Combination of " *
                                     "stride and chunk_size exceeds the number of CPU " *
                                     "threads ($(length(domain_cpuids))) in the domain " *
                                     "\"$domain\"."))

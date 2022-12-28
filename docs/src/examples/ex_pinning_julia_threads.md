@@ -10,9 +10,9 @@ Pinning your threads is as simple as putting the following at the top of your Ju
 using ThreadPinning
 pinthreads(:cores)
 ```
-This will successively pin all Julia threads to CPU cores in logcial order, avoiding hyperthreads if possible. Of course, you can replace `:cores` by all the options supported by [`pinthreads`](@ref). Conceptually, there are three different formats to specify your desired thread-processor mapping:
+This will successively pin all Julia threads to CPU-cores in logcial order, avoiding hyperthreads if possible. Of course, you can replace `:cores` by all the options supported by [`pinthreads`](@ref). Conceptually, there are three different formats to specify your desired thread-processor mapping:
 
-1) explicit lists of CPU ids (e.g. `0:3` or `[0,12,4]`),
+1) explicit lists of CPU IDs (e.g. `0:3` or `[0,12,4]`),
 2) predefined symbols (e.g. `:cores` or `:sockets`),
 3) logical specification of domains via helper functions (e.g. `node` and `socket`).
 
@@ -23,7 +23,7 @@ To check and visualize the current pinning you can use [`threadinfo`](@ref) to g
 
 ![threadinfo_ht_long.png](threadinfo_ht_long.png)
 
-As you can see, this image is taken on a dual-socket system (indicated by the two `| .... |` sections) where each CPU has 20 CPU-cores and Julia has been started with 40 threads. Hyperthreading is enabled - the greyed out numbers indicate hyperthreads/SMT-threads - with two CPU threads per core.
+As you can see, this image is taken on a dual-socket system (indicated by the two `| .... |` sections) where each CPU has 20 CPU-cores and Julia has been started with 40 threads. Hyperthreading is enabled - the greyed out numbers indicate hyperthreads/SMT-threads - with two CPU-threads per core.
 
 Note that [`threadinfo`](@ref) has a few keyword arguments that let you change or tune the output. The most important ones are probably `groupby` and `color`. The former allows you to switch from socket to, say, NUMA/memory domain visualization (`groupby=:numa`). The latter allows you to switch to non-colored output (see below).
 

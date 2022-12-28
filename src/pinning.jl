@@ -6,7 +6,7 @@ Pin the calling Julia thread to the CPU with id `cpuid`.
 function pinthread(cpuid::Integer; warn::Bool = true)
     warn && _check_environment()
     if !(cpuid in cpuids_all())
-        throw(ArgumentError("Inavlid cpuid encountered. See `cpuids_all()` for all " *
+        throw(ArgumentError("Inavlid CPU ID encountered. See `cpuids_all()` for all " *
                             "valid CPU IDs on the system."))
     end
     FIRST_PIN[] = false
@@ -26,7 +26,7 @@ end
 """
     pinthreads(cpuids[; nthreads=Threads.nthreads(), force=true, warn=true])
 Pin the first `min(length(cpuids), nthreads)` Julia threads to an explicit or implicit list
-of CPU ids. The latter can be specified in three ways:
+of CPU IDs. The latter can be specified in three ways:
 
 1) explicitly (e.g. `0:3` or `[0,12,4]`),
 2) by passing one of several predefined symbols (e.g. `:cores` or `:sockets`),
@@ -44,32 +44,32 @@ settings.
 
 **1) Explicit**
 
-Simply provide an `AbstractVector{<:Integer}` of CPU ids. The latter are expected to be the
+Simply provide an `AbstractVector{<:Integer}` of CPU IDs. The latter are expected to be the
 "physical" ids, i.e. as provided by `lscpu`, and thus start at zero!
 
 **2) Predefined Symbols**
 
-* `:cputhreads` or `:compact`: successively pin to all available CPU threads.
+* `:cputhreads` or `:compact`: successively pin to all available CPU-threads.
 * `:cores`: spread threads across all available cores, only use hyperthreads if necessary.
 * `:sockets`: spread threads across sockets (round-robin), only use hyperthreads if
               necessary. Set `compact=true` to get compact pinning within each socket.
 * `:numa`: spread threads across NUMA/memory domains (round-robin), only use hyperthreads
            if necessary. Set `compact=true` to get compact pinning within each NUMA/memory
            domain.
-* `:random`: pin threads randomly to CPU threads
-* `:current`: pin threads to the CPU threads they are currently running on
-* `:firstn`: pin threads to CPU threads in "physical" order (as specified by lscpu).
+* `:random`: pin threads randomly to CPU-threads
+* `:current`: pin threads to the CPU-threads they are currently running on
+* `:firstn`: pin threads to CPU-threads in "physical" order (as specified by lscpu).
 
 **3) Logical Specification**
 
 The functions [`node`](@ref), [`socket`](@ref), [`numa`](@ref), and [`core`](@ref) can be
-used to to specify CPU ids of/within a certain domain. Moreover, the functions
+used to to specify CPU IDs of/within a certain domain. Moreover, the functions
 [`sockets`](@ref) and [`numas`](@ref) can be used to express a round-robin scatter policy
 between sockets or NUMA domains, respectively.
 
 *Examples (domains):*
 * `pinthreads(socket(1, 1:3))` # pin to the first 3 cores in the first socket
-* `pinthreads(socket(1, 1:3; compact=true))` # pin to the first 3 CPU threads in the first
+* `pinthreads(socket(1, 1:3; compact=true))` # pin to the first 3 CPU-threads in the first
   socket
 * `pinthreads(numa(2, [2,4,6]))` # pin to the second, the fourth, and the sixth cores in
   the second NUMA/memory domain
@@ -168,7 +168,7 @@ end
 
 function _check_cpuids(cpuids)
     if !all(c -> c in cpuids_all(), cpuids)
-        throw(ArgumentError("Inavlid cpuid encountered. See `cpuids_all()` for all " *
+        throw(ArgumentError("Inavlid CPU ID encountered. See `cpuids_all()` for all " *
                             "valid CPU IDs on the system."))
     end
     return nothing

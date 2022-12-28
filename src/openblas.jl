@@ -30,7 +30,7 @@ function _openblas_pinthread(threadid, cpuid; juliathread = Threads.threadid())
 end
 
 """
-Pin the available OpenBLAS threads to the given CPU ids. Currently, only explict pinning
+Pin the available OpenBLAS threads to the given CPU IDs. Currently, only explict pinning
 is possible.
 """
 function openblas_pinthreads(cpuids::AbstractVector{<:Integer};
@@ -65,7 +65,7 @@ running.
 function openblas_getcpuid end
 
 """
-Returns the IDs of the CPU threads on which the OpenBLAS threads are currently running.
+Returns the IDs of the CPU-threads on which the OpenBLAS threads are currently running.
 
 !!! note
     Available as of Julia 1.9.

@@ -12,7 +12,7 @@ running.
 getcpuid(threadid::Integer) = fetch(@tspawnat threadid getcpuid())
 
 """
-Returns the IDs of the CPU threads on which the Julia threads are currently running.
+Returns the IDs of the CPU-threads on which the Julia threads are currently running.
 
 See `getcpuid` for more information.
 """
@@ -62,10 +62,10 @@ unsafe_cpuids_per_node() = sysinfo().cpuids_node
 
 "Check whether hyperthreading is enabled."
 hyperthreading_is_enabled() = sysinfo().hyperthreading
-"Check whether the given cpu thread is a hyperthread (i.e. the second cpu thread associated
+"Check whether the given CPU-thread is a hyperthread (i.e. the second CPU-thread associated
 with a CPU-core)."
 ishyperthread(cpuid::Integer) = sysinfo().ishyperthread[_cpuidx(cpuid)]
-"Number of CPU threads"
+"Number of CPU-threads"
 ncputhreads() = length(cpuids_all())
 "Number of cores (i.e. excluding hyperthreads)"
 ncores() = sysinfo().ncores
@@ -74,16 +74,16 @@ nnuma() = sysinfo().nnuma
 "Number of CPU sockets"
 nsockets() = sysinfo().nsockets
 
-"Number of CPU threads per core"
+"Number of CPU-threads per core"
 ncputhreads_per_core() = length.(unsafe_cpuids_per_core())
-"Number of CPU threads per NUMA domain"
+"Number of CPU-threads per NUMA domain"
 ncputhreads_per_numa() = length.(unsafe_cpuids_per_numa())
-"Number of CPU threads per socket"
+"Number of CPU-threads per socket"
 ncputhreads_per_socket() = length.(unsafe_cpuids_per_socket())
 
-"Number of CPU cores per NUMA domain"
+"Number of CPU-cores per NUMA domain"
 ncores_per_numa() = count.(!ishyperthread, unsafe_cpuids_per_numa())
-"Number of CPU cores per socket"
+"Number of CPU-cores per socket"
 ncores_per_socket() = count.(!ishyperthread, unsafe_cpuids_per_socket())
 
 "Returns a `Vector{Int}` which lists all valid CPUIDs. There is no guarantee about the
@@ -145,7 +145,7 @@ end
 # High-level API for direct usage with `pinthreads`
 const T_idcs = Union{Colon, AbstractVector{<:Integer}, Integer}
 """
-Represents the CPU id domain of core `i` (logical index, starts at 1). Uses compact ordering
+Represents the CPU ID domain of core `i` (logical index, starts at 1). Uses compact ordering
 by default. Set `shuffle=true` to randomize.
 
 Optional second argument: Logical indices to select a subset of the domain.
@@ -160,7 +160,7 @@ function core(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
     return cpuids
 end
 """
-Represents the CPU id domain of NUMA/memory domain `i` (logical index, starts at 1). By
+Represents the CPU ID domain of NUMA/memory domain `i` (logical index, starts at 1). By
 default, cores will be used first and hyperthreads will only be used if necessary. Provide
 `compact=true` to get compact ordering instead. Set `shuffle=true` to randomize.
 
@@ -176,7 +176,7 @@ function numa(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
     return cpuids
 end
 """
-Represents the CPU id domain of socket `i` (logical index, starts at 1). By default, cores
+Represents the CPU ID domain of socket `i` (logical index, starts at 1). By default, cores
 will be used first and hyperthreads will only be used if necessary. Provide `compact=true`
 to get compact ordering instead. Set `shuffle=true` to randomize.
 
@@ -192,7 +192,7 @@ function socket(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
     return cpuids
 end
 """
-Represents the CPU id domain of the entire node/system. By default, cores will be used first
+Represents the CPU ID domain of the entire node/system. By default, cores will be used first
 and hyperthreads will only be used if necessary. Provide `compact=true` to get compact
 ordering instead. Set `shuffle=true` to randomize. Set `shuffle=true` to randomize.
 
@@ -213,7 +213,7 @@ end
 #     return cpuids
 # end
 """
-Represents the CPU ids of the system as obtained by a round-robin scattering
+Represents the CPU IDs of the system as obtained by a round-robin scattering
 between sockets. By default, within each socket, cores will be used first and hyperthreads
 will only be used if necessary. Provide `compact=true` to get compact ordering within each
 socket. Set `shuffle=true` to randomize.
@@ -232,7 +232,7 @@ function sockets(idcs::T_idcs = Colon(); shuffle = false, kwargs...)
     return cpuids
 end
 """
-Represents the CPU ids of the system as obtained by a round-robin scattering
+Represents the CPU IDs of the system as obtained by a round-robin scattering
 between NUMA/memory domain. By default, within each memory domain, cores will be used first
 and hyperthreads will only be used if necessary. Provide `compact=true` to get compact
 ordering within each memory domain. Set `shuffle=true` to randomize.

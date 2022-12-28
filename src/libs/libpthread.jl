@@ -130,7 +130,7 @@ function pthread_getcpuid(threadid=Threads.threadid())
     if count(mask) == 1 # exactly one bit set
         return findfirst(mask)-1
     else
-        @warn "The affinity mask of Julia thread $threadid includes multiple cpu threads."
+        @warn "The affinity mask of Julia thread $threadid includes multiple CPU-threads."
         return -1
     end
 end
