@@ -27,8 +27,8 @@ makedocs(;
              ],
              "Explanations" => [
                  "Why Pin Julia Threads?" => "explanations/why.md",
+                 "Why only Linux?" => "explanations/linux.md",
                  "Julia Threads + BLAS Threads" => "explanations/blas.md",
-                 "How It Works" => "explanations/how.md",
              ],
              "References" => [
                  "API" => "refs/api.md",
