@@ -15,3 +15,4 @@ Threads.nthreads() ≥ 4 ||
 @testitem "likwid-pin" begin include("likwid-pin_test.jl") end
 @testitem "openblas" begin include("openblas_test.jl") end
 @testitem "core2core latency" begin include("latency_test.jl") end
+@testitem "intel mkl" begin include("mkl_test.jl") end
