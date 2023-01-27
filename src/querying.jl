@@ -53,6 +53,16 @@ function _affinity_mask_to_string(mask; groupby = :sockets)
     return str
 end
 
+"""
+Get the affinity mask of the given Julia Threads
+"""
+get_affinity_mask(tid) = uv_thread_getaffinity(tid)[1:ncputhreads()]
+
+"Get the CPU-thread IDs associated with the given affinity mask."
+function get_cpuids_from_affinity_mask(mask)
+    [unsafe_cpuids_all()[i] for (i, v) in enumerate(mask) if v == 1]
+end
+
 # Unsafe because they directly return the fields instead of copies (be warry when modiying!)
 unsafe_cpuids_all() = sysinfo().cpuids
 unsafe_cpuids_per_core() = sysinfo().cpuids_cores

@@ -59,6 +59,9 @@ Simply provide an `AbstractVector{<:Integer}` of CPU IDs. The latter are expecte
 * `:random`: pin threads randomly to CPU-threads
 * `:current`: pin threads to the CPU-threads they are currently running on
 * `:firstn`: pin threads to CPU-threads in "physical" order (as specified by lscpu).
+* `:affinitymask`: pin threads to different CPU-threads in accordance with their
+                   affinity mask (must be the same for all of them). By default,
+                   `hyperthreads_last=true`.
 
 **3) Logical Specification**
 
@@ -127,6 +130,31 @@ end
 pinthreads(::Val{:random}; kwargs...) = pinthreads(node(; shuffle = true); kwargs...)
 pinthreads(::Val{:firstn}; kwargs...) = pinthreads(cpuids_all(); kwargs...)
 pinthreads(::Val{:current}; kwargs...) = pinthreads(getcpuids(); kwargs...)
+function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
+                    nthreads = Threads.nthreads(), kwargs...)
+    masks = get_affinity_mask.(1:nthreads)
+    mask = first(masks)
+    if !all(isequal(mask), masks)
+        error("Julia threads have different affinity masks.")
+    end
+    cpuids = get_cpuids_from_affinity_mask(mask)
+    if length(cpuids) < nthreads
+        error("More Julia threads than CPU-threads specified by affinity mask.")
+    end
+    if hyperthreads_last
+        # sort cpuids such that hyperthreads come last
+        by_func(c) = (c, ishyperthread(c))
+        lt_func(x, y) =
+            if x[2] != y[2]
+                return x[2] < y[2] # non-hyperthreads first
+            else
+                return x[1] < y[1] # lower cpuid first
+            end
+        sort!(cpuids; lt = lt_func, by = by_func)
+    end
+    pinthreads(cpuids; nthreads, kwargs...)
+    return nothing
+end
 
 """
 Unpins all Julia threads by setting the affinity mask of all threads to all unity.
