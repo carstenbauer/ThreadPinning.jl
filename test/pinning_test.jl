@@ -72,6 +72,21 @@ end
         @test isnothing(pinthreads(:sockets; nthreads = 2))
         @test getcpuid.(1:2) == vcat(socket(1, 1:1), socket(2, 1:1))
     end
+    @testset "pinthreads(:affinitymask) + taskset" begin
+        julia = Base.julia_cmd()
+        pkgdir = joinpath(@__DIR__, "..")
+        numthreads = Threads.nthreads()
+        cpuids = sort!(shuffle!(cpuids_all())[1:numthreads])
+        cpulist = join(cpuids, ",")
+        code = `"using ThreadPinning, Test;
+                 pinthreads(:affinitymask)
+                 mask_cpuids = [$cpulist]
+                 @test length(getcpuids()) == length(Set(getcpuids()))
+                 @test all(c->c in mask_cpuids, getcpuids())
+                 @test issorted(ishyperthread.(getcpuids()))"`
+        @test run(`taskset --cpu-list $cpulist $julia --project=$(pkgdir) -t $numthreads -e $code`).exitcode ==
+              0
+    end
 end
 
 @testset "Thread Pinning (logical specification)" begin
@@ -131,22 +146,6 @@ end
     for tid in 1:nthreads()
         @test count(isone, ThreadPinning.uv_thread_getaffinity(tid)) == ncputhreads()
     end
-end
-
-@testset "taskset + pinthreads(:affinitymask)" begin
-    julia = Base.julia_cmd()
-    pkgdir = joinpath(@__DIR__, "..")
-    numthreads = Threads.nthreads()
-    cpuids = sort!(shuffle!(cpuids_all())[1:numthreads])
-    cpulist = join(cpuids, ",")
-    code = `"using ThreadPinning, Test;
-             pinthreads(:affinitymask)
-             mask_cpuids = [$cpulist]
-             @test length(getcpuids()) == length(Set(getcpuids()))
-             @test all(c->c in mask_cpuids, getcpuids())
-             @test issorted(ishyperthread.(getcpuids()))"`
-    @test run(`taskset --cpu-list $cpulist $julia --project=$(pkgdir) -t $numthreads -e $code`).exitcode ==
-          0
 end
 
 @testset "Environment variables" begin
