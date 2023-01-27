@@ -1,7 +1,7 @@
 using Test
 using ThreadPinning
 using Base.Threads: nthreads
-using Random: shuffle
+using Random: shuffle, shuffle!
 
 Threads.nthreads() ≥ 2 ||
     error("Can't run tests with single Julia thread! Forgot to set `JULIA_NUM_THREADS`?")
@@ -133,11 +133,29 @@ end
     end
 end
 
+@testset "taskset + pinthreads(:affinitymask)" begin
+    julia = Base.julia_cmd()
+    pkgdir = joinpath(@__DIR__, "..")
+    numthreads = Threads.nthreads()
+    cpuids = sort!(shuffle!(cpuids_all())[1:numthreads])
+    cpulist = join(cpuids, ",")
+    code = `"using ThreadPinning, Test;
+             pinthreads(:affinitymask)
+             mask_cpuids = [$cpulist]
+             @test length(getcpuids()) == length(Set(getcpuids()))
+             @test all(c->c in mask_cpuids, getcpuids())
+             @test issorted(ishyperthread.(getcpuids()))"`
+    @test run(`taskset --cpu-list $cpulist $julia --project=$(pkgdir) -t $numthreads -e $code`).exitcode ==
+          0
+end
+
 @testset "Environment variables" begin
     julia = Base.julia_cmd()
     pkgdir = joinpath(@__DIR__, "..")
 
-    exec(s; nthreads=ncores()) = run(`$julia --project=$(pkgdir) -t $nthreads -e $s`).exitcode == 0
+    function exec(s; nthreads = ncores())
+        run(`$julia --project=$(pkgdir) -t $nthreads -e $s`).exitcode == 0
+    end
     @testset "JULIA_PIN" begin
         withenv("JULIA_PIN" => "cputhreads") do
             @test exec(`'using ThreadPinning, Test;
