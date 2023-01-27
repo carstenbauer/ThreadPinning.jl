@@ -46,6 +46,7 @@ macro tspawnat(thrdid, expr)
 end
 
 """
+$(TYPEDSIGNATURES)
 # Examples
 ```julia
 interweave([1,2,3,4], [5,6,7,8]) == [1,5,2,6,3,7,4,8]

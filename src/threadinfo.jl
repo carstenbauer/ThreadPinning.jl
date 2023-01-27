@@ -1,4 +1,5 @@
 """
+$(SIGNATURES)
 Print information about Julia threads, e.g. on which CPU-threads (i.e. cores if
 hyperthreading is disabled) they are running.
 

@@ -30,6 +30,7 @@ function _openblas_pinthread(threadid, cpuid; juliathread = Threads.threadid())
 end
 
 """
+$(SIGNATURES)
 Pin the available OpenBLAS threads to the given CPU IDs. Currently, only explict pinning
 is possible.
 """
@@ -56,6 +57,7 @@ Print the affinity masks of all OpenBLAS threads.
 function openblas_print_affinity_masks end
 
 """
+$(SIGNATURES)
 Returns the ID of the CPU thread on which the `i`-th OpenBLAS thread is currently
 running.
 
@@ -65,6 +67,7 @@ running.
 function openblas_getcpuid end
 
 """
+$(SIGNATURES)
 Returns the IDs of the CPU-threads on which the OpenBLAS threads are currently running.
 
 !!! note

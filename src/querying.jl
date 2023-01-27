@@ -6,6 +6,7 @@ See `sched_getcpu` for more information.
 getcpuid() = Int(sched_getcpu())
 
 """
+$(SIGNATURES)
 Returns the ID of the CPU thread on which the given Julia thread (`threadid`) is currently
 running.
 """
@@ -62,7 +63,7 @@ unsafe_cpuids_per_node() = sysinfo().cpuids_node
 
 "Check whether hyperthreading is enabled."
 hyperthreading_is_enabled() = sysinfo().hyperthreading
-"Check whether the given CPU-thread is a hyperthread (i.e. the second CPU-thread associated
+"$(SIGNATURES)Check whether the given CPU-thread is a hyperthread (i.e. the second CPU-thread associated
 with a CPU-core)."
 ishyperthread(cpuid::Integer) = sysinfo().ishyperthread[_cpuidx(cpuid)]
 "Number of CPU-threads"
@@ -93,6 +94,7 @@ cpuids_all() = deepcopy(unsafe_cpuids_all())
 physical cores"
 cpuids_per_core() = deepcopy(unsafe_cpuids_per_core())
 """
+$(SIGNATURES)
 Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available
 NUMA domains. Within each memory domain, physical cores come first. Set `compact=true` to
 get compact ordering instead.
@@ -106,6 +108,7 @@ function cpuids_per_numa(; compact = false)
     end
 end
 """
+$(SIGNATURES)
 Returns a `Vector{Vector{Int}}` which indicates the CPUIDs associated with the available
 CPU sockets. Within each socket, physical cores come first. Set `compact=true` to get
 compact ordering instead.
@@ -119,6 +122,7 @@ function cpuids_per_socket(; compact = false)
     end
 end
 """
+$(SIGNATURES)
 Returns a `Vector{Int}` which indicates the CPUIDs associated with the available node.
 Physical cores come first. Set `compact=true` to get compact ordering.
 """
@@ -145,6 +149,7 @@ end
 # High-level API for direct usage with `pinthreads`
 const T_idcs = Union{Colon, AbstractVector{<:Integer}, Integer}
 """
+$(SIGNATURES)
 Represents the CPU ID domain of core `i` (logical index, starts at 1). Uses compact ordering
 by default. Set `shuffle=true` to randomize.
 
@@ -160,6 +165,7 @@ function core(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
     return cpuids
 end
 """
+$(SIGNATURES)
 Represents the CPU ID domain of NUMA/memory domain `i` (logical index, starts at 1). By
 default, cores will be used first and hyperthreads will only be used if necessary. Provide
 `compact=true` to get compact ordering instead. Set `shuffle=true` to randomize.
@@ -176,6 +182,7 @@ function numa(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
     return cpuids
 end
 """
+$(SIGNATURES)
 Represents the CPU ID domain of socket `i` (logical index, starts at 1). By default, cores
 will be used first and hyperthreads will only be used if necessary. Provide `compact=true`
 to get compact ordering instead. Set `shuffle=true` to randomize.
@@ -192,6 +199,7 @@ function socket(i::Integer, idcs::T_idcs = Colon(); shuffle = false, kwargs...)
     return cpuids
 end
 """
+$(SIGNATURES)
 Represents the CPU ID domain of the entire node/system. By default, cores will be used first
 and hyperthreads will only be used if necessary. Provide `compact=true` to get compact
 ordering instead. Set `shuffle=true` to randomize. Set `shuffle=true` to randomize.
@@ -213,6 +221,7 @@ end
 #     return cpuids
 # end
 """
+$(SIGNATURES)
 Represents the CPU IDs of the system as obtained by a round-robin scattering
 between sockets. By default, within each socket, cores will be used first and hyperthreads
 will only be used if necessary. Provide `compact=true` to get compact ordering within each
@@ -232,6 +241,7 @@ function sockets(idcs::T_idcs = Colon(); shuffle = false, kwargs...)
     return cpuids
 end
 """
+$(SIGNATURES)
 Represents the CPU IDs of the system as obtained by a round-robin scattering
 between NUMA/memory domain. By default, within each memory domain, cores will be used first
 and hyperthreads will only be used if necessary. Provide `compact=true` to get compact

@@ -6,6 +6,7 @@ using Libdl
 using LinearAlgebra
 import Random
 using DelimitedFiles
+using DocStringExtensions
 
 # includes
 include("utility.jl")
