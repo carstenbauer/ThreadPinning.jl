@@ -1,4 +1,5 @@
 """
+$(SIGNATURES)
 Pins Julia threads to CPU-threads based on the given `likwid-pin` compatible string.
 Checkout the [LIKWID documentation](https://github.com/RRZE-HPC/likwid/wiki/Likwid-Pin)
 for more information.
@@ -20,6 +21,7 @@ function pinthreads_likwidpin(str::AbstractString; onebased = false)
 end
 
 """
+$(SIGNATURES)
 Convert the given likwid-pin compatible string into a CPU ID list.
 See [`pinthreads_likwidpin`](@ref) for more information.
 """
@@ -110,6 +112,7 @@ function _lp_check_domain(domain; onebased = false)
 end
 
 """
+$(SIGNATURES)
 The likwid-pin compatible domains that are available for the system.
 """
 function likwidpin_domains(; onebased = false)

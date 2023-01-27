@@ -1,7 +1,6 @@
 """
-    pinthread(cpuid::Integer; warn::Bool = true)
-
-Pin the calling Julia thread to the CPU with id `cpuid`.
+$(TYPEDSIGNATURES)
+Pin the calling Julia thread to the given CPU-thread.
 """
 function pinthread(cpuid::Integer; warn::Bool = true)
     warn && _check_environment()
@@ -14,9 +13,8 @@ function pinthread(cpuid::Integer; warn::Bool = true)
 end
 
 """
-    pinthread(threadid::Integer, cpuid::Integer; kwargs...)
-
-Pin the given Julia thread (`threadid`) to the CPU with ID `cpuid`.
+$(TYPEDSIGNATURES)
+Pin a Julia thread to a specific CPU-thread.
 """
 function pinthread(threadid::Integer, cpuid::Integer; kwargs...)
     fetch(@tspawnat threadid pinthread(cpuid; kwargs...))
@@ -143,7 +141,8 @@ function unpinthreads()
 end
 
 """
-Unpins the Julia thread with the given `threadid` by setting the affinity mask to all unity.
+$(SIGNATURES)
+Unpins the given Julia thread by setting the affinity mask to all unity.
 Afterwards, the OS is free to move the Julia thread from one CPU thread to another.
 """
 function unpinthread(threadid::Integer)

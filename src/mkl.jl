@@ -12,6 +12,7 @@ function mkl_is_loaded()
 end
 
 """
+$(SIGNATURES)
 Returns the full path to the `libmkl_rt` library if the latter is loaded. Will try to
 locate the library and, if successfull, will cache the result. Throws an error otherwise.
 
@@ -51,7 +52,7 @@ Wrapper around the MKL function [`mkl_get_dynamic`](https://www.intel.com/conten
 mkl_get_dynamic() = @ccall mkl_fullpath().mkl_get_dynamic()::Cint
 
 """
-    mkl_set_dynamic(flag::Integer)
+$(SIGNATURES)
 Wrapper around the MKL function [`mkl_set_dynamic`](https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/support-functions/threading-control/mkl-set-dynamic.html).
 """
 function mkl_set_dynamic(flag::Integer)

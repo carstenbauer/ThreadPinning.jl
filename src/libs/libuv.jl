@@ -17,7 +17,7 @@ Ref: [docs](https://github.com/clibs/uv/blob/d0240ce496fcd86d45e8a6b211732220fdb
 uv_thread_self() = @ccall uv_thread_self()::uv_thread_t
 
 """
-    uv_thread_getaffinity(self_ref, cpumask, masksize)
+$(SIGNATURES)
 Gets the specified thread's affinity setting. On Unix, this maps the
 `cpu_set_t` returned by `pthread_getaffinity_np(3)` to bytes in `cpumask`.
 
@@ -34,7 +34,7 @@ function uv_thread_getaffinity(self_ref, cpumask, masksize)
 end
 
 """
-    uv_thread_getaffinity()
+$(SIGNATURES)
 Query the calling thread's affinity.
 """
 function uv_thread_getaffinity()
@@ -55,7 +55,7 @@ function uv_thread_getaffinity(threadid)
 end
 
 """
-    uv_thread_setaffinity(self_ref, cpumask, oldmask, masksize)
+$(SIGNATURES)
 Sets the specified thread's affinity to `cpumask`, which is specified in
 bytes. Optionally returning the previous affinity setting in `oldmask`.
 On Unix, uses `pthread_getaffinity_np(3)` to get the affinity setting
@@ -79,7 +79,7 @@ function uv_thread_setaffinity(self_ref, cpumask, oldmask, masksize)
 end
 
 """
-    uv_thread_setaffinity(procid::Integer)
+$(SIGNATURES)
 Set the calling thread's affinity to `procid`.
 """
 function uv_thread_setaffinity(procid::Integer)

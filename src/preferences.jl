@@ -1,6 +1,7 @@
 module Prefs
 
 using Preferences
+using DocStringExtensions
 
 const ALL_PREFERENCES = ("autoupdate", "pin", "likwidpin")
 
@@ -22,13 +23,13 @@ function get_likwidpin()
     return p
 end
 
-"Set the pin preference"
+"$(SIGNATURES)Set the pin preference"
 function set_pin(s::Union{Symbol, AbstractString})
     # TODO check if valid?
     @set_preferences!("pin"=>String(s))
     return nothing
 end
-"Set the likwidpin preference"
+"$(SIGNATURES)Set the likwidpin preference"
 function set_likwidpin(s::AbstractString)
     # TODO check if valid?
     @set_preferences!("likwidpin"=>s)
@@ -67,7 +68,7 @@ function get_autoupdate()
     end
 end
 
-"Set the autoupdate preference"
+"$(SIGNATURES)Set the autoupdate preference"
 function set_autoupdate(b::Bool)
     @set_preferences!("autoupdate"=>string(b))
     @info("Done. Package might recompile next time it is loaded (in a new Julia session).")
