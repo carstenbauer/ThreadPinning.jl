@@ -72,20 +72,35 @@ end
         @test isnothing(pinthreads(:sockets; nthreads = 2))
         @test getcpuid.(1:2) == vcat(socket(1, 1:1), socket(2, 1:1))
     end
-    @testset "pinthreads(:affinitymask) + taskset" begin
-        julia = Base.julia_cmd()
-        pkgdir = joinpath(@__DIR__, "..")
-        numthreads = Threads.nthreads()
+    @testset ":affinitymask" begin
+        test_external_affinity = (cmd, numthreads, code) -> begin
+            julia = Base.julia_cmd()
+            pkgdir = joinpath(@__DIR__, "..")
+            juliacmd = `$julia --project=$(pkgdir) -t $numthreads -e $code`
+            fullcmd = `$cmd $juliacmd`
+            # @show fullcmd
+            run(fullcmd).exitcode == 0
+        end
+
+        numthreads = min(Threads.nthreads(), ncputhreads())
         cpuids = sort!(shuffle!(cpuids_all())[1:numthreads])
         cpulist = join(cpuids, ",")
+        # Check
+        # 1) all in mask
+        # 2) unique / no overlap
+        # 3) hyperthreads last
         code = `"using ThreadPinning, Test;
                  pinthreads(:affinitymask)
                  mask_cpuids = [$cpulist]
-                 @test length(getcpuids()) == length(Set(getcpuids()))
                  @test all(c->c in mask_cpuids, getcpuids())
+                 @test length(getcpuids()) == length(Set(getcpuids()))
                  @test issorted(ishyperthread.(getcpuids()))"`
-        @test run(`taskset --cpu-list $cpulist $julia --project=$(pkgdir) -t $numthreads -e $code`).exitcode ==
-              0
+        unpinthreads()
+        @testset "taskset" begin @test test_external_affinity(`taskset --cpu-list $cpulist`,
+                                                              numthreads, code) end
+        unpinthreads()
+        @testset "numactl" begin @test test_external_affinity(`numactl -C $cpulist`,
+                                                              numthreads, code) end
     end
 end
 
