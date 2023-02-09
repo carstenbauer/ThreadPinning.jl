@@ -10,7 +10,7 @@ Pinning your threads is as simple as putting the following at the top of your Ju
 using ThreadPinning
 pinthreads(:cores)
 ```
-This will successively pin all Julia threads to CPU-cores in logcial order, avoiding hyperthreads if possible. Of course, you can replace `:cores` by all the options supported by [`pinthreads`](@ref). Conceptually, there are three different formats to specify your desired thread-processor mapping:
+This will successively pin all Julia threads to CPU-cores in logical order, avoiding hyperthreads if possible. Of course, you can replace `:cores` by all the options supported by [`pinthreads`](@ref). Conceptually, there are three different formats to specify your desired thread-processor mapping:
 
 1) explicit lists of CPU IDs (e.g. `0:3` or `[0,12,4]`),
 2) predefined symbols (e.g. `:cores` or `:sockets`),
