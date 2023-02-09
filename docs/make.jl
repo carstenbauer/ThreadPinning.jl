@@ -24,7 +24,7 @@ makedocs(;
                  "Pinning Julia Threads" => "examples/ex_pinning_julia_threads.md",
                  "Autochecking BLAS Thread Settings" => "examples/ex_blas.md",
                  "Measuring Core-to-Core Latency" => "examples/ex_core2core_latency.md",
-                 "External Pinning Tools" => "examples/ex_external.md",
+                 "Process Affinity Mask" => "examples/ex_affinity.md",
              ],
              "Explanations" => [
                  "Why Pin Julia Threads?" => "explanations/why.md",
