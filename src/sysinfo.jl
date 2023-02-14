@@ -100,7 +100,8 @@ function _lscpu_table_to_columns(table)::NamedTuple{(:idcs, :cpuid, :socket, :nu
     colid_online = @views findfirst(isequal("ONLINE"), table[1, :])
 
     # only consider online cpus
-    online_cpu_tblidcs = @views findall(isequal("yes"), table[:, colid_online])
+    online_cpu_tblidcs = @views findall(x -> !(isequal(x, "no") || isequal(x, "ONLINE")),
+                                        table[:, colid_online])
     @debug "_lscpu_table_to_columns" online_cpu_tblidcs
     if length(online_cpu_tblidcs) != Sys.CPU_THREADS
         @warn("Number of online CPUs ($(length(online_cpu_tblidcs))) doesn't match "*
