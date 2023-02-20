@@ -1,10 +1,8 @@
 # MPI
 
-[Process Affinity Mask](@ref exaffinitymask)
-
 ## SLURM
 
-In this section, we'll focus on MPI applications that run under SLURM (or a similar job scheduler). On most systems, the latter sets the affinity mask of the Julia processes (MPI ranks) based on the options set by the user (e.g. via `#SBATCH`).
+In this section, we'll focus on MPI applications that run under SLURM (or a similar job scheduler). On most systems, the latter sets the affinity mask of the Julia processes (MPI ranks) based on the options set by the user (e.g. via `#SBATCH`). Consequently, one has to do little to nothing on the Julia side to achieve the desired pinning pattern.
 
 ### MPI only
 
@@ -117,5 +115,7 @@ Rank 3:
 ```
 
 ## Manual
+
+In this section, we describe how you can pin the Julia threads of your MPI ranks manually, that is without any "help" from an external affinity mask (e.g. as set by SLURM, see above).
 
 TODO: [`pinthreads_mpi`](@ref)
