@@ -17,6 +17,7 @@ include("libs/libuv.jl")
 include("libs/libpthread.jl")
 include("querying.jl")
 include("pinning.jl")
+include("pinning_mpi.jl")
 include("likwid-pin.jl")
 include("mkl.jl")
 include("openblas.jl")
@@ -126,12 +127,14 @@ end end
 export threadinfo,
        pinthreads,
        pinthreads_likwidpin,
+       pinthreads_mpi,
        pinthread,
        getcpuids,
        getcpuid,
        unpinthreads,
        unpinthread,
        @tspawnat,
+       print_affinity_masks,
        ncputhreads,
        ncores,
        nnuma,

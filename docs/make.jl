@@ -22,6 +22,8 @@ makedocs(;
              "ThreadPinning" => "index.md",
              "Examples" => [
                  "Pinning Julia Threads" => "examples/ex_pinning_julia_threads.md",
+                 "Respect Process Affinity Mask" => "examples/ex_affinity.md",
+                 "MPI and MPI + Threads" => "examples/ex_mpi.md",
                  "Autochecking BLAS Thread Settings" => "examples/ex_blas.md",
                  "Measuring Core-to-Core Latency" => "examples/ex_core2core_latency.md",
              ],
@@ -48,8 +50,8 @@ if ci
     @info "Deploying documentation to GitHub"
     deploydocs(;
                repo = "github.com/carstenbauer/ThreadPinning.jl.git",
-               devbranch = "main"
-               # push_preview=true,
+               devbranch = "main",
+               push_preview=true,
                # target = "site",
                )
 end

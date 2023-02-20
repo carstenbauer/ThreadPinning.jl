@@ -1,7 +1,7 @@
 using Test
 using ThreadPinning
 using Base.Threads: nthreads
-using Random: shuffle
+using Random: shuffle, shuffle!
 
 Threads.nthreads() ≥ 2 ||
     error("Can't run tests with single Julia thread! Forgot to set `JULIA_NUM_THREADS`?")
@@ -72,6 +72,36 @@ end
         @test isnothing(pinthreads(:sockets; nthreads = 2))
         @test getcpuid.(1:2) == vcat(socket(1, 1:1), socket(2, 1:1))
     end
+    @testset ":affinitymask" begin
+        test_external_affinity = (cmd, numthreads, code) -> begin
+            julia = Base.julia_cmd()
+            pkgdir = joinpath(@__DIR__, "..")
+            juliacmd = `$julia --project=$(pkgdir) -t $numthreads -e $code`
+            fullcmd = `$cmd $juliacmd`
+            # @show fullcmd
+            run(fullcmd).exitcode == 0
+        end
+
+        numthreads = min(Threads.nthreads(), ncputhreads())
+        cpuids = sort!(shuffle!(cpuids_all())[1:numthreads])
+        cpulist = join(cpuids, ",")
+        # Check
+        # 1) all in mask
+        # 2) unique / no overlap
+        # 3) hyperthreads last
+        code = `"using ThreadPinning, Test;
+                 pinthreads(:affinitymask)
+                 mask_cpuids = [$cpulist]
+                 @test all(c->c in mask_cpuids, getcpuids())
+                 @test length(getcpuids()) == length(Set(getcpuids()))
+                 @test issorted(ishyperthread.(getcpuids()))"`
+        unpinthreads()
+        @testset "taskset" begin @test test_external_affinity(`taskset --cpu-list $cpulist`,
+                                                              numthreads, code) end
+        unpinthreads()
+        @testset "numactl" begin @test test_external_affinity(`numactl -C $cpulist`,
+                                                              numthreads, code) end
+    end
 end
 
 @testset "Thread Pinning (logical specification)" begin
@@ -137,7 +167,9 @@ end
     julia = Base.julia_cmd()
     pkgdir = joinpath(@__DIR__, "..")
 
-    exec(s; nthreads=ncores()) = run(`$julia --project=$(pkgdir) -t $nthreads -e $s`).exitcode == 0
+    function exec(s; nthreads = ncores())
+        run(`$julia --project=$(pkgdir) -t $nthreads -e $s`).exitcode == 0
+    end
     @testset "JULIA_PIN" begin
         withenv("JULIA_PIN" => "cputhreads") do
             @test exec(`'using ThreadPinning, Test;

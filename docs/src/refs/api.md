@@ -10,7 +10,7 @@ Order   = [:function, :type]
 ## References - Pinning
 ```@autodocs
 Modules = [ThreadPinning]
-Pages   = ["pinning.jl"]
+Pages   = ["pinning.jl", "pinning_mpi.jl"]
 ```
 
 ## References - Querying
