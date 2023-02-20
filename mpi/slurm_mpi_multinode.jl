@@ -23,5 +23,6 @@ sleep(0.3 * rank)
 println("Rank $rank:")
 println("\tHost: ", gethostname())
 println("\tCPUs: ", getcpuids())
+print_affinity_masks()
 
 MPI.Finalize()
