@@ -27,6 +27,20 @@ ThreadPinning.update_sysinfo!(; fromscratch = true)
     @test ishyperthread(0) == false
 end
 
+@static if VERSION >= v"1.9-"
+    @testset "Threadpools" begin
+        @test getcpuids(; threadpool = :default) == getcpuids()
+        @test length(getcpuids(; threadpool = :default)) ==
+              Threads.nthreads(:default)
+        @test length(getcpuids(; threadpool = :interactive)) ==
+              Threads.nthreads(:interactive)
+        @test typeof(getcpuids(; threadpool = :interactive)) == Vector{Int}
+        @test getcpuids(; threadpool = :all) == vcat(getcpuids(; threadpool = :default),
+                   getcpuids(; threadpool = :interactive))
+        @test_throws ArgumentError getcpuids(; threadpool = :carsten)
+    end
+end
+
 @testset "Internals / sysinfo (host system)" begin
     @test isnothing(ThreadPinning.lscpu())
     @test ThreadPinning.lscpu_string() isa String

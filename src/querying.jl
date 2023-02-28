@@ -17,11 +17,32 @@ Returns the IDs of the CPU-threads on which the Julia threads are currently runn
 
 See `getcpuid` for more information.
 """
-function getcpuids()
-    nt = nthreads()
-    cpuids = zeros(Int, nt)
-    @threads :static for tid in 1:nt
-        cpuids[tid] = getcpuid()
+function getcpuids(; threadpool = :default)::Vector{Int}
+    @static if VERSION >= v"1.9-"
+        if threadpool == :all
+            nt = Threads.maxthreadid()
+            tids_pool = 1:nt
+            @assert nt == Threads.nthreads(:default) + Threads.nthreads(:interactive)
+        elseif threadpool in (:default, :interactive)
+            nt = nthreads(threadpool)
+            tids_pool = filter(i -> Threads.threadpool(i) == threadpool,
+                               1:Threads.maxthreadid())
+        else
+            throw(ArgumentError("Unknown value for `threadpool` keyword argument. " *
+                                "Supported values are `:all`, `:default`, and " *
+                                "`:interactive`."))
+        end
+        cpuids = zeros(Int, nt)
+        @assert length(tids_pool) == nt
+        for (i, tid) in pairs(tids_pool)
+            cpuids[i] = fetch(@tspawnat tid getcpuid())
+        end
+    else
+        nt = nthreads()
+        cpuids = zeros(Int, nt)
+        @threads :static for tid in 1:nt
+            cpuids[tid] = getcpuid()
+        end
     end
     return cpuids
 end
