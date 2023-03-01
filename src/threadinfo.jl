@@ -17,14 +17,15 @@ Keyword arguments:
                                   Supported values are `:all`, `:default`, and
                                   `:interactive`. Only works for Julia >= 1.9.
 """
-function threadinfo(; blas = false, hints = false, color = true, masks = false,
+function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
+                    masks = false,
                     groupby = :sockets, threadpool = :all, kwargs...)
     # general info
     @static if VERSION >= v"1.9-"
         if threadpool == :default || threadpool == :interactive
             jlthreads = Base.Threads.nthreads(threadpool)
             if jlthreads == 0
-                println("No threads in threadpool $threadpool found.")
+                println(io, "No threads in threadpool $threadpool found.")
                 return nothing
             end
             thread_cpuids = filter(i -> Threads.threadpool(i) == threadpool,
@@ -44,68 +45,70 @@ function threadinfo(; blas = false, hints = false, color = true, masks = false,
     occupied_cputhreads = length(unique(thread_cpuids))
     cputhreads = Sys.CPU_THREADS
     # visualize current pinning
-    println()
-    _visualize_affinity(; thread_cpuids, color, groupby, kwargs...)
-    print("Julia threads: ")
+    println(io)
+    _visualize_affinity(io; thread_cpuids, color, groupby, kwargs...)
+    print(io, "Julia threads: ")
     if color
-        printstyled(jlthreads, "\n"; color = jlthreads > cputhreads ? :red : :green)
+        printstyled(io, jlthreads, "\n"; color = jlthreads > cputhreads ? :red : :green)
     else
-        printstyled(jlthreads, jlthreads > cputhreads ? "(!)" : "", "\n")
+        printstyled(io, jlthreads, jlthreads > cputhreads ? "(!)" : "", "\n")
     end
-    print("├ Occupied CPU-threads: ")
+    print(io, "├ Occupied CPU-threads: ")
     if color
-        printstyled(occupied_cputhreads, "\n";
+        printstyled(io, occupied_cputhreads, "\n";
                     color = occupied_cputhreads < jlthreads ? :red : :green)
     else
-        printstyled(occupied_cputhreads, occupied_cputhreads < jlthreads ? "(!)" : "", "\n")
+        printstyled(io, occupied_cputhreads, occupied_cputhreads < jlthreads ? "(!)" : "",
+                    "\n")
     end
-    print("└ Mapping (Thread => CPUID):")
-    # print("   ")
+    print(io, "└ Mapping (Thread => CPUID):")
+    # print(io, "   ")
     for (tid, core) in pairs(thread_cpuids)
-        print(" $tid => $core,")
+        print(io, " $tid => $core,")
         if tid == 5
-            print(" ...")
+            print(io, " ...")
             break
         end
     end
-    println("\n")
+    println(io, "\n")
     if blas
         libblas = BLAS_lib()
-        println("BLAS: ", libblas)
+        println(io, "BLAS: ", libblas)
         if contains(libblas, "openblas")
-            print("└ openblas_get_num_threads: ")
+            print(io, "└ openblas_get_num_threads: ")
             if color
-                printstyled(BLAS.get_num_threads(), "\n";
+                printstyled(io, BLAS.get_num_threads(), "\n";
                             color = _color_openblas_num_threads())
             else
-                printstyled(BLAS.get_num_threads(),
+                printstyled(io, BLAS.get_num_threads(),
                             _color_openblas_num_threads() == :red ? "(!)" : "",
                             "\n")
             end
-            println()
+            println(io)
             _color_openblas_num_threads(; hints)
         elseif contains(libblas, "mkl")
-            print("├ mkl_get_num_threads: ")
+            print(io, "├ mkl_get_num_threads: ")
             if color
-                printstyled(BLAS.get_num_threads(), "\n"; color = _color_mkl_num_threads())
+                printstyled(io, BLAS.get_num_threads(), "\n";
+                            color = _color_mkl_num_threads())
             else
-                printstyled(BLAS.get_num_threads(),
+                printstyled(io, BLAS.get_num_threads(),
                             _color_mkl_num_threads() == :red ? "(!)" : "",
                             "\n")
             end
-            println("└ mkl_get_dynamic: ", Bool(mkl_get_dynamic()))
-            println()
+            println(io, "└ mkl_get_dynamic: ", Bool(mkl_get_dynamic()))
+            println(io)
             _color_mkl_num_threads(; hints)
         end
     end
     if masks
-        print_affinity_masks(; groupby)
+        print_affinity_masks(io; groupby)
     end
     hints && _general_hints()
     return nothing
 end
 
-function _visualize_affinity(;
+function _visualize_affinity(io = getstdout();
                              thread_cpuids = getcpuids(),
                              blocksize = 16,
                              color = true,
@@ -121,12 +124,12 @@ function _visualize_affinity(;
     else
         [cpuids_all()]
     end
-    printstyled("| "; bold = true)
+    printstyled(io, "| "; bold = true)
     for (i, cpuids) in pairs(cpuids_grouped)
         for (k, cpuid) in pairs(cpuids)
             if color
                 if cpuid in thread_cpuids
-                    printstyled(cpuid;
+                    printstyled(io, cpuid;
                                 bold = true,
                                 color = if (hyperthreading && ishyperthread(cpuid))
                                     :light_magenta
@@ -134,7 +137,7 @@ function _visualize_affinity(;
                                     :yellow
                                 end)
                 else
-                    printstyled(cpuid;
+                    printstyled(io, cpuid;
                                 color = if (hyperthreading && ishyperthread(cpuid))
                                     :light_black
                                 else
@@ -143,53 +146,53 @@ function _visualize_affinity(;
                 end
             else
                 if cpuid in thread_cpuids
-                    printstyled(cpuid; bold = true)
+                    printstyled(io, cpuid; bold = true)
                 else
-                    print("_")
+                    print(io, "_")
                 end
             end
             if !(cpuid == last(cpuids))
-                print(",")
-                mod(k, blocksize) == 0 && print("\n  ")
+                print(io, ",")
+                mod(k, blocksize) == 0 && print(io, "\n  ")
             end
         end
-        # print(" | ")
+        # print(io, " | ")
         if ncpuids > 32
-            printstyled(" |"; bold = true)
+            printstyled(io, " |"; bold = true)
             if !(i == length(cpuids_grouped))
-                println()
-                printstyled("| "; bold = true)
+                println(io)
+                printstyled(io, "| "; bold = true)
             end
         else
-            printstyled(" | "; bold = true)
+            printstyled(io, " | "; bold = true)
         end
     end
-    println()
+    println(io)
     # legend
-    println()
+    println(io)
     if color
-        printstyled("#"; bold = true, color = :yellow)
+        printstyled(io, "#"; bold = true, color = :yellow)
     else
-        printstyled("#"; bold = true)
+        printstyled(io, "#"; bold = true)
     end
-    print(" = Julia thread, ")
+    print(io, " = Julia thread, ")
     if hyperthreading
-        printstyled("#"; color = :light_black)
-        print(" = HT, ")
-        printstyled("#"; bold = true, color = :light_magenta)
-        print(" = Julia thread on HT, ")
+        printstyled(io, "#"; color = :light_black)
+        print(io, " = HT, ")
+        printstyled(io, "#"; bold = true, color = :light_magenta)
+        print(io, " = Julia thread on HT, ")
     end
     if groupby in (:sockets, :socket)
-        printstyled("|"; bold = true)
-        print(" = Socket seperator")
+        printstyled(io, "|"; bold = true)
+        print(io, " = Socket seperator")
     elseif groupby in (:numa, :NUMA)
-        printstyled("|"; bold = true)
-        print(" = NUMA seperator")
+        printstyled(io, "|"; bold = true)
+        print(io, " = NUMA seperator")
     elseif groupby in (:core, :cores)
-        printstyled("|"; bold = true)
-        print(" = Core seperator")
+        printstyled(io, "|"; bold = true)
+        print(io, " = Core seperator")
     end
-    println("\n")
+    println(io, "\n")
     return nothing
 end
 

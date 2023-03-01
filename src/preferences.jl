@@ -42,10 +42,10 @@ function clear()
 end
 
 "Show all ThreadPinning.jl related preferences"
-function showall()
+function showall(io = getstdout())
     for pref in ALL_PREFERENCES
         val = @load_preference(pref)
-        println("$pref => $val")
+        println(io, "$pref => $val")
     end
     return nothing
 end
