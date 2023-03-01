@@ -1,3 +1,4 @@
+include("common.jl")
 using ThreadPinning
 import ThreadPinning: bench_core2core_latency
 using Test

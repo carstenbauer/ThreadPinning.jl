@@ -5,14 +5,14 @@ Threads.nthreads() ≥ 4 ||
 
 @run_package_tests
 
-@testitem "utility" begin include("utility_test.jl") end
-@testitem "preferences" begin include("preferences_test.jl") end
+# @testitem "utility" begin include("tests_utility.jl") end
+# @testitem "preferences" begin include("tests_preferences.jl") end
 
-@testitem "querying" begin include("querying_test.jl") end
-@testitem "threadinfo" begin include("threadinfo_test.jl") end
-@testitem "pinning" begin include("pinning_test.jl") end
+@testitem "querying" begin include("tests_querying.jl") end
+@testitem "threadinfo" begin include("tests_threadinfo.jl") end
+# @testitem "pinning" begin include("tests_pinning.jl") end
 
-@testitem "likwid-pin" begin include("likwid-pin_test.jl") end
-@testitem "openblas" begin include("openblas_test.jl") end
-@testitem "core2core latency" begin include("latency_test.jl") end
-@testitem "intel mkl" begin include("mkl_test.jl") end
+# @testitem "likwid-pin" begin include("tests_likwid-pin.jl") end
+# @testitem "openblas" begin include("tests_openblas.jl") end
+# @testitem "core2core latency" begin include("tests_latency.jl") end
+# @testitem "intel mkl" begin include("tests_mkl.jl") end

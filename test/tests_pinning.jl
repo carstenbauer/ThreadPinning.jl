@@ -1,3 +1,4 @@
+include("common.jl")
 using Test
 using ThreadPinning
 using Base.Threads: nthreads

@@ -114,15 +114,16 @@ function openblas_getcpuids end
         return str
     end
 
-    function openblas_print_affinity_masks(; juliathread = Threads.threadid(), kwargs...)
-        println("Julia threadid: ", juliathread)
+    function openblas_print_affinity_masks(io = getstdout();
+                                           juliathread = Threads.threadid(), kwargs...)
+        println(io, "Julia threadid: ", juliathread)
         for i in 1:openblas_nthreads()
             mask = _openblas_get_affinity_mask(i; juliathread, convert = false)
             str = _openblas_affinity_mask_to_string(mask; kwargs...)
-            print(rpad("$(i):", 5))
-            println(str)
+            print(io, rpad("$(i):", 5))
+            println(io, str)
         end
-        println()
+        println(io)
         return nothing
     end
 

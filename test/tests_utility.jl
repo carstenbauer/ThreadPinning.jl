@@ -1,3 +1,4 @@
+include("common.jl")
 using ThreadPinning
 using LinearAlgebra
 using Test

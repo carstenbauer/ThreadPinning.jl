@@ -188,8 +188,8 @@ function _create_sysinfo_obj(cols)
                    cpuids_numa, cpuids_cores, cpuids_node, ishyperthread, matrix)
 end
 
-function lscpu()
-    run(`lscpu --all --extended`)
+function lscpu(io = getstdout())
+    run(pipeline(`lscpu --all --extended`; stdout = io))
     return nothing
 end
 
