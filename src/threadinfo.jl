@@ -49,7 +49,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     _visualize_affinity(; thread_cpuids, color, groupby, kwargs...)
 
     # extra information
-    print("Julia threads: ")
+    print(io, "Julia threads: ")
     if color
         printstyled(io, njlthreads; color = njlthreads > nhwthreads ? :red : :green)
         @static if VERSION >= v"1.9-"
@@ -64,7 +64,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
                             Threads.nthreads(:default), " default)")
             end
         end
-        print("\n")
+        print(io, "\n")
     else
         printstyled(io, njlthreads, njlthreads > nhwthreads ? "(!)" : "", "\n")
     end

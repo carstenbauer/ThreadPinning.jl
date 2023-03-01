@@ -2,6 +2,7 @@ module Prefs
 
 using Preferences
 using DocStringExtensions
+using ..ThreadPinning: getstdout
 
 const ALL_PREFERENCES = ("autoupdate", "pin", "likwidpin")
 
