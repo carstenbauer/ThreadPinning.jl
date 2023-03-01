@@ -13,52 +13,67 @@ Keyword arguments:
   settings.
 * `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, `:cores`, or `:none`.
 * `masks` (default: `false`): Show the affinity masks of all Julia threads.
-* `threadpool` (default: `:all`): Only consider Julia threads in the given thread pool.
-                                  Supported values are `:all`, `:default`, and
-                                  `:interactive`. Only works for Julia >= 1.9.
+* `threadpool` (default: `:default`): Only consider Julia threads in the given thread pool.
+                                  Supported values are `:default`, `:interactive`, and
+                                  `:all`. Only works for Julia >= 1.9.
 """
 function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
                     masks = false,
-                    groupby = :sockets, threadpool = :all, kwargs...)
+                    groupby = :sockets, threadpool = :default, kwargs...)
     # general info
     @static if VERSION >= v"1.9-"
         if threadpool == :default || threadpool == :interactive
-            jlthreads = Base.Threads.nthreads(threadpool)
-            if jlthreads == 0
-                println(io, "No threads in threadpool $threadpool found.")
+            njlthreads = Threads.nthreads(threadpool)
+            if njlthreads == 0
+                println(io, "No threads in threadpool $threadpool.")
                 return nothing
             end
-            thread_cpuids = filter(i -> Threads.threadpool(i) == threadpool,
-                                   1:Threads.nthreads())
+            thread_cpuids = getcpuids(; threadpool)
         elseif threadpool == :all
-            jlthreads = Base.Threads.nthreads()
-            thread_cpuids = getcpuids()
+            njlthreads = Threads.maxthreadid()
+            thread_cpuids = getcpuids(; threadpool = :all)
         else
             throw(ArgumentError("Unknown value for `threadpool` keyword argument. Supported " *
                                 "values are `:all`, `:default`, and `:interactive`."))
         end
     else
-        jlthreads = Base.Threads.nthreads()
+        njlthreads = Threads.nthreads()
         thread_cpuids = getcpuids()
     end
-    @assert length(thread_cpuids) == jlthreads
-    occupied_cputhreads = length(unique(thread_cpuids))
-    cputhreads = Sys.CPU_THREADS
+    @assert length(thread_cpuids) == njlthreads
+    noccupied_hwthreads = length(unique(thread_cpuids))
+    nhwthreads = ncputhreads()
+
     # visualize current pinning
     println(io)
-    _visualize_affinity(io; thread_cpuids, color, groupby, kwargs...)
+    _visualize_affinity(; thread_cpuids, color, groupby, kwargs...)
+
+    # extra information
     print(io, "Julia threads: ")
     if color
-        printstyled(io, jlthreads, "\n"; color = jlthreads > cputhreads ? :red : :green)
+        printstyled(io, njlthreads; color = njlthreads > nhwthreads ? :red : :green)
+        @static if VERSION >= v"1.9-"
+            if threadpool == :all
+                printstyled(io, " (", Threads.nthreads(:default), "+",
+                            Threads.nthreads(:interactive), ")")
+            elseif threadpool == :default && Threads.nthreads(:interactive) > 0
+                printstyled(io, " (+",
+                            Threads.nthreads(:interactive), " interactive)")
+            elseif threadpool == :interactive
+                printstyled(io, " (+",
+                            Threads.nthreads(:default), " default)")
+            end
+        end
+        print(io, "\n")
     else
-        printstyled(io, jlthreads, jlthreads > cputhreads ? "(!)" : "", "\n")
+        printstyled(io, njlthreads, njlthreads > nhwthreads ? "(!)" : "", "\n")
     end
     print(io, "├ Occupied CPU-threads: ")
     if color
-        printstyled(io, occupied_cputhreads, "\n";
-                    color = occupied_cputhreads < jlthreads ? :red : :green)
+        printstyled(io, noccupied_hwthreads, "\n";
+                    color = noccupied_hwthreads < njlthreads ? :red : :green)
     else
-        printstyled(io, occupied_cputhreads, occupied_cputhreads < jlthreads ? "(!)" : "",
+        printstyled(io, noccupied_hwthreads, noccupied_hwthreads < njlthreads ? "(!)" : "",
                     "\n")
     end
     print(io, "└ Mapping (Thread => CPUID):")
@@ -102,7 +117,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         end
     end
     if masks
-        print_affinity_masks(io; groupby)
+        print_affinity_masks(io; groupby, threadpool)
     end
     hints && _general_hints()
     return nothing
@@ -114,7 +129,7 @@ function _visualize_affinity(io = getstdout();
                              color = true,
                              groupby = :sockets,
                              hyperthreading = hyperthreading_is_enabled())
-    ncpuids = Sys.CPU_THREADS
+    ncpuids = ncputhreads()
     cpuids_grouped = if groupby in (:sockets, :socket)
         cpuids_per_socket()
     elseif groupby in (:numa, :NUMA)
@@ -198,11 +213,11 @@ end
 
 function _color_mkl_num_threads(; hints = false)
     jlthreads = Threads.nthreads()
-    cputhreads = Sys.CPU_THREADS
+    cputhreads = ncputhreads()
     cputhreads_per_jlthread = floor(Int, cputhreads / jlthreads)
     blasthreads_per_jlthread = BLAS.get_num_threads()
     if blasthreads_per_jlthread == 1
-        if jlthreads < Sys.CPU_THREADS
+        if jlthreads < ncputhreads()
             hints &&
                 @info("blasthreads_per_jlthread == 1 && jlthreads < cputhreads. You "*
                       "should set BLAS.set_num_threads($cputhreads_per_jlthread) or try "*
@@ -235,7 +250,7 @@ end
 
 function _color_openblas_num_threads(; hints = false)
     # BLAS uses `blasthreads` many threads in total
-    cputhreads = Sys.CPU_THREADS
+    cputhreads = ncputhreads()
     blasthreads = BLAS.get_num_threads()
     jlthreads = Threads.nthreads()
     if jlthreads != 1
@@ -287,7 +302,7 @@ end
 
 function _general_hints()
     jlthreads = Threads.nthreads()
-    cputhreads = Sys.CPU_THREADS
+    cputhreads = ncputhreads()
     thread_cpuids = getcpuids()
     if jlthreads > cputhreads
         @warn("jlthreads > cputhreads. You should decrease the number of Julia threads "*

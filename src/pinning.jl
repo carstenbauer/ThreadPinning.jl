@@ -88,15 +88,41 @@ arguments to `pinthreads`.
 """
 function pinthreads end
 
+function _nthreadsarg(threadpool)
+    @static if VERSION >= v"1.9-"
+        if threadpool == :all
+            return Threads.maxthreadid()
+        else
+            return Threads.nthreads(threadpool)
+        end
+    else
+        return Threads.nthreads()
+    end
+end
+
 function pinthreads(cpuids::AbstractVector{<:Integer};
-                    warn::Bool = true, force = true, nthreads = Threads.nthreads())
+                    warn::Bool = true,
+                    force = true,
+                    threadpool = :default,
+                    nthreads = _nthreadsarg(threadpool))
     # TODO: maybe add `periodic` kwarg for PBC as alternative to strict `min` below.
     if force || first_pin_attempt()
         warn && _check_environment()
         _check_cpuids(cpuids)
         limit = min(length(cpuids), nthreads)
-        @threads :static for tid in 1:limit
-            pinthread(cpuids[tid]; warn = false)
+        @static if VERSION >= v"1.9-"
+            if threadpool == :all
+                tids = 1:Threads.maxthreadid()
+            else
+                tids = filter(i -> Threads.threadpool(i) == threadpool,
+                              1:Threads.maxthreadid())
+            end
+        else
+            tids = 1:limit
+        end
+        @debug("pinthreads", limit, nthreads, tids)
+        for (i, tid) in pairs(@view(tids[1:limit]))
+            pinthread(tid, cpuids[i]; warn = false)
         end
     end
     return nothing
