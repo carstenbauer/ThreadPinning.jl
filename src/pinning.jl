@@ -22,7 +22,7 @@ function pinthread(threadid::Integer, cpuid::Integer; kwargs...)
 end
 
 """
-    pinthreads(cpuids[; nthreads=Threads.nthreads(), force=true, warn=true])
+    pinthreads(cpuids[; nthreads, force=true, warn=true, threadpool=:default])
 Pin the first `min(length(cpuids), nthreads)` Julia threads to an explicit or implicit list
 of CPU IDs. The latter can be specified in three ways:
 
@@ -39,6 +39,9 @@ no-op. This may be particularly useful for packages that merely want to specify 
 
 The option `warn` toggles general warnings, such as unwanted interference with BLAS thread
 settings.
+
+The keyword argument `threadpool` can be used to indicate the pool of threads to be pinned.
+Supported values are `:default`, `:interactive`, or `:all`. (Requires Julia >= 1.9.)
 
 **1) Explicit**
 
