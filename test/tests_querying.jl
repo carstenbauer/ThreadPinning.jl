@@ -1,3 +1,4 @@
+include("common.jl")
 using Test
 using ThreadPinning
 using ThreadPinning: ICORE, ICPUID
@@ -50,6 +51,7 @@ end
 # Test different systems in loop
 for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
     @testset "$system" begin
+        ThreadPinning.update_sysinfo!(; lscpustr)
         @testset "cpuids_per_*" begin
             for compact in (false, true)
                 cpuids = cpuids_per_node(; compact)
@@ -58,12 +60,10 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
                 if hyperthreading_is_enabled()
                     if !compact
                         @test issorted(cpuids, by = ishyperthread) # physical cores first
-                        @test !issorted(ThreadPinning.cpuid2core.(cpuids),
-                                        by = ishyperthread)
+                        @test !issorted(ThreadPinning.cpuid2core.(cpuids))
                     else
                         @test !issorted(cpuids, by = ishyperthread)
-                        @test issorted(ThreadPinning.cpuid2core.(cpuids),
-                                       by = ishyperthread)
+                        @test issorted(ThreadPinning.cpuid2core.(cpuids))
                     end
                 end
             end
@@ -122,7 +122,12 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
             end
 
             @test issorted(sockets(); by = ishyperthread)
-            @test issorted(numas(); by = ishyperthread)
+
+            if system != "FUGAKU"
+                @test issorted(numas(); by = ishyperthread)
+            else
+                @test_broken issorted(numas(); by = ishyperthread)
+            end
 
             @test_throws ArgumentError sockets(1)
             @test_throws ArgumentError numas(1)

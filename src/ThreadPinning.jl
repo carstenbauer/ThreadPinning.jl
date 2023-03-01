@@ -8,6 +8,9 @@ import Random
 using DelimitedFiles
 using DocStringExtensions
 
+const DEFAULT_IO = Ref{Union{IO,Nothing}}(nothing)
+getstdout() = something(DEFAULT_IO[], stdout)
+
 # includes
 include("utility.jl")
 include("sysinfo.jl")

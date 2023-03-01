@@ -50,12 +50,12 @@ end
 """
 Print the affinity masks of all Julia threads.
 """
-function print_affinity_masks(; kwargs...)
+function print_affinity_masks(io = getstdout(); kwargs...)
     for tid in 1:nthreads()
         mask = uv_thread_getaffinity(tid)
         str = _affinity_mask_to_string(mask; kwargs...)
-        print(rpad("$(tid):", 5))
-        println(str)
+        print(io, rpad("$(tid):", 5))
+        println(io, str)
     end
     return nothing
 end
@@ -70,7 +70,9 @@ function _affinity_mask_to_string(mask; groupby = :sockets)
     end
     str = "|"
     for s in 1:nX()
-        str = string(str, bitstr[cpuids_per_X()[s] .+ 1], "|")
+        cpuids_s = cpuids_per_X()[s]
+        idcs = [findfirst(isequal(c), unsafe_cpuids_all()) for c in cpuids_s]
+        str = string(str, bitstr[idcs], "|")
     end
     return str
 end
