@@ -50,8 +50,18 @@ end
 """
 Print the affinity masks of all Julia threads.
 """
-function print_affinity_masks(io = getstdout(); kwargs...)
-    for tid in 1:nthreads()
+function print_affinity_masks(io = getstdout(); threadpool = :default, kwargs...)
+    @static if VERSION >= v"1.9-"
+        if threadpool == :all
+            tids = 1:Threads.maxthreadid()
+        else
+            tids = filter(i -> Threads.threadpool(i) == threadpool,
+                          1:Threads.maxthreadid())
+        end
+    else
+        tids = 1:nthreads()
+    end
+    for tid in tids
         mask = uv_thread_getaffinity(tid)
         str = _affinity_mask_to_string(mask; kwargs...)
         print(io, rpad("$(tid):", 5))

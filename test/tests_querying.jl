@@ -26,6 +26,7 @@ ThreadPinning.update_sysinfo!(; fromscratch = true)
     @test typeof(hyperthreading_is_enabled()) == Bool
     @test typeof(cpuids_per_socket()) == Vector{Vector{Int}}
     @test ishyperthread(0) == false
+    @test isnothing(print_affinity_masks())
 end
 
 @static if VERSION >= v"1.9-"
@@ -39,6 +40,10 @@ end
         @test getcpuids(; threadpool = :all) == vcat(getcpuids(; threadpool = :default),
                    getcpuids(; threadpool = :interactive))
         @test_throws ArgumentError getcpuids(; threadpool = :carsten)
+
+        @test isnothing(print_affinity_masks(; threadpool=:default))
+        @test isnothing(print_affinity_masks(; threadpool=:interactive))
+        @test isnothing(print_affinity_masks(; threadpool=:all))
     end
 end
 
