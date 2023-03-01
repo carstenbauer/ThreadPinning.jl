@@ -14,8 +14,8 @@ Keyword arguments:
 * `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, `:cores`, or `:none`.
 * `masks` (default: `false`): Show the affinity masks of all Julia threads.
 * `threadpool` (default: `:default`): Only consider Julia threads in the given thread pool.
-                                  Supported values are `:all`, `:default`, and
-                                  `:interactive`. Only works for Julia >= 1.9.
+                                  Supported values are `:default`, `:interactive`, and
+                                  `:all`. Only works for Julia >= 1.9.
 """
 function threadinfo(; blas = false, hints = false, color = true, masks = false,
                     groupby = :sockets, threadpool = :default, kwargs...)
@@ -55,6 +55,12 @@ function threadinfo(; blas = false, hints = false, color = true, masks = false,
             if threadpool == :all
                 printstyled(" (", Threads.nthreads(:default), "+",
                             Threads.nthreads(:interactive), ")")
+            elseif threadpool == :default && Threads.nthreads(:interactive) > 0
+                printstyled(" (+",
+                            Threads.nthreads(:interactive), " interactive)")
+            elseif threadpool == :interactive
+                printstyled(" (+",
+                            Threads.nthreads(:default), " default)")
             end
         end
         print("\n")

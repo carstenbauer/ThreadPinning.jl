@@ -70,7 +70,9 @@ end
     @testset ":sockets" begin
         pinthreads(:random)
         @test isnothing(pinthreads(:sockets; nthreads = 2))
-        @test getcpuid.(1:2) == vcat(socket(1, 1:1), socket(2, 1:1))
+        if nsockets() >= 2
+            @test getcpuid.(1:2) == vcat(socket(1, 1:1), socket(2, 1:1))
+        end
     end
     @testset ":affinitymask" begin
         test_external_affinity = (cmd, numthreads, code) -> begin

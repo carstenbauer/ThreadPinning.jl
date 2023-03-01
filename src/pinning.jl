@@ -128,20 +128,6 @@ function pinthreads(cpuids::AbstractVector{<:Integer};
     return nothing
 end
 
-function pinthreads(cpuids::AbstractVector{<:Integer};
-                    warn::Bool = true, force = true, nthreads = Threads.nthreads())
-    # TODO: maybe add `periodic` kwarg for PBC as alternative to strict `min` below.
-    if force || first_pin_attempt()
-        warn && _check_environment()
-        _check_cpuids(cpuids)
-        limit = min(length(cpuids), nthreads)
-        @threads :static for tid in 1:limit
-            pinthread(cpuids[tid]; warn = false)
-        end
-    end
-    return nothing
-end
-
 # concatenation
 function pinthreads(cpuids_vec::AbstractVector{T};
                     kwargs...) where {T <: AbstractVector{<:Integer}}
