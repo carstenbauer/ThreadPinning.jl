@@ -3,6 +3,7 @@ using DocThemePC2
 using ThreadPinning
 using Literate
 using LinearAlgebra
+using MPI
 # using MKL # optional
 # BLAS.set_num_threads(1)
 

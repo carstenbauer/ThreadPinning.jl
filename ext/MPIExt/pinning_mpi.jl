@@ -30,14 +30,14 @@ rank = MPI.Comm_rank(comm)
 pinthreads_mpi(:sockets, rank, nranks)
 ```
 """
-function pinthreads_mpi(symb::Symbol, args...; kwargs...)
+function ThreadPinning.pinthreads_mpi(symb::Symbol, args...; kwargs...)
     pinthreads_mpi(Val(symb), args...; kwargs...)
 end
 
-function pinthreads_mpi(::Val{:sockets}, rank::Integer, nranks::Integer;
-                        nthreads_per_rank = Threads.nthreads(),
-                        compact = false,
-                        kwargs...)
+function ThreadPinning.pinthreads_mpi(::Val{:sockets}, rank::Integer, nranks::Integer;
+                                      nthreads_per_rank = Threads.nthreads(),
+                                      compact = false,
+                                      kwargs...)
     idx_in_socket, socketidx = divrem(rank, nsockets()) .+ 1
     idcs = ((idx_in_socket - 1) * nthreads_per_rank + 1):(idx_in_socket * nthreads_per_rank)
     if maximum(idcs) >= ncputhreads_per_socket()[socketidx]
@@ -47,10 +47,10 @@ function pinthreads_mpi(::Val{:sockets}, rank::Integer, nranks::Integer;
     pinthreads(cpuids; nthreads = nthreads_per_rank, kwargs...)
     return nothing
 end
-function pinthreads_mpi(::Val{:numa}, rank::Integer, nranks::Integer;
-                        nthreads_per_rank = Threads.nthreads(),
-                        compact = false,
-                        kwargs...)
+function ThreadPinning.pinthreads_mpi(::Val{:numa}, rank::Integer, nranks::Integer;
+                                      nthreads_per_rank = Threads.nthreads(),
+                                      compact = false,
+                                      kwargs...)
     idx_in_numa, numaidx = divrem(rank, nnuma()) .+ 1
     idcs = ((idx_in_numa - 1) * nthreads_per_rank + 1):(idx_in_numa * nthreads_per_rank)
     if maximum(idcs) >= ncputhreads_per_numa()[numaidx]
