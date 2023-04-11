@@ -7,6 +7,8 @@ using LinearAlgebra
 import Random
 using DelimitedFiles
 using DocStringExtensions
+import Distributed: @fetchfrom, myid, workers
+import OrderedCollections: OrderedDict
 
 const DEFAULT_IO = Ref{Union{IO,Nothing}}(nothing)
 getstdout() = something(DEFAULT_IO[], stdout)
@@ -28,6 +30,7 @@ include("threadinfo.jl")
 include("latency.jl")
 include("preferences.jl")
 include("extension_stubs.jl")
+include("distributed.jl")
 
 function _try_get_autoupdate()
     try
@@ -132,10 +135,12 @@ export threadinfo,
        pinthreads,
        pinthreads_likwidpin,
        pinthreads_mpi,
+       pinthreads_distributed,
        pinthreads_hybrid,
        pinthread,
        getcpuids,
        getcpuid,
+       getcpuids_distributed,
        unpinthreads,
        unpinthread,
        @tspawnat,
