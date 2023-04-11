@@ -20,6 +20,7 @@ include("libs/libuv.jl")
 include("libs/libpthread.jl")
 include("querying.jl")
 include("pinning.jl")
+include("pinning_hybrid.jl")
 include("likwid-pin.jl")
 include("mkl.jl")
 include("openblas.jl")
@@ -131,6 +132,7 @@ export threadinfo,
        pinthreads,
        pinthreads_likwidpin,
        pinthreads_mpi,
+       pinthreads_hybrid,
        pinthread,
        getcpuids,
        getcpuid,

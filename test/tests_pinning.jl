@@ -194,3 +194,10 @@ end
         end
     end
 end
+
+@testset "pinthreads_hybrid" begin
+    for compact in (true, false)
+        pinthreads_hybrid(:sockets, 1; compact)
+        @test getcpuids() == socket(1, 1:Threads.nthreads(); compact)
+    end
+end
