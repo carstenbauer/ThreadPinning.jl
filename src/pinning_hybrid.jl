@@ -58,7 +58,7 @@ function _compute_cpuids_hybrid(proc::Integer, func_domain, func_ndomain,
                                 nthreads_per_proc = Threads.nthreads(), compact = false)
     idx_in_domain, domainidx = divrem(proc - 1, func_ndomain()) .+ 1
     idcs = ((idx_in_domain - 1) * nthreads_per_proc + 1):(idx_in_domain * nthreads_per_proc)
-    if maximum(idcs) >= func_ncputhreads_per_domain()[domainidx]
+    if maximum(idcs) > func_ncputhreads_per_domain()[domainidx]
         error("Out of bounds: Too many Julia threads (or processes) per domain.")
     end
     cpuids = func_domain(domainidx, idcs; compact)

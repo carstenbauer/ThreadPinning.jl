@@ -29,7 +29,7 @@ include("openblas.jl")
 include("threadinfo.jl")
 include("latency.jl")
 include("preferences.jl")
-include("extension_stubs.jl")
+include("mpi.jl")
 include("distributed.jl")
 
 function _try_get_autoupdate()
@@ -141,6 +141,7 @@ export threadinfo,
        getcpuids,
        getcpuid,
        getcpuids_distributed,
+       getcpuids_mpi,
        unpinthreads,
        unpinthread,
        @tspawnat,

@@ -27,7 +27,11 @@ function _worker2proc(; master = false)
 end
 
 """
-TODO
+Query the IDs of the CPU-threads currently used by the Julia threads on all Julia processes
+, that is, the default process as well as all workers created with the Distributed stdlib.
+
+**Note:** ThreadPinning must be loaded on all workers, e.g. via
+`@everywhere using ThreadPinning`.
 """
 function getcpuids_distributed()
     if myid() != 1
