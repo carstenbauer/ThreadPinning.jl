@@ -18,6 +18,19 @@ using Test
           [1, 5, 2, 6, 3, 7, 4, 8, 9, 10, 11, 12]
 end
 
+@testset "threadids" begin
+    @static if VERSION < v"1.9-"
+        @test ThreadPinning.threadids() == 1:Threads.nthreads()
+    else
+        @test ThreadPinning.threadids(:all) == 1:Threads.maxthreadid() # no IJulia here :)
+        # :default threads first, then :interactive threads
+        @test ThreadPinning.threadids(:default) == 1:Threads.nthreads(:default)
+        if Threads.nthreads(:interactive) > 0
+            @test ThreadPinning.threadids(:interactive) == (1:Threads.nthreads(:interactive)) .+ Threads.nthreads(:default)
+        end
+    end
+end
+
 @testset "tspawnat" begin
     @static if VERSION < v"1.9-"
         for tid in 1:Threads.nthreads()

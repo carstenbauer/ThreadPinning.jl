@@ -30,7 +30,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
             end
             thread_cpuids = getcpuids(; threadpool)
         elseif threadpool == :all
-            njlthreads = Threads.maxthreadid()
+            njlthreads = Threads.nthreads(:default) + Threads.nthreads(:interactive)
             thread_cpuids = getcpuids(; threadpool = :all)
         else
             throw(ArgumentError("Unknown value for `threadpool` keyword argument. Supported " *
