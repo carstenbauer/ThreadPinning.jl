@@ -94,7 +94,7 @@ function pinthreads end
 function _nthreadsarg(threadpool)
     @static if VERSION >= v"1.9-"
         if threadpool == :all
-            return Threads.maxthreadid()
+            return Threads.nthreads(:default) + Threads.nthreads(:interactive)
         else
             return Threads.nthreads(threadpool)
         end
@@ -112,17 +112,8 @@ function pinthreads(cpuids::AbstractVector{<:Integer};
     if force || first_pin_attempt()
         warn && _check_environment()
         _check_cpuids(cpuids)
+        tids = threadids(threadpool)
         limit = min(length(cpuids), nthreads)
-        @static if VERSION >= v"1.9-"
-            if threadpool == :all
-                tids = 1:Threads.maxthreadid()
-            else
-                tids = filter(i -> Threads.threadpool(i) == threadpool,
-                              1:Threads.maxthreadid())
-            end
-        else
-            tids = 1:limit
-        end
         @debug("pinthreads", limit, nthreads, tids)
         for (i, tid) in pairs(@view(tids[1:limit]))
             pinthread(tid, cpuids[i]; warn = false)
