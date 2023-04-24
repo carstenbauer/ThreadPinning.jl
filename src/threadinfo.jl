@@ -20,6 +20,17 @@ Keyword arguments:
 function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
                     masks = false,
                     groupby = :sockets, threadpool = :default, kwargs...)
+    println(io)
+    print(io, "System: ")
+    nsmt = ncputhreads_per_core()
+    if hyperthreading_is_enabled() && all(isequal(first(nsmt)), nsmt)
+        print(io, ncores(), " cores ($(first(nsmt))-way SMT)")
+    else
+        print(io, ncores(), " cores (no SMT)")
+    end
+    print(io, ", ", nsockets(), " sockets, ")
+    print(io, nnuma(), " NUMA domains")
+    println(io)
     # general info
     @static if VERSION >= v"1.9-"
         if threadpool == :default || threadpool == :interactive
@@ -85,8 +96,9 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
             break
         end
     end
-    println(io, "\n")
+    println(io)
     if blas
+        println(io)
         libblas = BLAS_lib()
         println(io, "BLAS: ", libblas)
         if contains(libblas, "openblas")
