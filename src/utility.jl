@@ -1,3 +1,28 @@
+function threadids(threadpool = :default)::Vector{Int}
+    @static if VERSION < v"1.9-"
+        return collect(1:nthreads())
+    else
+        if threadpool == :all
+            nt = nthreads(:default) + nthreads(:interactive)
+            tids = collect(1:Threads.maxthreadid())
+        else
+            nt = nthreads(threadpool)
+            tids = filter(i -> Threads.threadpool(i) == threadpool, 1:Threads.maxthreadid())
+        end
+
+        if nt != length(tids)
+            # IJulia manually adds a heartbeat thread that mus be ignored...
+            # see https://github.com/JuliaLang/IJulia.jl/issues/1072
+            # Currently, we just assume that it is the last thread.
+            # Might not be safe, in particular not once users can dynamically add threads
+            # in the future.
+            pop!(tids)
+        end
+
+        return tids
+    end
+end
+
 """
     @tspawnat tid -> task
 Mimics `Threads.@spawn`, but assigns the task to thread `tid` (with `sticky = true`).
