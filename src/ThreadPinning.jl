@@ -83,8 +83,8 @@ function __init__()
 end
 
 # precompile
-import SnoopPrecompile
-SnoopPrecompile.@precompile_all_calls begin @static if Sys.islinux()
+import PrecompileTools
+PrecompileTools.@compile_workload begin @static if Sys.islinux()
     ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
     update_sysinfo!()
     lscpu_string()
