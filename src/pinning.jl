@@ -3,7 +3,10 @@ $(TYPEDSIGNATURES)
 Pin the calling Julia thread to the given CPU-thread.
 """
 function pinthread(cpuid::Integer; warn::Bool = true)
-    warn && _check_environment()
+    if warn
+        _check_environment()
+        _check_slurm()
+    end
     if !(cpuid in cpuids_all())
         throw(ArgumentError("Inavlid CPU ID encountered. See `cpuids_all()` for all " *
                             "valid CPU IDs on the system."))
@@ -110,7 +113,10 @@ function pinthreads(cpuids::AbstractVector{<:Integer};
                     nthreads = _nthreadsarg(threadpool))
     # TODO: maybe add `periodic` kwarg for PBC as alternative to strict `min` below.
     if force || first_pin_attempt()
-        warn && _check_environment()
+        if warn
+            _check_environment()
+            _check_slurm()
+        end
         _check_cpuids(cpuids)
         tids = threadids(threadpool)
         limit = min(length(cpuids), nthreads)
@@ -209,6 +215,15 @@ function _check_environment()
         @warn("Found MKL_DYNAMIC == true. Be aware that calling an MKL function can "*
               "spoil the pinning of Julia threads! Use `ThreadPinning.mkl_set_dynamic(0)` "*
               "to be safe. See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
+    end
+    return nothing
+end
+
+function _check_slurm()
+    if SLURM.isslurmjob() && !SLURM.hasfullnode()
+        @warn("You seem to be running in a SLURM allocation that doesn't cover the entire"*
+              "node. Most likely, only a subset of the available CPU-threads will be"*
+              "accessible. This might lead to unexpected pinning results.")
     end
     return nothing
 end
