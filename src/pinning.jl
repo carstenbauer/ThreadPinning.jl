@@ -2,7 +2,7 @@
 $(TYPEDSIGNATURES)
 Pin the calling Julia thread to the given CPU-thread.
 """
-function pinthread(cpuid::Integer; warn::Bool = true)
+function pinthread(cpuid::Integer; warn::Bool = first_pin_attempt())
     if warn
         _check_environment()
         _check_slurm()
@@ -25,7 +25,7 @@ function pinthread(threadid::Integer, cpuid::Integer; kwargs...)
 end
 
 """
-    pinthreads(cpuids[; nthreads, force=true, warn=true, threadpool=:default])
+    pinthreads(cpuids[; nthreads, force=true, warn=first_pin_attempt(), threadpool=:default])
 Pin the first `min(length(cpuids), nthreads)` Julia threads to an explicit or implicit list
 of CPU IDs. The latter can be specified in three ways:
 
@@ -107,7 +107,7 @@ function _nthreadsarg(threadpool)
 end
 
 function pinthreads(cpuids::AbstractVector{<:Integer};
-                    warn::Bool = true,
+                    warn::Bool = first_pin_attempt(),
                     force = true,
                     threadpool = :default,
                     nthreads = _nthreadsarg(threadpool))
@@ -221,8 +221,8 @@ end
 
 function _check_slurm()
     if SLURM.isslurmjob() && !SLURM.hasfullnode()
-        @warn("You seem to be running in a SLURM allocation that doesn't cover the entire"*
-              "node. Most likely, only a subset of the available CPU-threads will be"*
+        @warn("You seem to be running in a SLURM allocation that doesn't cover the entire "*
+              "node. Most likely, only a subset of the available CPU-threads will be "*
               "accessible. This might lead to unexpected pinning results.")
     end
     return nothing
