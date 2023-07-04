@@ -2,27 +2,13 @@ stages:
   - test
   - documentation
 variables:
-  SCHEDULER_PARAMETERS: "-N 1 -n 1 -c 40 -t 00:15:00 -A pc2-mitarbeiter -p all --exclusive"
+  SCHEDULER_PARAMETERS: "-N 1 -n 1 -c 40 -t 00:15:00 -A pc2-mitarbeiter -p fpga --exclusive"
   JULIA_DEPOT_PATH: "/scratch/pc2-mitarbeiter/bauerc/.julia-ci"
   JULIA_NUM_THREADS: "20"
-  JULIA_1_8: "lang/JuliaHPC/1.8.5-foss-2022a-CUDA-11.7.0"
   JULIA_1_9: "lang/JuliaHPC/1.9.1-foss-2022a-CUDA-11.7.0"
 default:
   tags:
     - bauerc-noctua
-
-julia/1.8:
-  stage: test
-  rules:
-    - changes:
-        - "README.md"
-    - when: on_success
-  script:
-    - /bin/bash -l
-    - module load $JULIA_1_8
-    - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
-    - julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
-    - julia --color=yes --project=test/coverage test/coverage/coverage.jl
 
 julia/1.9:
   stage: test
@@ -44,8 +30,6 @@ build-and-deploy:
     - pushes
     - tags
     - external_pull_requests
-  # needs:
-  #   job: julia/1.8
   script:
     - /bin/bash -l
     - module load $JULIA_1_9
