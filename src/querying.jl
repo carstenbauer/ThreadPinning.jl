@@ -41,23 +41,32 @@ function getcpuids(; threadpool = :default)::Vector{Int}
 end
 
 """
-Print the affinity masks of all Julia threads.
+$(SIGNATURES)Print the affinity mask of a Julia thread.
 """
-function print_affinity_masks(io = getstdout(); threadpool = :default, kwargs...)
+function print_affinity_mask(tid = threadid(); io = getstdout(), kwargs...)
+    mask = uv_thread_getaffinity(tid)
+    str = _affinity_mask_to_string(mask; kwargs...)
+    print(io, rpad("$(tid):", 5))
+    println(io, str)
+end
+"""
+$(SIGNATURES)Print the affinity masks of all Julia threads.
+"""
+function print_affinity_masks(; threadpool = :default, io = getstdout(), kwargs...)
     tids = threadids(threadpool)
     for tid in tids
-        mask = uv_thread_getaffinity(tid)
-        str = _affinity_mask_to_string(mask; kwargs...)
-        print(io, rpad("$(tid):", 5))
-        println(io, str)
+        print_affinity_mask(tid; io, kwargs...)
     end
     return nothing
 end
 function _affinity_mask_to_string(mask; groupby = :sockets)
     bitstr = join(mask)[1:ncputhreads()]
-    if groupby == :numa
+    if groupby in (:numa, :NUMA)
         cpuids_per_X = cpuids_per_numa
         nX = nnuma
+    elseif groupby in (:core, :cores)
+        cpuids_per_X = cpuids_per_core
+        nX = ncores
     else
         cpuids_per_X = cpuids_per_socket
         nX = nsockets
@@ -72,12 +81,17 @@ function _affinity_mask_to_string(mask; groupby = :sockets)
 end
 
 """
-Get the affinity mask of the given Julia Threads
+$(SIGNATURES)Get the affinity mask of the given Julia Thread
 """
-get_affinity_mask(tid) = uv_thread_getaffinity(tid)[1:ncputhreads()]
+get_affinity_mask(tid=threadid()) = uv_thread_getaffinity(tid)[1:ncputhreads()]
+
+"""
+$(SIGNATURES)Get the IDs of the CPU-threads associated with the affinity mask of the given Julia Thread
+"""
+get_cpuids_from_affinity_mask(tid=threadid()) = affinitymask2cpuids(get_affinity_mask(tid))
 
 "Get the CPU-thread IDs associated with the given affinity mask."
-function get_cpuids_from_affinity_mask(mask)
+function affinitymask2cpuids(mask)
     [unsafe_cpuids_all()[i] for (i, v) in enumerate(mask) if v == 1]
 end
 

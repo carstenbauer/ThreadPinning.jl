@@ -161,7 +161,7 @@ function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
     if !all(isequal(mask), masks)
         error("Julia threads have different affinity masks.")
     end
-    cpuids = get_cpuids_from_affinity_mask(mask)
+    cpuids = affinitymask2cpuids(mask)
     if length(cpuids) < nthreads
         error("More Julia threads than CPU-threads specified by affinity mask.")
     end
@@ -230,7 +230,7 @@ end
 
 function _check_cpuids(cpuids)
     if !all(c -> c in cpuids_all(), cpuids)
-        throw(ArgumentError("Inavlid CPU ID encountered. See `cpuids_all()` for all " *
+        throw(ArgumentError("Invalid CPU ID encountered. See `cpuids_all()` for all " *
                             "valid CPU IDs on the system."))
     end
     return nothing

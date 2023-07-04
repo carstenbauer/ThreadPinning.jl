@@ -22,6 +22,7 @@ include("querying.jl")
 include("slurm.jl")
 include("pinning.jl")
 include("pinning_mpi.jl")
+include("setaffinity.jl")
 include("likwid-pin.jl")
 include("mkl.jl")
 include("openblas.jl")
@@ -100,6 +101,7 @@ PrecompileTools.@compile_workload begin @static if Sys.islinux()
     pinthreads(:numa; nthreads = 1, compact = true)
     pinthreads(:random; nthreads = 1)
     pinthreads(:current; nthreads = 1)
+    setaffinity(node(1:2))
     getcpuid()
     getcpuids()
     nsockets()
@@ -133,11 +135,13 @@ export threadinfo,
        pinthreads_likwidpin,
        pinthreads_mpi,
        pinthread,
+       setaffinity,
        getcpuids,
        getcpuid,
        unpinthreads,
        unpinthread,
        @tspawnat,
+       print_affinity_mask,
        print_affinity_masks,
        ncputhreads,
        ncores,
