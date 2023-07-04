@@ -15,6 +15,7 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
         @test isnothing(threadinfo(; hyperthreading = true))
         @test isnothing(threadinfo(; blocksize = 5))
         @test isnothing(threadinfo(; blas = true))
+        @test isnothing(threadinfo(; slurm = true))
 
         @static if VERSION >= v"1.9-"
             @test isnothing(threadinfo(; threadpool = :default))
