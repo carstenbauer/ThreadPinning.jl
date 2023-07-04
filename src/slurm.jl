@@ -6,7 +6,7 @@ import ..ThreadPinning: ncputhreads
 Returns `true` if the current Julia session is (most likely) running in an
 active SLURM job.
 """
-isslurmjob() = haskey(ENV, "SLURM_JOBID")
+isslurmjob() = get(ENV, "SLURM_JOBID", "") != ""
 
 """
 Returns `false` if the Julia session is (most likely) running in a SLURM allocation
