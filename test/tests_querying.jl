@@ -27,6 +27,8 @@ ThreadPinning.update_sysinfo!(; fromscratch = true)
     @test typeof(cpuids_per_socket()) == Vector{Vector{Int}}
     @test ishyperthread(0) == false
     @test isnothing(print_affinity_masks())
+    @test isnothing(print_affinity_mask())
+    @test isnothing(print_affinity_mask(1))
 end
 
 @static if VERSION >= v"1.9-"

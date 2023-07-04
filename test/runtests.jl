@@ -17,6 +17,7 @@ end
 @testitem "querying" begin include("tests_querying.jl") end
 @testitem "threadinfo" begin include("tests_threadinfo.jl") end
 @testitem "pinning" begin include("tests_pinning.jl") end
+@testitem "setaffinity" begin include("tests_setaffinity.jl") end
 
 @testitem "likwid-pin" begin include("tests_likwid-pin.jl") end
 @testitem "openblas" begin include("tests_openblas.jl") end

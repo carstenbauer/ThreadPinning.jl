@@ -139,7 +139,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         end
     end
     if masks
-        print_affinity_masks(io; groupby, threadpool)
+        print_affinity_masks(; groupby, threadpool, io)
     end
     hints && _general_hints()
     return nothing
