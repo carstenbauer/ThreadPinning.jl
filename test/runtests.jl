@@ -12,6 +12,7 @@ end
 
 @testitem "utility" begin include("tests_utility.jl") end
 @testitem "preferences" begin include("tests_preferences.jl") end
+@testitem "threadinfo" begin include("tests_slurm.jl") end
 
 @testitem "querying" begin include("tests_querying.jl") end
 @testitem "threadinfo" begin include("tests_threadinfo.jl") end

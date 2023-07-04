@@ -19,7 +19,7 @@ Keyword arguments:
 """
 function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
                     masks = false,
-                    groupby = :sockets, threadpool = :default, kwargs...)
+                    groupby = :sockets, threadpool = :default, slurm = false, kwargs...)
     println(io)
     print(io, "System: ")
     nsmt = ncputhreads_per_core()
@@ -31,6 +31,15 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     print(io, ", ", nsockets(), " sockets, ")
     print(io, nnuma(), " NUMA domains")
     println(io)
+    if slurm
+        println(io)
+        if SLURM.isslurmjob()
+            printstyled(io, "SLURM: ",  SLURM.ncpus_per_task(), " assigned CPU-threads"; color=:light_cyan)
+        else
+            printstyled(io, "SLURM: Session doesn't seem to be running in a SLURM allocation."; color=:red)
+        end
+        println(io)
+    end
     # general info
     @static if VERSION >= v"1.9-"
         if threadpool == :default || threadpool == :interactive
@@ -57,7 +66,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
 
     # visualize current pinning
     println(io)
-    _visualize_affinity(; thread_cpuids, color, groupby, kwargs...)
+    _visualize_affinity(; thread_cpuids, color, groupby, slurm, kwargs...)
 
     # extra information
     print(io, "Julia threads: ")
@@ -140,6 +149,7 @@ function _visualize_affinity(io = getstdout();
                              blocksize = 16,
                              color = true,
                              groupby = :sockets,
+                             slurm = false,
                              hyperthreading = hyperthreading_is_enabled())
     ncpuids = ncputhreads()
     cpuids_grouped = if groupby in (:sockets, :socket)
@@ -151,31 +161,40 @@ function _visualize_affinity(io = getstdout();
     else
         [cpuids_all()]
     end
+    if slurm
+        slurm_mask = SLURM.get_cpu_mask()
+        slurm_cpuids = isnothing(slurm_mask) ? Int[] : Int[c for (i,c) in pairs(cpuids_all()) if slurm_mask[i] == 1]
+    end
     printstyled(io, "| "; bold = true)
     for (i, cpuids) in pairs(cpuids_grouped)
         for (k, cpuid) in pairs(cpuids)
-            if color
-                if cpuid in thread_cpuids
-                    printstyled(io, cpuid;
-                                bold = true,
-                                color = if (hyperthreading && ishyperthread(cpuid))
-                                    :light_magenta
-                                else
-                                    :yellow
-                                end)
-                else
-                    printstyled(io, cpuid;
-                                color = if (hyperthreading && ishyperthread(cpuid))
-                                    :light_black
-                                else
-                                    :default
-                                end)
-                end
+            if slurm && !(cpuid in slurm_cpuids)
+                print(io, ".")
+                # continue
             else
-                if cpuid in thread_cpuids
-                    printstyled(io, cpuid; bold = true)
+                if color
+                    if cpuid in thread_cpuids
+                        printstyled(io, cpuid;
+                                    bold = true,
+                                    color = if (hyperthreading && ishyperthread(cpuid))
+                                        :light_magenta
+                                    else
+                                        :yellow
+                                    end)
+                    else
+                        printstyled(io, cpuid;
+                                    color = if (hyperthreading && ishyperthread(cpuid))
+                                        :light_black
+                                    else
+                                        :default
+                                    end)
+                    end
                 else
-                    print(io, "_")
+                    if cpuid in thread_cpuids
+                        printstyled(io, cpuid; bold = true)
+                    else
+                        print(io, "_")
+                    end
                 end
             end
             if !(cpuid == last(cpuids))
