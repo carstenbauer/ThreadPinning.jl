@@ -13,11 +13,11 @@ using ThreadPinning
     # get_cpu_mask[_str]()
     withenv("SLURM_CPU_BIND"=>"verbose,mask_cpu:0x000000000000000000000001FFFFFFFF", "SLURM_CPU_BIND_LIST"=>nothing) do
         @test ThreadPinning.SLURM.get_cpu_mask_str() == "0x000000000000000000000001FFFFFFFF"
-        @test ThreadPinning.SLURM.get_cpu_mask() == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        @test ThreadPinning.SLURM.get_cpu_mask() == vcat(fill(1, 33), fill(0,ncputhreads()-33))
     end
     withenv("SLURM_CPU_BIND_LIST"=>"0x000000000000000000000001FFFFFFFF", "SLURM_CPU_BIND"=>nothing) do
         @test ThreadPinning.SLURM.get_cpu_mask_str() == "0x000000000000000000000001FFFFFFFF"
-        @test ThreadPinning.SLURM.get_cpu_mask() == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        @test ThreadPinning.SLURM.get_cpu_mask() == vcat(fill(1, 33), fill(0,ncputhreads()-33))
     end
 
     # ncpus_per_task()
