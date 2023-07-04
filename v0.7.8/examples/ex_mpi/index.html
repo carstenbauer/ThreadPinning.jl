@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>MPI and MPI + Threads · ThreadPinning.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="ThreadPinning.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">ThreadPinning.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">ThreadPinning</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../ex_pinning_julia_threads/">Pinning Julia Threads</a></li><li><a class="tocitem" href="../ex_affinity/">Respect Process Affinity Mask</a></li><li class="is-active"><a class="tocitem" href>MPI and MPI + Threads</a><ul class="internal"><li><a class="tocitem" href="#SLURM"><span>SLURM</span></a></li><li><a class="tocitem" href="#Manual"><span>Manual</span></a></li></ul></li><li><a class="tocitem" href="../ex_blas/">Autochecking BLAS Thread Settings</a></li><li><a class="tocitem" href="../ex_core2core_latency/">Measuring Core-to-Core Latency</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">Explanations</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../explanations/why/">Why Pin Julia Threads?</a></li><li><a class="tocitem" href="../../explanations/linux/">Why only Linux?</a></li><li><a class="tocitem" href="../../explanations/blas/">Julia Threads + BLAS Threads</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">References</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../refs/api/">API</a></li><li><a class="tocitem" href="../../refs/blaslapack/">BLAS/LAPACK</a></li><li><a class="tocitem" href="../../refs/latency/">Latency</a></li><li><a class="tocitem" href="../../refs/libX/">LibX</a></li><li><a class="tocitem" href="../../refs/likwidpin/">Likwid-Pin</a></li><li><a class="tocitem" href="../../refs/prefs/">Preferences</a></li><li><a class="tocitem" href="../../refs/utility/">Utility</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>MPI and MPI + Threads</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>MPI and MPI + Threads</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/carstenbauer/ThreadPinning.jl/blob/main/docs/src/examples/ex_mpi.md#" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="MPI"><a class="docs-heading-anchor" href="#MPI">MPI</a><a id="MPI-1"></a><a class="docs-heading-anchor-permalink" href="#MPI" title="Permalink"></a></h1><h2 id="SLURM"><a class="docs-heading-anchor" href="#SLURM">SLURM</a><a id="SLURM-1"></a><a class="docs-heading-anchor-permalink" href="#SLURM" title="Permalink"></a></h2><p>In this section, we&#39;ll focus on MPI applications that run under SLURM (or a similar job scheduler). On most systems, the latter sets the affinity mask of the Julia processes (MPI ranks) based on the options set by the user (e.g. via <code>#SBATCH</code>). Consequently, one has to do little to nothing on the Julia side to achieve the desired pinning pattern.</p><h3 id="MPI-only"><a class="docs-heading-anchor" href="#MPI-only">MPI only</a><a id="MPI-only-1"></a><a class="docs-heading-anchor-permalink" href="#MPI-only" title="Permalink"></a></h3><p>If your MPI-parallel application is single threaded (i.e. one Julia thread per MPI rank), <strong>you likely don&#39;t have to do anything on the Julia side</strong> to pin the MPI ranks. Instead, you can just use the SLURM options.</p><p><strong>Multinode example, 1 MPI rank per socket:</strong></p><pre><code class="language-julia hljs">#!/usr/bin/env sh
+#SBATCH -N 2 # two nodes
+#SBATCH -n 4 # four MPI ranks in total
+#SBATCH --ntasks-per-socket 1 # one MPI rank per socket
+#SBATCH -o sl_mpi_multinode_%j.out
+#SBATCH -A pc2-mitarbeiter
+#SBATCH -p all
+#SBATCH -t 00:02:00
+#=
+ml lang JuliaHPC # load Julia module (system specific!)
+srun -n 4 julia --project -t 1 $(scontrol show job $SLURM_JOBID | awk -F= &#39;/Command=/{print $2}&#39;)
+exit
+# =#
+using MPI
+using ThreadPinning
+
+MPI.Init()
+nranks = MPI.Comm_size(MPI.COMM_WORLD)
+rank = MPI.Comm_rank(MPI.COMM_WORLD)
+MPI.Barrier()
+sleep(2*rank)
+println(&quot;Rank $rank:&quot;)
+println(&quot;\tHost: &quot;, gethostname())
+println(&quot;\tCPUs: &quot;, getcpuids())
+print_affinity_masks()</code></pre><p>Output (manually cleaned up a bit):</p><pre><code class="nohighlight hljs">Rank 0:
+    Host: n2fpga19
+    CPUs: [0]
+1:   |1000000000000000000000000000000000000000000000000000000000000000|0000000000000000000000000000000000000000000000000000000000000000|
+
+Rank 1:
+    Host: n2fpga19
+    CPUs: [64]
+1:   |0000000000000000000000000000000000000000000000000000000000000000|1000000000000000000000000000000000000000000000000000000000000000|
+
+Rank 2:
+    Host: n2fpga33
+    CPUs: [0]
+1:   |1000000000000000000000000000000000000000000000000000000000000000|0000000000000000000000000000000000000000000000000000000000000000|
+
+Rank 3:
+    Host: n2fpga33
+    CPUs: [64]
+1:   |0000000000000000000000000000000000000000000000000000000000000000|1000000000000000000000000000000000000000000000000000000000000000|</code></pre><h3 id="Hybrid:-MPI-Threads"><a class="docs-heading-anchor" href="#Hybrid:-MPI-Threads">Hybrid: MPI + Threads</a><a id="Hybrid:-MPI-Threads-1"></a><a class="docs-heading-anchor-permalink" href="#Hybrid:-MPI-Threads" title="Permalink"></a></h3><p>If your MPI-parallel application is multithreaded (i.e. multiple Julia threads per MPI rank), you can use <a href="../../refs/api/#ThreadPinning.pinthreads"><code>pinthreads(:affinitymask)</code></a> to pin Julia threads of each MPI rank according to the affinity mask set by SLURM (according to the user-specified options). If you don&#39;t use <code>pinthreads(:affinitymask)</code>, the Julia threads are only bound to a range of CPU-threads, they can migrate, and they can also overlap (occupy the same CPU-thread). See <a href="../ex_affinity/#exaffinitymask">Process Affinity Mask</a> for more information.</p><p><strong>Multinode example, 1 MPI rank per socket, 25 threads per rank:</strong></p><pre><code class="language-julia hljs">#!/usr/bin/env sh
+#SBATCH -N 2
+#SBATCH -n 4
+#SBATCH --ntasks-per-socket 1
+#SBATCH --cpus-per-task 25
+#SBATCH -o sl_hybrid_multinode_affinitymask_%j.out
+#SBATCH -A pc2-mitarbeiter
+#SBATCH -p all
+#SBATCH -t 00:02:00
+#=
+ml lang JuliaHPC
+srun -n 4 julia --project -t 25 $(scontrol show job $SLURM_JOBID | awk -F= &#39;/Command=/{print $2}&#39;)
+exit
+# =#
+using MPI
+using ThreadPinning
+pinthreads(:affinitymask)
+
+MPI.Init()
+nranks = MPI.Comm_size(MPI.COMM_WORLD)
+rank = MPI.Comm_rank(MPI.COMM_WORLD)
+MPI.Barrier()
+sleep(2*rank)
+println(&quot;Rank $rank:&quot;)
+println(&quot;\tHost: &quot;, gethostname())
+println(&quot;\tCPUs: &quot;, getcpuids())</code></pre><p>Output:</p><pre><code class="nohighlight hljs">Rank 0:
+    Host: n2cn0853
+    CPUs: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+Rank 1:
+    Host: n2cn0853
+    CPUs: [64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]
+Rank 2:
+    Host: n2cn0854
+    CPUs: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+Rank 3:
+    Host: n2cn0854
+    CPUs: [64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88]</code></pre><h2 id="Manual"><a class="docs-heading-anchor" href="#Manual">Manual</a><a id="Manual-1"></a><a class="docs-heading-anchor-permalink" href="#Manual" title="Permalink"></a></h2><p>In this section, we describe how you can pin the Julia threads of your MPI ranks manually, that is without any &quot;help&quot; from an external affinity mask (e.g. as set by SLURM, see above).</p><p>TODO: <a href="../../refs/api/#ThreadPinning.pinthreads_mpi-Tuple{Symbol, Vararg{Any}}"><code>pinthreads_mpi</code></a></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../ex_affinity/">« Respect Process Affinity Mask</a><a class="docs-footer-nextpage" href="../ex_blas/">Autochecking BLAS Thread Settings »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Tuesday 4 July 2023 22:21">Tuesday 4 July 2023</span>. Using Julia version 1.9.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
