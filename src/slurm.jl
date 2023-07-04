@@ -24,4 +24,40 @@ function hasfullnode()
     return true
 end
 
+function get_cpu_mask_str()
+    slurm_str = get(ENV, "SLURM_CPU_BIND", nothing)
+    if isnothing(slurm_str)
+        slurm_str = get(ENV, "SLURM_CPU_BIND_LIST", nothing)
+    end
+    mask_str = nothing
+    if !isnothing(slurm_str)
+        sp = split(slurm_str, "0x")
+        if length(sp) == 2
+            mask_str = string("0x", sp[2])
+            return mask_str
+        end
+    end
+    return nothing
+end
+
+function get_cpu_mask(mask_str = get_cpu_mask_str())
+    if isnothing(mask_str)
+        return nothing
+    end
+    mask = parse(Int, mask_str)
+    return digits(mask; base=2, pad=ncputhreads())
+end
+
+function ncpus_per_task()::Int
+    n = get(ENV, "SLURM_CPUS_PER_TASK", nothing)
+    if !isnothing(n)
+        return parse(Int, n)
+    end
+    slurm_mask = get_cpu_mask()
+    if !isnothing(slurm_mask)
+        return count(isequal(1), slurm_mask)
+    end
+    return 0
+end
+
 end
