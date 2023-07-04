@@ -9,6 +9,7 @@ Keyword arguments:
 * `hyperthreading` (default: `true`): If `true`, we (try to) highlight CPU-threads
   associated with hyperthreading in the `color=true` output.
 * `blas` (default: `false`): Show information about BLAS threads as well.
+* `slurm` (default: `false`): Only show the part of the system that is covered by the active SLURM session.
 * `hints` (default: `false`): Give some hints about how to improve the threading related
   settings.
 * `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, `:cores`, or `:none`.
