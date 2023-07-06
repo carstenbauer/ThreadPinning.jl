@@ -19,7 +19,7 @@ function hasfullnode()
     end
     slurm_cpus_on_node = get(ENV, "SLURM_CPUS_ON_NODE", nothing)
     if !isnothing(slurm_cpus_on_node)
-        return parse(Int64, slurm_cpus_on_node) == ncputhreads
+        return parse(Int64, slurm_cpus_on_node) == ncputhreads()
     end
     return true
 end
