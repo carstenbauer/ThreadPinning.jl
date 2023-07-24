@@ -2,7 +2,7 @@ include("Core2CoreLatency/Core2CoreLatency.jl")
 using .Core2CoreLatency
 
 """
-    bench_core2core_latency([cpuids = 0:Sys.CPU_THREADS-1; nbench = 5, nsamples::Integer = 100, mode::Symbol = :min])
+    bench_core2core_latency([cpuids; nbench = 5, nsamples::Integer = 100, mode::Symbol = :min])
 A tool for measuring core-to-core latency (i.e. inter-core latency) in nanoseconds.
 
 The measured latencies correspond to a full roundtrip between two cores. Divide them by two to obtain an estimate for the time needed to fetch data from another core.
@@ -11,12 +11,10 @@ The measured latencies correspond to a full roundtrip between two cores. Divide 
 
 **Refs:** Largely inspired by [rigtorp/c2clat](https://github.com/rigtorp/c2clat) and [ajakubek/core-latency](https://github.com/ajakubek/core-latency).
 """
-function bench_core2core_latency(cpuids = 0:(Sys.CPU_THREADS - 1); nbench = 5, kwargs...)
+function bench_core2core_latency(cpuids = cpuids_all(); nbench = 5, kwargs...)
     # check validity of cpuids input
-    for c in cpuids
-        if c < 0 || c > Sys.CPU_THREADS
-            @error("CPU IDs must all be non-negative and ≤ Sys.CPU_THREADS.")
-        end
+    if !all(c->c in cpuids_all(), cpuids)
+        throw(ArgumentError("Some of the provided CPU IDs seem to be invalid."))
     end
     # backup current thread affinity
     pinning_before = getcpuids()
