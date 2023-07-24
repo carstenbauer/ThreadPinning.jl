@@ -16,6 +16,7 @@ end
 state(S::Sync) = S.state[]
 function wait_until(S::Sync, expected_state::State)
     while state(S) != expected_state
+        GC.safepoint()
     end
     return nothing
 end
@@ -27,6 +28,7 @@ function wait_as_long_as(S::Sync, wait_state::State)
     loaded_state = state(S)
     while loaded_state == wait_state
         loaded_state = state(S)
+        GC.safepoint()
     end
     return loaded_state
 end
@@ -49,6 +51,7 @@ function run_bench(cpu1::Integer, cpu2::Integer; nsamples::Integer = 100,
                 set(S, Pong)
                 state = wait_as_long_as(S, Pong)
             end
+            GC.safepoint()
         end
     end
 
