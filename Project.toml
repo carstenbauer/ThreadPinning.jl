@@ -8,23 +8,24 @@ DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 
 [compat]
+DelimitedFiles = "1"
 DocStringExtensions = "0.9"
 MKL = "0.4, 0.6"
-Preferences = "1"
 PrecompileTools = "1"
+Preferences = "1"
 TestItemRunner = "0.2"
 julia = "1.6"
 
 [extras]
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
