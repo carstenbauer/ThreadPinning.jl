@@ -86,8 +86,11 @@ function __init__()
         end
         maybe_autopin()
     else
-        @warn("Operating system not supported by ThreadPinning.jl."*
-              " Functions like `pinthreads` will be no-ops!")
+        os_warning = get(ENV, "TP_OS_WARNING", Prefs.get_os_warning())
+        if os_warning
+            @warn("Operating system not supported by ThreadPinning.jl."*
+                  " Functions like `pinthreads` will be no-ops!")
+        end
     end
     return nothing
 end
