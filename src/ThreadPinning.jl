@@ -89,7 +89,8 @@ function __init__()
         os_warning = Prefs.get_os_warning()
         if isnothing(os_warning) || os_warning
             @warn("Operating system not supported by ThreadPinning.jl."*
-                  " Functions like `pinthreads` will be no-ops!")
+                  " Functions like `pinthreads` will be no-ops!\n" *
+                  "(Hide this warning via `ThreadPinning.Prefs.set_os_warning(false)`.)")
         end
     end
     return nothing
