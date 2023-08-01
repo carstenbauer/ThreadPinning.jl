@@ -8,7 +8,7 @@ import Random
 using DelimitedFiles
 using DocStringExtensions
 
-const DEFAULT_IO = Ref{Union{IO,Nothing}}(nothing)
+const DEFAULT_IO = Ref{Union{IO, Nothing}}(nothing)
 getstdout() = something(DEFAULT_IO[], stdout)
 
 # includes
@@ -87,46 +87,56 @@ end
 # precompile
 import PrecompileTools
 PrecompileTools.@compile_workload begin @static if Sys.islinux()
-    ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
-    update_sysinfo!()
-    lscpu_string()
-    pinthread(0)
-    pinthreads(0:(nthreads() - 1))
-    pinthreads(collect(0:(nthreads() - 1)))
-    pinthreads(:compact; nthreads = 1)
-    pinthreads(:cores; nthreads = 1)
-    pinthreads(:sockets; nthreads = 1)
-    pinthreads(:sockets; nthreads = 1, compact = true)
-    pinthreads(:numa; nthreads = 1)
-    pinthreads(:numa; nthreads = 1, compact = true)
-    pinthreads(:random; nthreads = 1)
-    pinthreads(:current; nthreads = 1)
-    setaffinity(node(1:2))
-    getcpuid()
-    getcpuids()
-    nsockets()
-    nnuma()
-    cpuids_all()
-    cpuids_per_socket()
-    cpuids_per_numa()
-    cpuids_per_node()
-    cpuids_per_core()
-    ncputhreads()
-    ncputhreads_per_socket()
-    ncputhreads_per_numa()
-    ncputhreads_per_core()
-    ncores()
-    ncores_per_socket()
-    ncores_per_numa()
-    socket(1, 1:1)
-    socket(1, [1])
-    numa(1, 1:1)
-    numa(1, [1])
-    node(1:1)
-    node([1])
-    core(1, [1])
-    sockets()
-    numas()
+    try
+        ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
+        update_sysinfo!()
+        lscpu_string()
+        cs = cpuids_all()[1:4]
+        pinthread(cs[2])
+        pinthreads(cs)
+        if all(==(1), diff(cs))
+            pinthreads(minimum(cs):maximum(cs))
+        end
+        pinthreads(:compact; nthreads = 1)
+        pinthreads(:cores; nthreads = 1)
+        pinthreads(:random; nthreads = 1)
+        pinthreads(:current; nthreads = 1)
+        if nsockets() > 1 &&
+           all(x -> length(x) == length(cpuids_per_socket()[1]), cpuids_per_socket())
+            pinthreads(:sockets; nthreads = 1)
+        end
+        if nnuma() > 1 &&
+           all(x -> length(x) == length(cpuids_per_numa()[1]), cpuids_per_numa())
+            pinthreads(:numa; nthreads = 1)
+        end
+        setaffinity(node(1:2))
+        getcpuid()
+        getcpuids()
+        nsockets()
+        nnuma()
+        cpuids_all()
+        cpuids_per_socket()
+        cpuids_per_numa()
+        cpuids_per_node()
+        cpuids_per_core()
+        ncputhreads()
+        ncputhreads_per_socket()
+        ncputhreads_per_numa()
+        ncputhreads_per_core()
+        ncores()
+        ncores_per_socket()
+        ncores_per_numa()
+        socket(1, 1:1)
+        socket(1, [1])
+        numa(1, 1:1)
+        numa(1, [1])
+        node(1:1)
+        node([1])
+        core(1, [1])
+        sockets()
+        numas()
+    catch err
+    end
 end end
 
 # exports
