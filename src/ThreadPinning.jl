@@ -13,21 +13,23 @@ getstdout() = something(DEFAULT_IO[], stdout)
 
 # includes
 include("utility.jl")
-include("sysinfo.jl")
-include("lscpu_examples.jl")
-include("libs/libc.jl")
-include("libs/libuv.jl")
-include("libs/libpthread.jl")
-include("querying.jl")
-include("slurm.jl")
-include("pinning.jl")
-include("pinning_mpi.jl")
-include("setaffinity.jl")
-include("likwid-pin.jl")
-include("mkl.jl")
-include("openblas.jl")
-include("threadinfo.jl")
-include("latency.jl")
+@static if Sys.islinux()
+    include("sysinfo.jl")
+    include("lscpu_examples.jl")
+    include("libs/libc.jl")
+    include("libs/libuv.jl")
+    include("libs/libpthread.jl")
+    include("querying.jl")
+    include("slurm.jl")
+    include("pinning.jl")
+    include("pinning_mpi.jl")
+    include("setaffinity.jl")
+    include("likwid-pin.jl")
+    include("mkl.jl")
+    include("openblas.jl")
+    include("threadinfo.jl")
+    include("latency.jl")
+end
 include("preferences.jl")
 
 function _try_get_autoupdate()
@@ -78,8 +80,7 @@ function __init__()
         end
         maybe_autopin()
     else
-        error("Operating system not supported. ThreadPinning.jl currently only supports " *
-              "Linux.")
+        # Nothing for now.
     end
     return nothing
 end
