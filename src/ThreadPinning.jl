@@ -8,7 +8,7 @@ import Random
 using DelimitedFiles
 using DocStringExtensions
 
-const DEFAULT_IO = Ref{Union{IO,Nothing}}(nothing)
+const DEFAULT_IO = Ref{Union{IO, Nothing}}(nothing)
 getstdout() = something(DEFAULT_IO[], stdout)
 
 # includes
@@ -29,6 +29,12 @@ include("utility.jl")
     include("openblas.jl")
     include("threadinfo.jl")
     include("latency.jl")
+else
+    pinthreads(args...; kwargs...) = nothing
+    pinthread(args...; kwargs...) = nothing
+    setaffinity(args...; kwargs...) = nothing
+    pinthreads_likwidpin(args...; kwargs...) = nothing
+    pinthreads_mpi(args...; kwargs...) = nothing
 end
 include("preferences.jl")
 
@@ -80,7 +86,8 @@ function __init__()
         end
         maybe_autopin()
     else
-        # Nothing for now.
+        @warn("Operating system not supported by ThreadPinning.jl."*
+              " Functions like `pinthreads` will be no-ops!")
     end
     return nothing
 end
