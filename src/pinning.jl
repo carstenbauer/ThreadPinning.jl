@@ -230,7 +230,9 @@ end
 
 function _check_cpuids(cpuids)
     if !all(c -> c in cpuids_all(), cpuids)
-        throw(ArgumentError("Invalid CPU ID encountered. See `cpuids_all()` for all " *
+        valid_cpuids = cpuids_all()
+        problem_cpuids = filter(c -> !(c in valid_cpuids), cpuids)
+        throw(ArgumentError("Invalid CPU ID(s) encountered: $(problem_cpuids). See `cpuids_all()` for all " *
                             "valid CPU IDs on the system."))
     end
     return nothing
