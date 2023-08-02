@@ -8,26 +8,34 @@ import Random
 using DelimitedFiles
 using DocStringExtensions
 
-const DEFAULT_IO = Ref{Union{IO,Nothing}}(nothing)
+const DEFAULT_IO = Ref{Union{IO, Nothing}}(nothing)
 getstdout() = something(DEFAULT_IO[], stdout)
 
 # includes
 include("utility.jl")
-include("sysinfo.jl")
-include("lscpu_examples.jl")
-include("libs/libc.jl")
-include("libs/libuv.jl")
-include("libs/libpthread.jl")
-include("querying.jl")
-include("slurm.jl")
-include("pinning.jl")
-include("pinning_mpi.jl")
-include("setaffinity.jl")
-include("likwid-pin.jl")
-include("mkl.jl")
-include("openblas.jl")
-include("threadinfo.jl")
-include("latency.jl")
+@static if Sys.islinux()
+    include("sysinfo.jl")
+    include("lscpu_examples.jl")
+    include("libs/libc.jl")
+    include("libs/libuv.jl")
+    include("libs/libpthread.jl")
+    include("querying.jl")
+    include("slurm.jl")
+    include("pinning.jl")
+    include("pinning_mpi.jl")
+    include("setaffinity.jl")
+    include("likwid-pin.jl")
+    include("mkl.jl")
+    include("openblas.jl")
+    include("threadinfo.jl")
+    include("latency.jl")
+else
+    pinthreads(args...; kwargs...) = nothing
+    pinthread(args...; kwargs...) = nothing
+    setaffinity(args...; kwargs...) = nothing
+    pinthreads_likwidpin(args...; kwargs...) = nothing
+    pinthreads_mpi(args...; kwargs...) = nothing
+end
 include("preferences.jl")
 
 function _try_get_autoupdate()
@@ -78,8 +86,12 @@ function __init__()
         end
         maybe_autopin()
     else
-        error("Operating system not supported. ThreadPinning.jl currently only supports " *
-              "Linux.")
+        os_warning = Prefs.get_os_warning()
+        if isnothing(os_warning) || os_warning
+            @warn("Operating system not supported by ThreadPinning.jl."*
+                  " Functions like `pinthreads` will be no-ops!\n" *
+                  "(Hide this warning via `ThreadPinning.Prefs.set_os_warning(false)`.)")
+        end
     end
     return nothing
 end

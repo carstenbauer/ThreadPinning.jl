@@ -4,7 +4,7 @@ using Preferences
 using DocStringExtensions
 using ..ThreadPinning: getstdout
 
-const ALL_PREFERENCES = ("autoupdate", "pin", "likwidpin")
+const ALL_PREFERENCES = ("autoupdate", "pin", "likwidpin", "os_warning")
 
 "Query whether the pin preference is set"
 has_pin() = @has_preference("pin")
@@ -72,6 +72,31 @@ end
 "$(SIGNATURES)Set the autoupdate preference"
 function set_autoupdate(b::Bool)
     @set_preferences!("autoupdate"=>string(b))
+    @info("Done. Package might recompile next time it is loaded (in a new Julia session).")
+    return nothing
+end
+
+"Query whether the OS warning preference is set"
+has_os_warning() = @has_preference("os_warning")
+
+"Get the OS warning preference. Returns `nothing` if not set."
+function get_os_warning()
+    p = @load_preference("os_warning")
+    if isnothing(p)
+        return nothing #default
+    else
+        try
+            b = parse(Bool, lowercase(p))
+            return b
+        catch
+            throw(ArgumentError("`$p` is not a valid value for the OS warning preference"))
+        end
+    end
+end
+
+"$(SIGNATURES)Set the OS warning preference"
+function set_os_warning(b::Bool)
+    @set_preferences!("os_warning"=>string(b))
     @info("Done. Package might recompile next time it is loaded (in a new Julia session).")
     return nothing
 end

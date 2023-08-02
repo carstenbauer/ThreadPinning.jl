@@ -6,6 +6,10 @@ using Test
     @test ThreadPinning.Prefs.get_autoupdate() == false
     @test isnothing(ThreadPinning.Prefs.set_autoupdate(true))
 
+    @test isnothing(ThreadPinning.Prefs.set_os_warning(false))
+    @test ThreadPinning.Prefs.get_os_warning() == false
+    @test isnothing(ThreadPinning.Prefs.set_os_warning(true))
+
     @test isnothing(ThreadPinning.Prefs.set_pin(:sockets))
     @test ThreadPinning.Prefs.get_pin() == "sockets"
     @test isnothing(ThreadPinning.Prefs.set_pin("cores"))
