@@ -41,6 +41,54 @@ function getcpuids(; threadpool = :default)::Vector{Int}
 end
 
 """
+Returns the ID (starting at zero) of the NUMA node corresponding to the CPU thread on which
+the calling thread is currently running.
+"""
+function getnumanode()
+    cpuid = getcpuid()
+    for (i, cs_numa) in enumerate(unsafe_cpuids_per_numa())
+        if cpuid in cs_numa
+            return i-1
+        end
+    end
+    return -1
+end
+
+"""
+$(SIGNATURES)
+Returns the ID (starting at zero) of the NUMA node corresponding to the CPU thread on which
+the given Julia thread (`threadid`) is currently running.
+"""
+getnumanode(threadid::Integer) = fetch(@tspawnat threadid getnumanode())
+
+"""
+Returns the ID (starting at zero) of the NUMA nodes corresponding to the CPU threads on which
+the Julia threads are currently running.
+"""
+function getnumanodes(; threadpool = :default)::Vector{Int}
+    @static if VERSION >= v"1.9-"
+        if !(threadpool in (:all, :default, :interactive))
+            throw(ArgumentError("Unknown value for `threadpool` keyword argument. " *
+                                "Supported values are `:all`, `:default`, and " *
+                                "`:interactive`."))
+        end
+        tids_pool = threadids(threadpool)
+        nt = length(tids_pool)
+        numanodes = zeros(Int, nt)
+        for (i, tid) in pairs(tids_pool)
+            numanodes[i] = fetch(@tspawnat tid getnumanode())
+        end
+    else
+        nt = nthreads()
+        numanodes = zeros(Int, nt)
+        @threads :static for tid in 1:nt
+            numanodes[tid] = getnumanode()
+        end
+    end
+    return numanodes
+end
+
+"""
 $(SIGNATURES)Print the affinity mask of a Julia thread.
 """
 function print_affinity_mask(tid = threadid(); io = getstdout(), kwargs...)

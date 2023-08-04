@@ -124,6 +124,8 @@ PrecompileTools.@compile_workload begin @static if Sys.islinux()
         setaffinity(node(1:2))
         getcpuid()
         getcpuids()
+        getnumanode()
+        getnumanodes()
         nsockets()
         nnuma()
         cpuids_all()
@@ -160,6 +162,8 @@ export threadinfo,
        setaffinity,
        getcpuids,
        getcpuid,
+       getnumanode,
+       getnumanodes,
        unpinthreads,
        unpinthread,
        @tspawnat,

@@ -29,6 +29,9 @@ ThreadPinning.update_sysinfo!(; fromscratch = true)
     @test isnothing(print_affinity_masks())
     @test isnothing(print_affinity_mask())
     @test isnothing(print_affinity_mask(1))
+    @test typeof(getnumanode()) == Int
+    @test typeof(getnumanodes()) == Vector{Int}
+    @test getnumanodes() == getnumanode.(1:Threads.nthreads())
 end
 
 @static if VERSION >= v"1.9-"
@@ -42,6 +45,16 @@ end
         @test getcpuids(; threadpool = :all) == vcat(getcpuids(; threadpool = :default),
                    getcpuids(; threadpool = :interactive))
         @test_throws ArgumentError getcpuids(; threadpool = :carsten)
+
+        @test getnumanodes(; threadpool = :default) == getnumanodes()
+        @test length(getnumanodes(; threadpool = :default)) ==
+              Threads.nthreads(:default)
+        @test length(getnumanodes(; threadpool = :interactive)) ==
+              Threads.nthreads(:interactive)
+        @test typeof(getnumanodes(; threadpool = :interactive)) == Vector{Int}
+        @test getnumanodes(; threadpool = :all) == vcat(getnumanodes(; threadpool = :default),
+                   getnumanodes(; threadpool = :interactive))
+        @test_throws ArgumentError getnumanodes(; threadpool = :carsten)
 
         @test isnothing(print_affinity_masks(; threadpool=:default))
         @test isnothing(print_affinity_masks(; threadpool=:interactive))
