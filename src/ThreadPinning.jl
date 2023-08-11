@@ -104,22 +104,22 @@ PrecompileTools.@compile_workload begin @static if Sys.islinux()
         update_sysinfo!()
         lscpu_string()
         cs = cpuids_all()[1:4]
-        pinthread(cs[2])
-        pinthreads(cs)
+        pinthread(cs[2]; warn=false)
+        pinthreads(cs; warn=false)
         if all(==(1), diff(cs))
-            pinthreads(minimum(cs):maximum(cs))
+            pinthreads(minimum(cs):maximum(cs); warn=false)
         end
-        pinthreads(:compact; nthreads = 1)
-        pinthreads(:cores; nthreads = 1)
-        pinthreads(:random; nthreads = 1)
-        pinthreads(:current; nthreads = 1)
+        pinthreads(:compact; nthreads = 1; warn=false)
+        pinthreads(:cores; nthreads = 1; warn=false)
+        pinthreads(:random; nthreads = 1; warn=false)
+        pinthreads(:current; nthreads = 1; warn=false)
         if nsockets() > 1 &&
            all(x -> length(x) == length(cpuids_per_socket()[1]), cpuids_per_socket())
-            pinthreads(:sockets; nthreads = 1)
+            pinthreads(:sockets; nthreads = 1; warn=false)
         end
         if nnuma() > 1 &&
            all(x -> length(x) == length(cpuids_per_numa()[1]), cpuids_per_numa())
-            pinthreads(:numa; nthreads = 1)
+            pinthreads(:numa; nthreads = 1; warn=false)
         end
         setaffinity(node(1:2))
         getcpuid()
