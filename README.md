@@ -40,7 +40,7 @@ https://www.youtube.com/watch?v=6Whc9XtlCC0
 
 [![](https://img.youtube.com/vi/6Whc9XtlCC0/0.jpg)](https://youtu.be/6Whc9XtlCC0)
 
-## Demonstration
+## Quick Demo
 
 Dual-socket system where each CPU has 40 hardware threads (20 CPU-cores with 2-way [SMT](https://en.wikipedia.org/wiki/Simultaneous_multithreading)).
 
