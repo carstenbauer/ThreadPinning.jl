@@ -34,7 +34,7 @@
 
 ## Video
 
-Lightning talk (10 min) given at JuliaCon 23 at MIT.
+Lightning talk (10 min) given at [JuliaCon 2023](https://juliacon.org/2023/) at MIT.
 
 https://www.youtube.com/watch?v=6Whc9XtlCC0
 
