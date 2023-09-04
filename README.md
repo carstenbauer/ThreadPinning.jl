@@ -36,8 +36,6 @@
 
 Lightning talk (10 min) given at [JuliaCon 2023](https://juliacon.org/2023/) at MIT.
 
-https://www.youtube.com/watch?v=6Whc9XtlCC0
-
 [![](https://img.youtube.com/vi/6Whc9XtlCC0/0.jpg)](https://youtu.be/6Whc9XtlCC0)
 
 ## Quick Demo
