@@ -32,6 +32,14 @@
 |:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
 | [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][cov-img]][cov-url] | ![][lifecycle-img] [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle) |
 
+## Video
+
+Lightning talk (10 min) given at JuliaCon 23 at MIT.
+
+https://www.youtube.com/watch?v=6Whc9XtlCC0
+
+[![](https://img.youtube.com/vi/6Whc9XtlCC0/0.jpg)](https://youtu.be/6Whc9XtlCC0)
+
 ## Demonstration
 
 Dual-socket system where each CPU has 40 hardware threads (20 CPU-cores with 2-way [SMT](https://en.wikipedia.org/wiki/Simultaneous_multithreading)).
