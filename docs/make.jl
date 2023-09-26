@@ -1,15 +1,9 @@
 using Documenter
-using DocThemePC2
 using ThreadPinning
 using Literate
 using LinearAlgebra
-# using MKL # optional
-# BLAS.set_num_threads(1)
 
 const ci = get(ENV, "CI", "") == "true"
-
-@info "Preparing DocThemePC2"
-DocThemePC2.install(@__DIR__)
 
 @info "Generating Documenter.jl site"
 makedocs(;
@@ -44,7 +38,7 @@ makedocs(;
          ],
          # assets = ["assets/custom.css", "assets/custom.js"]
          repo = "https://github.com/carstenbauer/ThreadPinning.jl/blob/{commit}{path}#{line}",
-         format = Documenter.HTML(; collapselevel = 1))
+         format = Documenter.HTML(repolink="https://github.com/carstenbauer/ThreadPinning.jl"; collapselevel = 1))
 
 if ci
     @info "Deploying documentation to GitHub"

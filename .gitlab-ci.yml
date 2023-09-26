@@ -5,7 +5,7 @@ variables:
   SCHEDULER_PARAMETERS: "-N 1 -n 1 -c 40 -t 00:15:00 -A pc2-mitarbeiter -p all --exclusive"
   JULIA_DEPOT_PATH: "/scratch/pc2-mitarbeiter/bauerc/.julia-ci"
   JULIA_NUM_THREADS: "20"
-  JULIA_1_9: "lang/JuliaHPC/1.9.1-foss-2022a-CUDA-11.7.0"
+  JULIA_1_9: "lang/JuliaHPC/1.9.2-foss-2022a-CUDA-11.7.0"
 default:
   tags:
     - bauerc-noctua

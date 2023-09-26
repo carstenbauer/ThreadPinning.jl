@@ -14,7 +14,7 @@ println("no double occupancies: ", length(unique(getcpuids())) == length(getcpui
 println("in order: ", issorted(getcpuids()))
 ```
 
-## `taskset`
+## [`taskset`](@id tasksetheading)
 
 Let's use `taskset --cpu-list` to set the affinity of the Julia process.
 
@@ -41,7 +41,7 @@ in order: true
 
 ## `numactl`
 
-The same comments as made for [`taskset`](@ref) above also apply to `numactl --physcpubind`. Without `pinthreads(:affinitymask)`:
+The same comments as made for [`taskset`](@ref tasksetheading) above also apply to `numactl --physcpubind`. Without `pinthreads(:affinitymask)`:
 
 ```julia
 $ numactl --physcpubind=0-24 julia --project -t 25 check.jl 
