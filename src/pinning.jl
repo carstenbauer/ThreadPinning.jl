@@ -107,10 +107,10 @@ function _nthreadsarg(threadpool)
 end
 
 function pinthreads(cpuids::AbstractVector{<:Integer};
-                    warn::Bool = first_pin_attempt(),
-                    force = true,
-                    threadpool = :default,
-                    nthreads = _nthreadsarg(threadpool))
+        warn::Bool = first_pin_attempt(),
+        force = true,
+        threadpool = :default,
+        nthreads = _nthreadsarg(threadpool))
     # TODO: maybe add `periodic` kwarg for PBC as alternative to strict `min` below.
     if force || first_pin_attempt()
         if warn
@@ -130,7 +130,7 @@ end
 
 # concatenation
 function pinthreads(cpuids_vec::AbstractVector{T};
-                    kwargs...) where {T <: AbstractVector{<:Integer}}
+        kwargs...) where {T <: AbstractVector{<:Integer}}
     return pinthreads(reduce(vcat, cpuids_vec); kwargs...)
 end
 function pinthreads(cpuids_args::AbstractVector{<:Integer}...; kwargs...)
@@ -155,7 +155,7 @@ pinthreads(::Val{:random}; kwargs...) = pinthreads(node(; shuffle = true); kwarg
 pinthreads(::Val{:firstn}; kwargs...) = pinthreads(cpuids_all(); kwargs...)
 pinthreads(::Val{:current}; kwargs...) = pinthreads(getcpuids(); kwargs...)
 function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
-                    nthreads = Threads.nthreads(), kwargs...)
+        nthreads = Threads.nthreads(), kwargs...)
     masks = get_affinity_mask.(1:nthreads)
     mask = first(masks)
     if !all(isequal(mask), masks)
@@ -178,6 +178,54 @@ function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
     end
     pinthreads(cpuids; nthreads, kwargs...)
     return nothing
+end
+
+"""
+$(SIGNATURES)
+Runs the function `f` with the specified pinning and restores the previous thread affinities
+afterwards. Typically to be used in combination with do-syntax.
+
+By default (`soft=false`), before the thread affinities are restored, the Julia
+threads will be pinned to the CPU-threads they were running on previously.
+
+**Example**
+```julia
+julia> getcpuids()
+4-element Vector{Int64}:
+  7
+ 75
+ 63
+  4
+
+julia> with_pinthreads(:cores) do
+           getcpuids()
+       end
+4-element Vector{Int64}:
+ 0
+ 1
+ 2
+ 3
+
+julia> getcpuids()
+4-element Vector{Int64}:
+  7
+ 75
+ 63
+  4
+```
+"""
+function with_pinthreads(f::F,
+        args...;
+        threadpool = :default,
+        soft = false,
+        kwargs...) where {F}
+    masks_prior = uv_thread_getaffinity.(threadids(threadpool))
+    cpuids_prior = getcpuids()
+    pinthreads(args...; threadpool, kwargs...)
+    res = f()
+    soft || pinthreads(cpuids_prior)
+    uv_thread_setaffinity.(threadids(threadpool), masks_prior)
+    return res
 end
 
 """

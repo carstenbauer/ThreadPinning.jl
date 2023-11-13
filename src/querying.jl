@@ -143,6 +143,9 @@ function affinitymask2cpuids(mask)
     [unsafe_cpuids_all()[i] for (i, v) in enumerate(mask) if v == 1]
 end
 
+"Returns `true` if the thread is pinned, i.e. if it has an affinity mask that comprises a single CPU-thread."
+ispinned(tid=threadid()) = count(isequal(1), get_affinity_mask(tid)) == 1
+
 # Unsafe because they directly return the fields instead of copies (be warry when modiying!)
 unsafe_cpuids_all() = sysinfo().cpuids
 unsafe_cpuids_per_core() = sysinfo().cpuids_cores
