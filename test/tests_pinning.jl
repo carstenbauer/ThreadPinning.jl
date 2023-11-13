@@ -134,6 +134,23 @@ end
     end
 end
 
+@testset "Thread Pinning (with_pinthreads)" begin
+    c_prior = getcpuids()
+    c_masks_prior = Vector{Int8}[]
+    for i in 1:Threads.nthreads(:default)
+        push!(c_masks_prior, ThreadPinning.get_affinity_mask(i))
+    end
+    @test with_pinthreads(:cores) do
+        getcpuids()
+    end == node(1:Threads.nthreads(:default))
+    @test getcpuids() == c_prior
+    c_masks = Vector{Int8}[]
+    for i in 1:Threads.nthreads(:default)
+        push!(c_masks, ThreadPinning.get_affinity_mask(i))
+    end
+    @test c_masks == c_masks_prior
+end
+
 @testset "First pin attempt" begin
     @test isnothing(ThreadPinning.forget_pin_attempts())
     @test ThreadPinning.first_pin_attempt()
