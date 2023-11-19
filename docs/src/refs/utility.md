@@ -7,7 +7,7 @@
 
 ```@index
 Pages   = ["utility.md"]
-Order   = [:function, :type]
+Order   = [:function, :type, :macro]
 ```
 
 ### References
