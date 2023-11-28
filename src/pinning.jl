@@ -155,7 +155,7 @@ pinthreads(::Val{:random}; kwargs...) = pinthreads(node(; shuffle = true); kwarg
 pinthreads(::Val{:firstn}; kwargs...) = pinthreads(cpuids_all(); kwargs...)
 pinthreads(::Val{:current}; kwargs...) = pinthreads(getcpuids(); kwargs...)
 function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
-        nthreads = Threads.nthreads(), kwargs...)
+        nthreads = Threads.nthreads(), warn = false, kwargs...)
     masks = get_affinity_mask.(1:nthreads)
     mask = first(masks)
     if !all(isequal(mask), masks)
@@ -176,7 +176,7 @@ function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
             end
         sort!(cpuids; lt = lt_func, by = by_func)
     end
-    pinthreads(cpuids; nthreads, kwargs...)
+    pinthreads(cpuids; nthreads, warn, kwargs...)
     return nothing
 end
 
@@ -271,7 +271,7 @@ function _check_slurm()
     if SLURM.isslurmjob() && !SLURM.hasfullnode()
         @warn("You seem to be running in a SLURM allocation that doesn't cover the entire "*
               "node. Most likely, only a subset of the available CPU-threads will be "*
-              "accessible. This might lead to unexpected pinning results.")
+              "accessible. This might lead to unexpected/wrong pinning results.")
     end
     return nothing
 end
