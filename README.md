@@ -1,4 +1,4 @@
-# ThreadPinning.jl
+# ThreadPinning.jlasd
 
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 [docs-dev-url]: https://carstenbauer.github.io/ThreadPinning.jl/dev
