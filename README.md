@@ -66,7 +66,7 @@ In the unlikely case that `lscpu` isn't already installed on your system, here a
 
 ### Autoupdate setting
 
-By default, ThreadPinning.jl queries the system topology using `lscpu` on startup (i.e. at runtime). This is quite costly but is unfortunately necessary since you might have precompiled the package on one machine and use it from another (think e.g. login and compute nodes of a HPC cluster). However, you can tell ThreadPinning.jl to permanently skip this autoupdate at runtime and to always use the system topology that was present at compile time (i.e. when precompiling the package). This is perfectly save if you don't use the same Julia depot on different machines, in particular if you're a "standard user" that uses Julia on a desktop computer or laptop, and can reduce the package load time significantly. To do so, simply call `ThreadPinning.Prefs.set_autoupdate(false)`.
+By default, ThreadPinning.jl queries the system topology using `lscpu` on startup (i.e. at runtime). This is quite costly but is unfortunately necessary since you might have precompiled the package on one machine and use it from another (think e.g. login and compute nodes of a HPC cluster). However, you can tell ThreadPinning.jl to permanently skip this autoupdate at runtime and to always use the system topology that was present at compile time (i.e. when precompiling the package). This is perfectly safe if you don't use the same Julia depot on different machines, in particular if you're a "standard user" that uses Julia on a desktop computer or laptop, and can reduce the package load time significantly. To do so, simply call `ThreadPinning.Prefs.set_autoupdate(false)`.
 
 ## Why pin Julia threads?
 
