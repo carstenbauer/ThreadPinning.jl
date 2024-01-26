@@ -13,7 +13,7 @@ ThreadPinning.update_sysinfo!(; fromscratch = true)
     pinthreads(:random)
     @test typeof(getcpuid()) == Int
     @test typeof(getcpuids()) == Vector{Int}
-    @test getcpuids() == getcpuid.(1:Threads.nthreads())
+    @test getcpuids() == getcpuid.(ThreadPinning.threadids(:default))
     @test typeof(nsockets()) == Int
     @test ncputhreads() >= 1
     @test ncores() >= 1
@@ -31,7 +31,7 @@ ThreadPinning.update_sysinfo!(; fromscratch = true)
     @test isnothing(print_affinity_mask(1))
     @test typeof(getnumanode()) == Int
     @test typeof(getnumanodes()) == Vector{Int}
-    @test getnumanodes() == getnumanode.(1:Threads.nthreads())
+    @test getnumanodes() == getnumanode.(ThreadPinning.threadids(:default))
 end
 
 @static if VERSION >= v"1.9-"

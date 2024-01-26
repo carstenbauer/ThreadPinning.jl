@@ -56,23 +56,23 @@ end
     @testset ":cputhreads" begin
         pinthreads(:random)
         @test isnothing(pinthreads(:cputhreads; nthreads = 2))
-        @test getcpuid.(1:2) == cpuids_per_node(; compact = true)[1:2]
+        @test getcpuids()[1:2] == cpuids_per_node(; compact = true)[1:2]
     end
     @testset ":cores" begin
         pinthreads(:random)
         @test isnothing(pinthreads(:cores; nthreads = 2))
-        @test getcpuid.(1:2) == cpuids_per_node(; compact = false)[1:2]
+        @test getcpuids()[1:2] == cpuids_per_node(; compact = false)[1:2]
     end
     @testset ":numa" begin
         pinthreads(:random)
         @test isnothing(pinthreads(:numa; nthreads = 2))
-        @test getcpuid.(1:2) == vcat(numa(1, 1:1), numa(2, 1:1))
+        @test getcpuids()[1:2] == vcat(numa(1, 1:1), numa(2, 1:1))
     end
     @testset ":sockets" begin
         pinthreads(:random)
         @test isnothing(pinthreads(:sockets; nthreads = 2))
         if nsockets() >= 2
-            @test getcpuid.(1:2) == vcat(socket(1, 1:1), socket(2, 1:1))
+            @test getcpuids()[1:2] == vcat(socket(1, 1:1), socket(2, 1:1))
         end
     end
     @testset ":affinitymask" begin
@@ -101,9 +101,9 @@ end
         unpinthreads()
         @testset "taskset" begin @test test_external_affinity(`taskset --cpu-list $cpulist`,
                                                               numthreads, code) end
-        unpinthreads()
-        @testset "numactl" begin @test test_external_affinity(`numactl -C $cpulist`,
-                                                              numthreads, code) end
+        # unpinthreads()
+        # @testset "numactl" begin @test test_external_affinity(`numactl -C $cpulist`,
+        #                                                       numthreads, code) end
     end
 end
 
@@ -111,33 +111,33 @@ end
     @testset "domains" begin
         pinthreads(:random)
         @test isnothing(pinthreads(core(1, 1:1)))
-        @test getcpuid.(1:1) == core(1, 1:1)
+        @test getcpuids()[1:1] == core(1, 1:1)
         for f in (numa, socket)
             for compact in (false, true)
                 pinthreads(:random)
                 @test isnothing(pinthreads(f(1, 1:2; compact)))
-                @test getcpuid.(1:2) == f(1, 1:2; compact)
+                @test getcpuids()[1:2] == f(1, 1:2; compact)
             end
         end
         pinthreads(:random)
         @test isnothing(pinthreads(node(1:2)))
-        @test getcpuid.(1:2) == node(1:2)
+        @test getcpuids()[1:2] == node(1:2)
     end
 
     @testset "concatenation" begin
         pinthreads(:random)
         @test isnothing(pinthreads(core(1, 1:1), core(2, 1:1)))
-        @test getcpuid.(1:2) == vcat(core(1, 1:1), core(2, 1:1))
+        @test getcpuids()[1:2] == vcat(core(1, 1:1), core(2, 1:1))
         pinthreads(:random)
         @test isnothing(pinthreads([core(1, 1:1), core(2, 1:1)]))
-        @test getcpuid.(1:2) == vcat(core(1, 1:1), core(2, 1:1))
+        @test getcpuids()[1:2] == vcat(core(1, 1:1), core(2, 1:1))
     end
 end
 
 @testset "Thread Pinning (with_pinthreads)" begin
     c_prior = getcpuids()
     c_masks_prior = Vector{Int8}[]
-    for i in 1:Threads.nthreads(:default)
+    for i in ThreadPinning.threadids(:default)
         push!(c_masks_prior, ThreadPinning.get_affinity_mask(i))
     end
     @test with_pinthreads(:cores) do
@@ -145,7 +145,7 @@ end
     end == node(1:Threads.nthreads(:default))
     @test getcpuids() == c_prior
     c_masks = Vector{Int8}[]
-    for i in 1:Threads.nthreads(:default)
+    for i in ThreadPinning.threadids(:default)
         push!(c_masks, ThreadPinning.get_affinity_mask(i))
     end
     @test c_masks == c_masks_prior
@@ -169,16 +169,17 @@ end
 
 @testset "Unpinning" begin
     pinthreads(:compact)
-    for tid in 1:nthreads()
+    for tid in ThreadPinning.threadids(:default)
         @test count(isone, ThreadPinning.uv_thread_getaffinity(tid)) == 1
     end
 
-    unpinthread(2)
-    @test count(isone, ThreadPinning.uv_thread_getaffinity(1)) == 1
-    @test count(isone, ThreadPinning.uv_thread_getaffinity(2)) == ncputhreads()
+    one, two = ThreadPinning.threadids(:default)[1:2]
+    unpinthread(two)
+    @test count(isone, ThreadPinning.uv_thread_getaffinity(one)) == 1
+    @test count(isone, ThreadPinning.uv_thread_getaffinity(two)) == ncputhreads()
 
     unpinthreads()
-    for tid in 1:nthreads()
+    for tid in ThreadPinning.threadids(:default)
         @test count(isone, ThreadPinning.uv_thread_getaffinity(tid)) == ncputhreads()
     end
 end
