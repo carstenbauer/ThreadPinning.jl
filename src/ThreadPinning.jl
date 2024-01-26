@@ -48,7 +48,7 @@ function _try_get_autoupdate()
         end
     catch err
         @warn("Couldn't parse autoupdate preference \"$x\" (not a boolean?). Falling "*
-              "back to default (true).")
+        "back to default (true).")
         return true # default
     end
 end
@@ -80,6 +80,7 @@ end
 # initialization
 function __init__()
     @static if Sys.islinux()
+        set_initial_affinity_mask()
         forget_pin_attempts()
         if AUTOUPDATE
             update_sysinfo!(; fromscratch = true)
@@ -89,7 +90,7 @@ function __init__()
         os_warning = Prefs.get_os_warning()
         if isnothing(os_warning) || os_warning
             @warn("Operating system not supported by ThreadPinning.jl."*
-                  " Functions like `pinthreads` will be no-ops!\n" *
+                  " Functions like `pinthreads` will be no-ops!\n"*
                   "(Hide this warning via `ThreadPinning.Prefs.set_os_warning(false)`.)")
         end
     end
@@ -98,99 +99,101 @@ end
 
 # precompile
 import PrecompileTools
-PrecompileTools.@compile_workload begin @static if Sys.islinux()
-    try
-        ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
-        update_sysinfo!()
-        lscpu_string()
-        cs = cpuids_all()[1:4]
-        pinthread(cs[2]; warn=false)
-        pinthreads(cs; warn=false)
-        if all(==(1), diff(cs))
-            pinthreads(minimum(cs):maximum(cs); warn=false)
+PrecompileTools.@compile_workload begin
+    @static if Sys.islinux()
+        try
+            ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
+            update_sysinfo!()
+            lscpu_string()
+            cs = cpuids_all()[1:4]
+            pinthread(cs[2]; warn = false)
+            pinthreads(cs; warn = false)
+            if all(==(1), diff(cs))
+                pinthreads(minimum(cs):maximum(cs); warn = false)
+            end
+            pinthreads(:compact; nthreads = 1, warn = false)
+            pinthreads(:cores; nthreads = 1, warn = false)
+            pinthreads(:random; nthreads = 1, warn = false)
+            pinthreads(:current; nthreads = 1, warn = false)
+            if nsockets() > 1 &&
+               all(x -> length(x) == length(cpuids_per_socket()[1]), cpuids_per_socket())
+                pinthreads(:sockets; nthreads = 1, warn = false)
+            end
+            if nnuma() > 1 &&
+               all(x -> length(x) == length(cpuids_per_numa()[1]), cpuids_per_numa())
+                pinthreads(:numa; nthreads = 1, warn = false)
+            end
+            setaffinity(node(1:2))
+            getcpuid()
+            getcpuids()
+            getnumanode()
+            getnumanodes()
+            nsockets()
+            nnuma()
+            cpuids_all()
+            cpuids_per_socket()
+            cpuids_per_numa()
+            cpuids_per_node()
+            cpuids_per_core()
+            ncputhreads()
+            ncputhreads_per_socket()
+            ncputhreads_per_numa()
+            ncputhreads_per_core()
+            ncores()
+            ncores_per_socket()
+            ncores_per_numa()
+            socket(1, 1:1)
+            socket(1, [1])
+            numa(1, 1:1)
+            numa(1, [1])
+            node(1:1)
+            node([1])
+            core(1, [1])
+            sockets()
+            numas()
+        catch err
         end
-        pinthreads(:compact; nthreads = 1, warn=false)
-        pinthreads(:cores; nthreads = 1, warn=false)
-        pinthreads(:random; nthreads = 1, warn=false)
-        pinthreads(:current; nthreads = 1, warn=false)
-        if nsockets() > 1 &&
-           all(x -> length(x) == length(cpuids_per_socket()[1]), cpuids_per_socket())
-            pinthreads(:sockets; nthreads = 1, warn=false)
-        end
-        if nnuma() > 1 &&
-           all(x -> length(x) == length(cpuids_per_numa()[1]), cpuids_per_numa())
-            pinthreads(:numa; nthreads = 1, warn=false)
-        end
-        setaffinity(node(1:2))
-        getcpuid()
-        getcpuids()
-        getnumanode()
-        getnumanodes()
-        nsockets()
-        nnuma()
-        cpuids_all()
-        cpuids_per_socket()
-        cpuids_per_numa()
-        cpuids_per_node()
-        cpuids_per_core()
-        ncputhreads()
-        ncputhreads_per_socket()
-        ncputhreads_per_numa()
-        ncputhreads_per_core()
-        ncores()
-        ncores_per_socket()
-        ncores_per_numa()
-        socket(1, 1:1)
-        socket(1, [1])
-        numa(1, 1:1)
-        numa(1, [1])
-        node(1:1)
-        node([1])
-        core(1, [1])
-        sockets()
-        numas()
-    catch err
     end
-end end
+end
 
 # exports
 export threadinfo,
-       pinthreads,
-       pinthreads_likwidpin,
-       pinthreads_mpi,
-       pinthread,
-       with_pinthreads,
-       setaffinity,
-       getcpuids,
-       getcpuid,
-       getnumanode,
-       getnumanodes,
-       unpinthreads,
-       unpinthread,
-       @tspawnat,
-       print_affinity_mask,
-       print_affinity_masks,
-       ncputhreads,
-       ncores,
-       nnuma,
-       nsockets,
-       ncputhreads_per_core,
-       ncputhreads_per_numa,
-       ncputhreads_per_socket,
-       ncores_per_numa,
-       ncores_per_socket,
-       hyperthreading_is_enabled,
-       ishyperthread,
-       cpuids_all,
-       cpuids_per_core,
-       cpuids_per_numa,
-       cpuids_per_socket,
-       cpuids_per_node,
-       node,
-       socket,
-       sockets,
-       numa,
-       numas,
-       core
+    pinthreads,
+    pinthreads_likwidpin,
+    pinthreads_mpi,
+    pinthread,
+    with_pinthreads,
+    setaffinity,
+    getcpuids,
+    getcpuid,
+    getnumanode,
+    getnumanodes,
+    unpinthreads,
+    unpinthread,
+    @tspawnat,
+    print_affinity_mask,
+    print_affinity_masks,
+    ncputhreads,
+    ncores,
+    nnuma,
+    nsockets,
+    ncputhreads_per_core,
+    ncputhreads_per_numa,
+    ncputhreads_per_socket,
+    ncores_per_numa,
+    ncores_per_socket,
+    hyperthreading_is_enabled,
+    ishyperthread,
+    cpuids_all,
+    cpuids_per_core,
+    cpuids_per_numa,
+    cpuids_per_socket,
+    cpuids_per_node,
+    node,
+    socket,
+    sockets,
+    numa,
+    numas,
+    core
 #    cores
 end

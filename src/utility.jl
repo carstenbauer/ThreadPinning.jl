@@ -4,7 +4,9 @@ function threadids(threadpool = :default)::Vector{Int}
     else
         if threadpool == :all
             nt = nthreads(:default) + nthreads(:interactive)
-            tids = collect(1:Threads.maxthreadid())
+            tids_default = filter(i -> Threads.threadpool(i) == :default, 1:Threads.maxthreadid())
+            tids_interactive = filter(i -> Threads.threadpool(i) == :interactive, 1:Threads.maxthreadid())
+            tids = vcat(tids_default, tids_interactive)
         else
             nt = nthreads(threadpool)
             tids = filter(i -> Threads.threadpool(i) == threadpool, 1:Threads.maxthreadid())

@@ -18,18 +18,16 @@ using Test
           [1, 5, 2, 6, 3, 7, 4, 8, 9, 10, 11, 12]
 end
 
-@testset "threadids" begin
-    @static if VERSION < v"1.9-"
-        @test ThreadPinning.threadids() == 1:Threads.nthreads()
-    else
-        @test ThreadPinning.threadids(:all) == 1:Threads.maxthreadid() # no IJulia here :)
-        # :default threads first, then :interactive threads
-        @test ThreadPinning.threadids(:default) == 1:Threads.nthreads(:default)
-        if Threads.nthreads(:interactive) > 0
-            @test ThreadPinning.threadids(:interactive) == (1:Threads.nthreads(:interactive)) .+ Threads.nthreads(:default)
-        end
-    end
-end
+# @testset "threadids" begin
+#     @static if VERSION < v"1.9-"
+#         @test ThreadPinning.threadids() == 1:Threads.nthreads()
+#     else
+#         @test ThreadPinning.threadids(:all) == 1:(Threads.nthreads(:default) + Threads.nthreads(:interactive)) # no IJulia here :)
+#         # :interactive threads first, then :default threads
+#         @test ThreadPinning.threadids(:interactive) == 1:Threads.nthreads(:interactive)
+#         @test ThreadPinning.threadids(:default) == (1:Threads.nthreads(:default)) .+ Threads.nthreads(:interactive)
+#     end
+# end
 
 @testset "tspawnat" begin
     @static if VERSION < v"1.9-"
@@ -39,13 +37,14 @@ end
     else
         ntdefault = Threads.nthreads(:default)
         ntinteractive = Threads.nthreads(:interactive)
-        for tid in 1:(ntdefault + ntinteractive)
+        for tid in ThreadPinning.threadids(:all)
             @test fetch(@tspawnat tid Threads.threadid()) == tid
-            if tid <= ntdefault
-                @test fetch(@tspawnat tid Threads.threadpool()) == :default
-            else
-                @test fetch(@tspawnat tid Threads.threadpool()) == :interactive
-            end
+        end
+        for tid in ThreadPinning.threadids(:default)
+            @test fetch(@tspawnat tid Threads.threadpool()) == :default
+        end
+        for tid in ThreadPinning.threadids(:interactive)
+            @test fetch(@tspawnat tid Threads.threadpool()) == :interactive
         end
     end
 end

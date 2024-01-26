@@ -156,11 +156,8 @@ pinthreads(::Val{:firstn}; kwargs...) = pinthreads(cpuids_all(); kwargs...)
 pinthreads(::Val{:current}; kwargs...) = pinthreads(getcpuids(); kwargs...)
 function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
         nthreads = Threads.nthreads(), warn = false, kwargs...)
-    masks = get_affinity_mask.(1:nthreads)
-    mask = first(masks)
-    if !all(isequal(mask), masks)
-        error("Julia threads have different affinity masks.")
-    end
+    mask = initial_affinity_mask()
+    isnothing(mask) && error("No (or non-unique) external affinity mask set.")
     cpuids = affinitymask2cpuids(mask)
     if length(cpuids) < nthreads
         error("More Julia threads than CPU-threads specified by affinity mask.")
@@ -236,7 +233,7 @@ function unpinthreads()
     masksize = uv_cpumask_size()
     cpumask = zeros(Cchar, masksize)
     fill!(cpumask, 1)
-    for tid in 1:nthreads()
+    for tid in threadids()
         uv_thread_setaffinity(tid, cpumask)
     end
     return nothing
@@ -292,5 +289,24 @@ const FIRST_PIN = Ref{Bool}(true)
 first_pin_attempt() = FIRST_PIN[]
 function forget_pin_attempts()
     FIRST_PIN[] = true
+    return nothing
+end
+
+const INITIAL_AFFINITY_MASK = Ref{Union{Nothing, Vector{Cchar}}}(nothing)
+
+initial_affinity_mask() = INITIAL_AFFINITY_MASK[]
+function set_initial_affinity_mask(mask::Vector{Cchar})
+    INITIAL_AFFINITY_MASK[] = mask
+    return nothing
+end
+function set_initial_affinity_mask()
+    masks = get_affinity_mask.(1:Threads.nthreads())
+    mask = first(masks)
+    if !all(isequal(mask), masks)
+        @debug("No unique initial affinity mask.")
+        INITIAL_AFFINITY_MASK[] = nothing
+    else
+        INITIAL_AFFINITY_MASK[] = mask
+    end
     return nothing
 end
