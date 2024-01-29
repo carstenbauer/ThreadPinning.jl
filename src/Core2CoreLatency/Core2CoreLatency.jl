@@ -1,6 +1,6 @@
 module Core2CoreLatency
 
-using ..ThreadPinning: pinthread, pinthreads, getcpuids, @tspawnat
+using ..ThreadPinning: pinthread, pinthreads, getcpuids, @spawnat
 
 const State = Int
 const Preparing = 0
@@ -41,7 +41,7 @@ function run_bench(cpu1::Integer, cpu2::Integer; nsamples::Integer = 100,
     S = Sync()
     pinthread(cpu1)
 
-    second_thread = @tspawnat 2 begin
+    second_thread = @spawnat 2 begin
         pinthread(cpu2)
         set(S, Ready)
 

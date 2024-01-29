@@ -51,7 +51,7 @@ function uv_thread_getaffinity()
     return cpumask
 end
 function uv_thread_getaffinity(threadid)
-    return fetch(@tspawnat threadid uv_thread_getaffinity())
+    return fetch(@spawnat threadid uv_thread_getaffinity())
 end
 
 """
@@ -100,5 +100,5 @@ function uv_thread_setaffinity(mask)
     return err == 0
 end
 function uv_thread_setaffinity(threadid, mask)
-    return fetch(@tspawnat threadid uv_thread_setaffinity(mask))
+    return fetch(@spawnat threadid uv_thread_setaffinity(mask))
 end

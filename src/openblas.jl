@@ -17,7 +17,7 @@ end
 function _openblas_set_affinity_mask(threadid, mask; juliathread = Threads.threadid())
     cpuset = Ccpu_set_t(mask)
     cpuset_ref = Ref{Ccpu_set_t}(cpuset)
-    ret = fetch(@tspawnat juliathread _openblas_setaffinity(threadid - 1, sizeof(cpuset),
+    ret = fetch(@spawnat juliathread _openblas_setaffinity(threadid - 1, sizeof(cpuset),
                                                             cpuset_ref))
     if ret != 0
         @warn "_openblas_setaffinity call returned a non-zero value (indicating failure)"
@@ -90,7 +90,7 @@ function openblas_getcpuids end
     function _openblas_get_affinity_mask(threadid; convert = true,
                                          juliathread = Threads.threadid())
         cpuset = Ref{Ccpu_set_t}()
-        ret = fetch(@tspawnat juliathread _openblas_getaffinity(threadid - 1,
+        ret = fetch(@spawnat juliathread _openblas_getaffinity(threadid - 1,
                                                                 sizeof(cpuset), cpuset))
         if ret != 0
             @warn "_openblas_getaffinity call returned a non-zero value (indicating failure)"

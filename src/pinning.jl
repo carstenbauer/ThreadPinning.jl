@@ -20,7 +20,7 @@ $(TYPEDSIGNATURES)
 Pin a Julia thread to a specific CPU-thread.
 """
 function pinthread(threadid::Integer, cpuid::Integer; kwargs...)
-    fetch(@tspawnat threadid pinthread(cpuid; kwargs...))
+    fetch(@spawnat threadid pinthread(cpuid; kwargs...))
     return nothing
 end
 

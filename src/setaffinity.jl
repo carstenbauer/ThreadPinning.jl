@@ -17,7 +17,7 @@ end
 $(TYPEDSIGNATURES)Set the affinity of a specific Julia thread to the given CPU-threads.
 """
 function setaffinity(threadid::Integer, cpuids::AbstractVector{<:Integer}; kwargs...)
-    fetch(@tspawnat threadid setaffinity(cpuids; kwargs...))
+    fetch(@spawnat threadid setaffinity(cpuids; kwargs...))
     return nothing
 end
 

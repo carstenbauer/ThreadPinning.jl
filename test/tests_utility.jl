@@ -1,5 +1,6 @@
 include("common.jl")
 using ThreadPinning
+using ThreadPinning: @spawnat
 using LinearAlgebra
 using Test
 
@@ -29,22 +30,22 @@ end
 #     end
 # end
 
-@testset "tspawnat" begin
+@testset "spawnat" begin
     @static if VERSION < v"1.9-"
         for tid in 1:Threads.nthreads()
-            @test fetch(@tspawnat tid Threads.threadid()) == tid
+            @test fetch(@spawnat tid Threads.threadid()) == tid
         end
     else
         ntdefault = Threads.nthreads(:default)
         ntinteractive = Threads.nthreads(:interactive)
         for tid in ThreadPinning.threadids(:all)
-            @test fetch(@tspawnat tid Threads.threadid()) == tid
+            @test fetch(@spawnat tid Threads.threadid()) == tid
         end
         for tid in ThreadPinning.threadids(:default)
-            @test fetch(@tspawnat tid Threads.threadpool()) == :default
+            @test fetch(@spawnat tid Threads.threadpool()) == :default
         end
         for tid in ThreadPinning.threadids(:interactive)
-            @test fetch(@tspawnat tid Threads.threadpool()) == :interactive
+            @test fetch(@spawnat tid Threads.threadpool()) == :interactive
         end
     end
 end

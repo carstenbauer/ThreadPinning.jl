@@ -7,6 +7,7 @@ using LinearAlgebra
 import Random
 using DelimitedFiles
 using DocStringExtensions
+using StableTasks: @spawnat
 
 const DEFAULT_IO = Ref{Union{IO, Nothing}}(nothing)
 getstdout() = something(DEFAULT_IO[], stdout)
