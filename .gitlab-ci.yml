@@ -18,6 +18,7 @@ julia/1.9:
     - when: on_success
   script:
     - /bin/bash -l
+    - export PATH=/opt/cray/slurm/default/bin/:$PATH
     - module load $JULIA_1_9
     - julia --color=yes --project=. -e 'using Pkg; Pkg.build(verbose=true); Pkg.test(; coverage = true);'
     - julia --color=yes --project=test/coverage -e 'import Pkg; Pkg.instantiate()'
