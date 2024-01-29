@@ -1,6 +1,6 @@
 module SLURM
 
-import ..ThreadPinning: ncputhreads
+import ..ThreadPinning: ncputhreads, _execute
 
 """
 Returns `true` if the current Julia session is (most likely) running in an
@@ -42,10 +42,11 @@ end
 
 function get_cpu_mask(mask_str = get_cpu_mask_str())
     if isnothing(mask_str)
+        @debug("`get_cpu_mask_str()` returned nothing. Neither `SLURM_CPU_BIND_LIST` nor `SLURM_CPU_BIN` seems to be set?")
         return nothing
     end
     mask = parse(Int, mask_str)
-    return digits(mask; base=2, pad=ncputhreads())
+    return digits(mask; base = 2, pad = ncputhreads())
 end
 
 function ncpus_per_task()::Int
@@ -58,6 +59,32 @@ function ncpus_per_task()::Int
         return count(isequal(1), slurm_mask)
     end
     return 0
+end
+
+function query_cpu_ids()::Vector{Int}
+    jobid = ENV["SLURM_JOBID"]
+    cmd = `scontrol show job -d $(jobid)`
+    res = _execute(cmd)
+    if res.exitcode != 0
+        @debug("Received non-zero exit code.", cmd)
+        return nothing
+    end
+    try
+        idstr = split(split(res.stdout, "CPU_IDs=")[2], ' ')[1]
+        @debug("`query_cpu_ids()`", idstr)
+        if contains(idstr, '-')
+            startstr, stopstr = split(idstr, '-')
+            start = parse(Int, startstr)
+            stop = parse(Int, stopstr)
+            return collect(start:stop)
+        else
+            # assume single CPU-thread
+            return Int[parse(Int, idstr)]
+        end
+    catch err
+        @debug("Can't parse CPU_IDs", res.stdout)
+        return nothing
+    end
 end
 
 end

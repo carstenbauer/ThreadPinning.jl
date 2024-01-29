@@ -130,3 +130,17 @@ end
 
 "Number of BLAS threads."
 nblasthreads() = BLAS.get_num_threads()
+
+"Run a Cmd object, returning the stdout & stderr contents plus the exit code"
+function _execute(cmd::Cmd)
+    out = Pipe()
+    err = Pipe()
+
+    process = run(pipeline(ignorestatus(cmd); stdout = out, stderr = err))
+    close(out.in)
+    close(err.in)
+
+    out = (stdout = String(read(out)), stderr = String(read(err)),
+           exitcode = process.exitcode)
+    return out
+end
