@@ -33,6 +33,9 @@ Note for Julia >= 1.9: Threads in the `:interactive` thread pool come after thos
 `:default`. Hence, use a thread id `tid > nthreads(:default)` to spawn computations on
 "interactive" threads.
 
+DEPRECATION NOTICE: In the next breaking version of ThreadPinning (v0.8), `@tspawnat` will
+be replaced by `ThreadPinning.@spawnat`.
+
 # Example
 ```julia
 julia> t = @tspawnat 4 Threads.threadid()

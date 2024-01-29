@@ -10,7 +10,7 @@ $(SIGNATURES)
 Returns the ID of the CPU thread on which the given Julia thread (`threadid`) is currently
 running.
 """
-getcpuid(threadid::Integer) = fetch(@tspawnat threadid getcpuid())
+getcpuid(threadid::Integer) = fetch(@spawnat threadid getcpuid())
 
 """
 Returns the IDs of the CPU-threads on which the Julia threads are currently running.
@@ -28,7 +28,7 @@ function getcpuids(; threadpool = :default)::Vector{Int}
         nt = length(tids_pool)
         cpuids = zeros(Int, nt)
         for (i, tid) in pairs(tids_pool)
-            cpuids[i] = fetch(@tspawnat tid getcpuid())
+            cpuids[i] = fetch(@spawnat tid getcpuid())
         end
     else
         nt = nthreads()
@@ -59,7 +59,7 @@ $(SIGNATURES)
 Returns the ID (starting at zero) of the NUMA node corresponding to the CPU thread on which
 the given Julia thread (`threadid`) is currently running.
 """
-getnumanode(threadid::Integer) = fetch(@tspawnat threadid getnumanode())
+getnumanode(threadid::Integer) = fetch(@spawnat threadid getnumanode())
 
 """
 Returns the ID (starting at zero) of the NUMA nodes corresponding to the CPU threads on which
@@ -76,7 +76,7 @@ function getnumanodes(; threadpool = :default)::Vector{Int}
         nt = length(tids_pool)
         numanodes = zeros(Int, nt)
         for (i, tid) in pairs(tids_pool)
-            numanodes[i] = fetch(@tspawnat tid getnumanode())
+            numanodes[i] = fetch(@spawnat tid getnumanode())
         end
     else
         nt = nthreads()

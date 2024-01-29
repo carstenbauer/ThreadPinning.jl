@@ -61,7 +61,10 @@ function ncpus_per_task()::Int
     return 0
 end
 
-function query_cpu_ids()::Vector{Int}
+function query_cpu_ids()::Union{Nothing, Vector{Int}}
+    if !haskey(ENV, "SLURM_JOBID")
+        return nothing
+    end
     jobid = ENV["SLURM_JOBID"]
     cmd = `scontrol show job -d $(jobid)`
     res = _execute(cmd)

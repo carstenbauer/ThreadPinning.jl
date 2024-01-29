@@ -64,7 +64,7 @@ pthread_set_affinity_mask(mask) = pthread_set_affinity_mask(threadid(), mask)
 function pthread_set_affinity_mask(threadid, mask)
     cpuset = Ccpu_set_t(mask)
     cpuset_ref = Ref{Ccpu_set_t}(cpuset)
-    ret = fetch(@tspawnat threadid _pthread_setaffinity_np(_pthread_self(), sizeof(cpuset), cpuset_ref))
+    ret = fetch(@spawnat threadid _pthread_setaffinity_np(_pthread_self(), sizeof(cpuset), cpuset_ref))
     if ret != 0
         @warn "_pthread_setaffinity_np call returned a non-zero value (indicating failure)"
     end
@@ -89,7 +89,7 @@ end
 pthread_get_affinity_mask(; kwargs...) = pthread_get_affinity_mask(threadid(); kwargs...)
 function pthread_get_affinity_mask(threadid; convert=true)
     cpuset = Ref{Ccpu_set_t}()
-    ret = fetch(@tspawnat threadid _pthread_getaffinity_np(_pthread_self(), sizeof(cpuset), cpuset))
+    ret = fetch(@spawnat threadid _pthread_getaffinity_np(_pthread_self(), sizeof(cpuset), cpuset))
     if ret != 0
         @warn "_pthread_getaffinity_np call returned a non-zero value (indicating failure)"
     end
@@ -99,7 +99,7 @@ end
 pthread_print_affinity_mask(; kwargs...) = pthread_print_affinity_mask(threadid(); kwargs...)
 function pthread_print_affinity_mask(threadid; groupby=:sockets)
     mask = Ref{Ccpu_set_t}()
-    ret = fetch(@tspawnat threadid _pthread_getaffinity_np(_pthread_self(), sizeof(mask), mask))
+    ret = fetch(@spawnat threadid _pthread_getaffinity_np(_pthread_self(), sizeof(mask), mask))
     if ret != 0
         @warn "_pthread_getaffinity_np call returned a non-zero value (indicating failure)"
     end
