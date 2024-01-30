@@ -147,3 +147,6 @@ function _execute(cmd::Cmd)
            exitcode = process.exitcode)
     return out
 end
+
+"Returns a (most likely) unique id for the calling task."
+taskid() = objectid(current_task())
