@@ -48,13 +48,13 @@ Check out the [documentation](https://carstenbauer.github.io/ThreadPinning.jl/st
 
 ## Installation
 
-**Note: Only Linux is supported!**
-
 The package is registered. Hence, you can simply use
 ```
 ] add ThreadPinning
 ```
 to add the package to your Julia environment.
+
+Note that ThreadPinning.jl, specifically the pinning functionality, **only works on Linux**. On other operating systems, all pinning calls (e.g. `pinthreads`) will be no-ops.
 
 ### Prerequisites
 
