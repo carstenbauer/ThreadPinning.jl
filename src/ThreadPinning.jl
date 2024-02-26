@@ -2,11 +2,11 @@ module ThreadPinning
 
 # imports
 using Base.Threads: @threads, nthreads, threadid
-using Libdl
-using LinearAlgebra
-import Random
-using DelimitedFiles
-using DocStringExtensions
+using Libdl: Libdl
+using LinearAlgebra: BLAS, rank
+using Random: Random
+using DelimitedFiles: readdlm
+using DocStringExtensions: SIGNATURES, TYPEDSIGNATURES
 using StableTasks: @spawnat
 
 const DEFAULT_IO = Ref{Union{IO, Nothing}}(nothing)
@@ -159,42 +159,42 @@ end
 
 # exports
 export threadinfo,
-    pinthreads,
-    pinthreads_likwidpin,
-    pinthreads_mpi,
-    pinthread,
-    with_pinthreads,
-    setaffinity,
-    getcpuids,
-    getcpuid,
-    getnumanode,
-    getnumanodes,
-    unpinthreads,
-    unpinthread,
-    @tspawnat,
-    print_affinity_mask,
-    print_affinity_masks,
-    ncputhreads,
-    ncores,
-    nnuma,
-    nsockets,
-    ncputhreads_per_core,
-    ncputhreads_per_numa,
-    ncputhreads_per_socket,
-    ncores_per_numa,
-    ncores_per_socket,
-    hyperthreading_is_enabled,
-    ishyperthread,
-    cpuids_all,
-    cpuids_per_core,
-    cpuids_per_numa,
-    cpuids_per_socket,
-    cpuids_per_node,
-    node,
-    socket,
-    sockets,
-    numa,
-    numas,
-    core
+       pinthreads,
+       pinthreads_likwidpin,
+       pinthreads_mpi,
+       pinthread,
+       with_pinthreads,
+       setaffinity,
+       getcpuids,
+       getcpuid,
+       getnumanode,
+       getnumanodes,
+       unpinthreads,
+       unpinthread,
+       @tspawnat,
+       print_affinity_mask,
+       print_affinity_masks,
+       ncputhreads,
+       ncores,
+       nnuma,
+       nsockets,
+       ncputhreads_per_core,
+       ncputhreads_per_numa,
+       ncputhreads_per_socket,
+       ncores_per_numa,
+       ncores_per_socket,
+       hyperthreading_is_enabled,
+       ishyperthread,
+       cpuids_all,
+       cpuids_per_core,
+       cpuids_per_numa,
+       cpuids_per_socket,
+       cpuids_per_node,
+       node,
+       socket,
+       sockets,
+       numa,
+       numas,
+       core
 #    cores
 end

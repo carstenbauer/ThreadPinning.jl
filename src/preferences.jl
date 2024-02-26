@@ -1,7 +1,7 @@
 module Prefs
 
-using Preferences
-using DocStringExtensions
+using Preferences: @has_preference, @load_preference, @set_preferences!, @delete_preferences!
+using DocStringExtensions: SIGNATURES
 using ..ThreadPinning: getstdout
 
 const ALL_PREFERENCES = ("autoupdate", "pin", "likwidpin", "os_warning")

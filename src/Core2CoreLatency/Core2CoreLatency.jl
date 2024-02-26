@@ -1,6 +1,6 @@
 module Core2CoreLatency
 
-using ..ThreadPinning: pinthread, pinthreads, getcpuids, @spawnat
+using ..ThreadPinning: pinthread, @spawnat
 
 const State = Int
 const Preparing = 0
