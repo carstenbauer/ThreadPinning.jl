@@ -1,7 +1,7 @@
 include("common.jl")
 using Test
 using ThreadPinning
-using ThreadPinning: ICORE, ICPUID
+using ThreadPinning: ICORE, IOSID
 
 Threads.nthreads() ≥ 2 ||
     error("Can't run tests with single Julia thread! Forgot to set `JULIA_NUM_THREADS`?")
@@ -116,7 +116,7 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
 
         @testset "cpuid2core" begin
             M = ThreadPinning.sysinfo().matrix
-            @test @views ThreadPinning.cpuid2core.(M[:, ICPUID]) == M[:, ICORE]
+            @test @views ThreadPinning.cpuid2core.(M[:, IOSID]) == M[:, ICORE]
         end
 
         @testset "Logical specification" begin
