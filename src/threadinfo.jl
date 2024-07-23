@@ -43,7 +43,8 @@ import ThreadPinningCore
 function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         masks = false,
         groupby = :sockets, threadpool = :default, slurm = false, compact = true,
-        logical = false, efficiency = false,
+        logical = false, efficiency = !SysInfo.hyperthreading_is_enabled() &&
+            SysInfo.ncorekinds() > 1,
         highlight = SysInfo.hyperthreading_is_enabled() || SysInfo.ncorekinds() > 1,
         kwargs...)
     # print header
