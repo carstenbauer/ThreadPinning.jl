@@ -22,7 +22,7 @@ function _openblas_set_affinity_mask(threadid, mask; juliathread = Threads.threa
     if ret != 0
         @warn "_openblas_setaffinity call returned a non-zero value (indicating failure)"
     end
-    return nothing
+    return
 end
 
 function _openblas_pinthread(threadid, cpuid; juliathread = Threads.threadid())
@@ -43,7 +43,7 @@ function openblas_pinthreads(cpuids::AbstractVector{<:Integer};
     for tid in 1:limit
         _openblas_pinthread(tid, cpuids[tid]; juliathread)
     end
-    return nothing
+    return
 end
 
 # TODO unpin openblas threads
@@ -87,7 +87,7 @@ function openblas_getcpuids end
     end
 
     # Query the affinity of an OpenBLAS thread
-    function _openblas_get_affinity_mask(threadid; convert = true,
+    function _openblas_getaffinity(threadid; convert = true,
                                          juliathread = Threads.threadid())
         cpuset = Ref{Ccpu_set_t}()
         ret = fetch(@spawnat juliathread _openblas_getaffinity(threadid - 1,
@@ -118,17 +118,17 @@ function openblas_getcpuids end
                                            juliathread = Threads.threadid(), kwargs...)
         println(io, "Julia threadid: ", juliathread)
         for i in 1:openblas_nthreads()
-            mask = _openblas_get_affinity_mask(i; juliathread, convert = false)
+            mask = _openblas_getaffinity(i; juliathread, convert = false)
             str = _openblas_affinity_mask_to_string(mask; kwargs...)
             print(io, rpad("$(i):", 5))
             println(io, str)
         end
         println(io)
-        return nothing
+        return
     end
 
     function openblas_getcpuid(i; juliathread = Threads.threadid())
-        mask = _openblas_get_affinity_mask(i; juliathread)
+        mask = _openblas_getaffinity(i; juliathread)
         if count(mask) == 1 # exactly one bit set
             return findfirst(mask) - 1
         else

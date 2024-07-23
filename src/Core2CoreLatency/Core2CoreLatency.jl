@@ -18,11 +18,11 @@ function wait_until(S::Sync, expected_state::State)
     while state(S) != expected_state
         GC.safepoint()
     end
-    return nothing
+    return
 end
 function set(S::Sync, state::State)
     S.state[] = state
-    return nothing
+    return
 end
 function wait_as_long_as(S::Sync, wait_state::State)
     loaded_state = state(S)

@@ -50,7 +50,7 @@ end
 function _omp_proc_bind_env_parse(bind::AbstractString)::Union{Nothing, Symbol}
     bindl = lowercase(bind)
     if bindl == "false"
-        return nothing # don't pin threads at all
+        return # don't pin threads at all
     elseif bindl == "master"
         throw(ArgumentError("Binding option \"master\" isn't supported."))
     elseif bindl == "close"

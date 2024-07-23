@@ -36,7 +36,7 @@ function print_affinity_mask end
 """
 $(SIGNATURES)Get the affinity mask of the given Julia Thread
 """
-function get_affinity_mask end
+function getaffinity end
 
 """
 Returns `true` if the thread is pinned, i.e. if it has an affinity mask that comprises a single CPU-thread.
@@ -188,4 +188,3 @@ To be used as input argument for [`pinthreads`](@ref). What it actually returns 
 implementation detail!
 """
 function numas end
-

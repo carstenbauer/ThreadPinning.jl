@@ -138,7 +138,7 @@ end
     c_prior = getcpuids()
     c_masks_prior = Vector{Int8}[]
     for i in ThreadPinning.threadids(:default)
-        push!(c_masks_prior, ThreadPinning.get_affinity_mask(i))
+        push!(c_masks_prior, ThreadPinning.getaffinity(i))
     end
     @test with_pinthreads(:cores) do
         getcpuids()
@@ -146,7 +146,7 @@ end
     @test getcpuids() == c_prior
     c_masks = Vector{Int8}[]
     for i in ThreadPinning.threadids(:default)
-        push!(c_masks, ThreadPinning.get_affinity_mask(i))
+        push!(c_masks, ThreadPinning.getaffinity(i))
     end
     @test c_masks == c_masks_prior
 end

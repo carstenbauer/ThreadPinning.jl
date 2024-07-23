@@ -45,7 +45,7 @@ function pinthreads_mpi(::Val{:sockets}, rank::Integer, nranks::Integer;
     end
     cpuids = socket(socketidx, idcs; compact)
     pinthreads(cpuids; nthreads = nthreads_per_rank, kwargs...)
-    return nothing
+    return
 end
 function pinthreads_mpi(::Val{:numa}, rank::Integer, nranks::Integer;
                         nthreads_per_rank = Threads.nthreads(),
@@ -58,5 +58,5 @@ function pinthreads_mpi(::Val{:numa}, rank::Integer, nranks::Integer;
     end
     cpuids = numa(numaidx, idcs; compact)
     pinthreads(cpuids; nthreads = nthreads_per_rank, kwargs...)
-    return nothing
+    return
 end

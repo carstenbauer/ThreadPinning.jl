@@ -21,7 +21,7 @@ Pin a Julia thread to a specific CPU-thread.
 """
 function pinthread(threadid::Integer, cpuid::Integer; kwargs...)
     fetch(@spawnat threadid pinthread(cpuid; kwargs...))
-    return nothing
+    return
 end
 
 """
@@ -125,7 +125,7 @@ function pinthreads(cpuids::AbstractVector{<:Integer};
             pinthread(tid, cpuids[i]; warn = false)
         end
     end
-    return nothing
+    return
 end
 
 # concatenation
@@ -174,7 +174,7 @@ function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
         sort!(cpuids; lt = lt_func, by = by_func)
     end
     pinthreads(cpuids; nthreads, warn, kwargs...)
-    return nothing
+    return
 end
 
 """
@@ -236,7 +236,7 @@ function unpinthreads()
     for tid in threadids()
         uv_thread_setaffinity(tid, cpumask)
     end
-    return nothing
+    return
 end
 
 """
@@ -261,7 +261,7 @@ function _check_environment()
               "spoil the pinning of Julia threads! Use `ThreadPinning.mkl_set_dynamic(0)` "*
               "to be safe. See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
     end
-    return nothing
+    return
 end
 
 function _check_slurm()
@@ -270,7 +270,7 @@ function _check_slurm()
               "node. Most likely, only a subset of the available CPU-threads will be "*
               "accessible. This might lead to unexpected/wrong pinning results.")
     end
-    return nothing
+    return
 end
 
 function _check_cpuids(cpuids)
@@ -280,7 +280,7 @@ function _check_cpuids(cpuids)
         throw(ArgumentError("Invalid CPU ID(s) encountered: $(problem_cpuids). See `cpuids_all()` for all " *
                             "valid CPU IDs on the system."))
     end
-    return nothing
+    return
 end
 
 # global "constants"
@@ -289,7 +289,7 @@ const FIRST_PIN = Ref{Bool}(true)
 first_pin_attempt() = FIRST_PIN[]
 function forget_pin_attempts()
     FIRST_PIN[] = true
-    return nothing
+    return
 end
 
 const INITIAL_AFFINITY_MASK = Ref{Union{Nothing, Vector{Cchar}}}(nothing)
@@ -297,10 +297,10 @@ const INITIAL_AFFINITY_MASK = Ref{Union{Nothing, Vector{Cchar}}}(nothing)
 initial_affinity_mask() = INITIAL_AFFINITY_MASK[]
 function set_initial_affinity_mask(mask::Vector{Cchar})
     INITIAL_AFFINITY_MASK[] = mask
-    return nothing
+    return
 end
 function set_initial_affinity_mask()
-    masks = get_affinity_mask.(1:Threads.nthreads())
+    masks = [getaffinity(; threadid=id) for id in 1:Threads.nthreads()]
     mask = first(masks)
     if !all(isequal(mask), masks)
         @debug("No unique initial affinity mask.")
@@ -308,5 +308,5 @@ function set_initial_affinity_mask()
     else
         INITIAL_AFFINITY_MASK[] = mask
     end
-    return nothing
+    return
 end

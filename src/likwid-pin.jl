@@ -108,7 +108,7 @@ function _lp_check_domain(domain; onebased = false)
         throw(ArgumentError("Unknown domain \"$domain\". Valid domains are " *
                             "$(likwidpin_domains(; onebased))."))
     end
-    return nothing
+    return
 end
 
 """

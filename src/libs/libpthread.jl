@@ -68,7 +68,7 @@ function pthread_set_affinity_mask(threadid, mask)
     if ret != 0
         @warn "_pthread_setaffinity_np call returned a non-zero value (indicating failure)"
     end
-    return nothing
+    return
 end
 pthread_pinthread(cpuid::Integer) = pthread_set_affinity_mask([cpuid])
 pthread_pinthread(threadid::Integer, cpuid::Integer) = pthread_set_affinity_mask(threadid, [cpuid])
@@ -77,7 +77,7 @@ function pthread_pinthreads(cpuids::AbstractVector{<:Integer})
     @threads :static for tid in 1:ncpuids
         pthread_pinthread(cpuids[tid])
     end
-    return nothing
+    return
 end
 
 # -------------------- GET AFFINITY
@@ -86,8 +86,8 @@ function _pthread_getaffinity_np(thread, cpussetsize, cpuset)
                                              cpuset::Ptr{Ccpu_set_t})::Cint
 end
 
-pthread_get_affinity_mask(; kwargs...) = pthread_get_affinity_mask(threadid(); kwargs...)
-function pthread_get_affinity_mask(threadid; convert=true)
+pthread_getaffinity(; kwargs...) = pthread_getaffinity(threadid(); kwargs...)
+function pthread_getaffinity(threadid; convert=true)
     cpuset = Ref{Ccpu_set_t}()
     ret = fetch(@spawnat threadid _pthread_getaffinity_np(_pthread_self(), sizeof(cpuset), cpuset))
     if ret != 0
@@ -116,17 +116,17 @@ function pthread_print_affinity_mask(threadid; groupby=:sockets)
         print(bitstr[cpuids_per_X()[s].+1],"|")
     end
     print("\n")
-    return nothing
+    return
 end
 function pthread_print_affinity_masks(; kwargs...)
     for i in 1:nthreads()
         pthread_print_affinity_mask(i; kwargs...)
     end
-    return nothing
+    return
 end
 
 function pthread_getcpuid(threadid=Threads.threadid())
-    mask = pthread_get_affinity_mask(threadid)
+    mask = pthread_getaffinity(threadid)
     if count(mask) == 1 # exactly one bit set
         return findfirst(mask)-1
     else

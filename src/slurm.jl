@@ -37,13 +37,13 @@ function get_cpu_mask_str()
             return mask_str
         end
     end
-    return nothing
+    return
 end
 
 function get_cpu_mask(mask_str = get_cpu_mask_str())
     if isnothing(mask_str)
         @debug("`get_cpu_mask_str()` returned nothing. Neither `SLURM_CPU_BIND_LIST` nor `SLURM_CPU_BIN` seems to be set?")
-        return nothing
+        return
     end
     mask = parse(Int, mask_str)
     return digits(mask; base = 2, pad = ncputhreads())
@@ -63,14 +63,14 @@ end
 
 function query_cpu_ids()::Union{Nothing, Vector{Int}}
     if !haskey(ENV, "SLURM_JOBID")
-        return nothing
+        return
     end
     jobid = ENV["SLURM_JOBID"]
     cmd = `scontrol show job -d $(jobid)`
     res = _execute(cmd)
     if res.exitcode != 0
         @debug("Received non-zero exit code.", cmd)
-        return nothing
+        return
     end
     try
         idstr = split(split(res.stdout, "CPU_IDs=")[2], ' ')[1]
@@ -86,7 +86,7 @@ function query_cpu_ids()::Union{Nothing, Vector{Int}}
         end
     catch err
         @debug("Can't parse CPU_IDs", res.stdout)
-        return nothing
+        return
     end
 end
 

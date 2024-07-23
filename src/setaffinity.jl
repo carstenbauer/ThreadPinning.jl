@@ -11,14 +11,14 @@ function setaffinity(cpuids::AbstractVector{<:Integer})
     _check_cpuids(cpuids)
     mask = cpuids2affinitymask(cpuids)
     uv_thread_setaffinity(mask)
-    return nothing
+    return
 end
 """
 $(TYPEDSIGNATURES)Set the affinity of a specific Julia thread to the given CPU-threads.
 """
 function setaffinity(threadid::Integer, cpuids::AbstractVector{<:Integer}; kwargs...)
     fetch(@spawnat threadid setaffinity(cpuids; kwargs...))
-    return nothing
+    return
 end
 
 function cpuids2affinitymask(cpuids::AbstractVector{<:Integer})

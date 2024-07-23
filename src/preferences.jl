@@ -28,13 +28,13 @@ end
 function set_pin(s::Union{Symbol, AbstractString})
     # TODO check if valid?
     @set_preferences!("pin"=>String(s))
-    return nothing
+    return
 end
 "$(SIGNATURES)Set the likwidpin preference"
 function set_likwidpin(s::AbstractString)
     # TODO check if valid?
     @set_preferences!("likwidpin"=>s)
-    return nothing
+    return
 end
 
 "Clear all ThreadPinning.jl related preferences"
@@ -48,7 +48,7 @@ function showall(io = getstdout())
         val = @load_preference(pref)
         println(io, "$pref => $val")
     end
-    return nothing
+    return
 end
 
 "Query whether the autoupdate preference is set"
@@ -58,7 +58,7 @@ has_autoupdate() = @has_preference("autoupdate")
 function get_autoupdate()
     p = @load_preference("autoupdate")
     if isnothing(p)
-        return nothing #default
+        return #default
     else
         try
             b = parse(Bool, lowercase(p))
@@ -73,7 +73,7 @@ end
 function set_autoupdate(b::Bool)
     @set_preferences!("autoupdate"=>string(b))
     @info("Done. Package might recompile next time it is loaded (in a new Julia session).")
-    return nothing
+    return
 end
 
 "Query whether the OS warning preference is set"
@@ -83,7 +83,7 @@ has_os_warning() = @has_preference("os_warning")
 function get_os_warning()
     p = @load_preference("os_warning")
     if isnothing(p)
-        return nothing #default
+        return #default
     else
         try
             b = parse(Bool, lowercase(p))
@@ -98,7 +98,7 @@ end
 function set_os_warning(b::Bool)
     @set_preferences!("os_warning"=>string(b))
     @info("Done. Package might recompile next time it is loaded (in a new Julia session).")
-    return nothing
+    return
 end
 
 end # module

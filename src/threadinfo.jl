@@ -1,3 +1,9 @@
+##
+##
+## -------------- API --------------
+##
+##
+
 """
 $(SIGNATURES)
 Print information about Julia threads, e.g. on which CPU-threads (i.e. cores if
@@ -18,6 +24,18 @@ Keyword arguments:
                                   Supported values are `:default`, `:interactive`, and
                                   `:all`. Only works for Julia >= 1.9.
 """
+function threadinfo end
+
+##
+##
+## -------------- Internals / Implementation --------------
+##
+##
+
+module ThreadInfo
+
+import ThreadPinning: threadinfo
+
 function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         masks = false,
         groupby = :sockets, threadpool = :default, slurm = false, kwargs...)
@@ -53,7 +71,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
             njlthreads = Threads.nthreads(threadpool)
             if njlthreads == 0
                 println(io, "No threads in threadpool $threadpool.")
-                return nothing
+                return
             end
             thread_cpuids = getcpuids(; threadpool)
         elseif threadpool == :all
@@ -148,7 +166,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         print_affinity_masks(; groupby, threadpool, io)
     end
     hints && _general_hints()
-    return nothing
+    return
 end
 
 function _visualize_affinity(io = getstdout();
@@ -253,7 +271,7 @@ function _visualize_affinity(io = getstdout();
         print(io, " = Core seperator")
     end
     println(io, "\n")
-    return nothing
+    return
 end
 
 function _color_mkl_num_threads(; hints = false)
@@ -359,5 +377,7 @@ function _general_hints()
     if length(unique(thread_cpuids)) < jlthreads
         @warn("Overlap: Some Julia threads are running on the same CPU-threads")
     end
-    return nothing
+    return
 end
+
+end # module
