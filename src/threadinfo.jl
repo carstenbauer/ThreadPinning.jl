@@ -43,8 +43,8 @@ import ThreadPinningCore
 function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         masks = false,
         groupby = :sockets, threadpool = :default, slurm = false, compact = true,
-        logical = false, efficiency = false,
-        highlight = SysInfo.hyperthreading_is_enabled() || SysInfo.ncorekinds() > 1,
+        logical = false, efficiency = SysInfo.ncorekinds() > 1,
+        hyperthreads = SysInfo.hyperthreading_is_enabled(),
         kwargs...)
     # print header
     SysInfo.Internals._print_sysinfo_header(; io, gpu = false)
@@ -69,9 +69,13 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
                 color = :red)
         end
     end
-    if !efficiency
+    if !efficiency && SysInfo.ncorekinds() > 1
         printstyled(io,
             "\nYour system seems to have CPU-cores of varying power efficiency. Consider using `threadinfo(; efficiency=true)`.\n";
+            color = :red)
+    elseif efficiency && SysInfo.ncorekinds() == 1
+        printstyled(io,
+            "\nYour system doesn't seem to multiple CPU-core kinds. Won't be highlighting any efficiency cores.`.\n";
             color = :red)
     end
     println(io)
@@ -94,7 +98,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     # visualization
     _visualize_affinity(;
         threadpool, threads_cpuids, color, groupby, slurm, compact,
-        logical, efficiency, highlight, kwargs...)
+        logical, efficiency, hyperthreads, kwargs...)
 
     # noccupied_hwthreads = length(unique(threads_cpuids))
     # nhwthreads = SysInfo.ncputhreads()
@@ -184,7 +188,7 @@ function _visualize_affinity(io = getstdout();
         compact = false,
         logical = false,
         efficiency = false,
-        highlight = false)
+        hyperthreads = false)
     # preparation
     ncputhreads = SysInfo.ncputhreads()
     if groupby in (:sockets, :socket)
@@ -201,19 +205,6 @@ function _visualize_affinity(io = getstdout();
         label = "Core"
     else
         throw(ArgumentError("Invalid groupby argument. Valid arguments are :socket, :numa, and :core."))
-    end
-
-    if !efficiency
-        ishighlight = SysInfo.ishyperthread
-        highlight_label = "HT"
-    else
-        nck = SysInfo.ncorekinds()
-        if nck > 1
-            ishighlight = (i) -> (SysInfo.cpuid_to_efficiency(i) < nck)
-        else
-            ishighlight = (i) -> false
-        end
-        highlight_label = "Efficency core"
     end
 
     if slurm
@@ -245,18 +236,20 @@ function _visualize_affinity(io = getstdout();
                     if cpuid in threads_cpuids
                         printstyled(io, logical ? id(cpuid) : cpuid;
                             bold = true,
-                            color = if (highlight && ishighlight(cpuid))
+                            color = if (hyperthreads && SysInfo.ishyperthread(cpuid))
                                 :light_magenta
                             else
                                 :yellow
-                            end)
+                            end,
+                            underline = efficiency && SysInfo.isefficiencycore(cpuid))
                     else
                         printstyled(io, logical ? id(cpuid) : cpuid;
-                            color = if (highlight && ishighlight(cpuid))
+                            color = if (hyperthreads && SysInfo.ishyperthread(cpuid))
                                 :light_black
                             else
                                 :default
-                            end)
+                            end,
+                            underline = efficiency && SysInfo.isefficiencycore(cpuid))
                     end
                 else
                     if cpuid in threads_cpuids
@@ -298,12 +291,18 @@ function _visualize_affinity(io = getstdout();
         printstyled(io, "#"; bold = true)
     end
     print(io, " = Julia thread, ")
-    if highlight
+    if hyperthreads
         printstyled(io, "#"; color = :light_black)
-        print(io, " = $(highlight_label), ")
+        print(io, " = HT, ")
         printstyled(io, "#"; bold = true, color = :light_magenta)
-        print(io, " = Julia thread on $(highlight_label), ")
+        print(io, " = Julia thread on HT, ")
     end
+    # if efficiency
+    #     printstyled(io, "#"; color = :light_black)
+    #     print(io, " = HT, ")
+    #     printstyled(io, "#"; bold = true, color = :light_magenta)
+    #     print(io, " = Julia thread on HT, ")
+    # end
     if groupby in (:sockets, :socket)
         printstyled(io, "|"; bold = true)
         print(io, " = CPU/Socket")
