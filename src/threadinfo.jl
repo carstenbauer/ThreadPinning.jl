@@ -97,14 +97,20 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
             color = color ? :red : :default)
     end
 
-    printstyled(io, "Julia threads: \t", njlthreads, "\n\n"; bold = true, color = color ? :green : :default)
+    printstyled(io, "Julia threads: \t", njlthreads;
+        bold = true, color = color ? :green : :default)
+    if threadpool == :all
+        printstyled(
+            io, " (", Threads.nthreads(:default), " + ", Threads.nthreads(:interactive),
+            ")"; bold = true, color = color ? :green : :default)
+    end
+    println(io, "\n")
 
     # visualization
     _visualize_affinity(;
         threadpool, threads_cpuids, color, groupby, slurm, compact,
         logical, efficiency, hyperthreads, kwargs...)
 
-    # noccupied_hwthreads = length(unique(threads_cpuids))
     # nhwthreads = SysInfo.ncputhreads()
     # # extra information
     # print(io, "Julia threads: ")
@@ -287,15 +293,17 @@ function _visualize_affinity(io = getstdout();
     end
     print(io, " = Julia thread")
     if hyperthreads
-        printstyled(io, ", #"; color = color ? :light_black : :default)
-        print(io, " = HT, ")
+        print(io, ", ")
         printstyled(io, "#"; bold = true, color = color ? :light_magenta : :default)
         print(io, " = Julia thread on HT")
     end
+    print(io, ", ")
+    printstyled(io, "#"; bold = true, color = color ? :red : :default)
+    print(io, " = >1 Julia thread")
     if efficiency
         print(io, ", ")
         printstyled(io, "#"; underline = true)
-        print(io, " = EC")
+        print(io, " = Julia thread on EC")
     end
     println(io)
     return
