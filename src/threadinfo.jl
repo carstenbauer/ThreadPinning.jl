@@ -42,7 +42,7 @@ import ThreadPinningCore
 
 function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         masks = false,
-        groupby = :sockets, threadpool = :default, slurm = false, kwargs...)
+        groupby = :sockets, threadpool = :default, slurm = false, compact = true, logical = false, kwargs...)
     # print header
     SysInfo.Internals._print_sysinfo_header(; io, gpu = false)
 
@@ -79,10 +79,13 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     else
         threads_cpuids = Int[]
         njlthreads = length(ThreadPinningCore.threadids(; threadpool))
+        printstyled(
+            io, "Unsupported OS: Won't be able to highlight Julia threads.\n"; color = :red)
     end
 
     # visualization
-    _visualize_affinity(; threadpool, threads_cpuids, color, groupby, slurm, kwargs...)
+    _visualize_affinity(;
+        threadpool, threads_cpuids, color, groupby, slurm, compact, logical, kwargs...)
 
     # noccupied_hwthreads = length(unique(threads_cpuids))
     # nhwthreads = SysInfo.ncputhreads()
@@ -169,15 +172,17 @@ function _visualize_affinity(io = getstdout();
         color = true,
         groupby = :sockets,
         slurm = false,
+        compact = false,
+        logical = false,
         hyperthreading = SysInfo.hyperthreading_is_enabled())
     # preparation
     ncputhreads = SysInfo.ncputhreads()
     if groupby in (:sockets, :socket)
-        f = SysInfo.socket
+        f = (i) -> SysInfo.socket(i; compact)
         n = SysInfo.nsockets()
         label = "CPU socket"
     elseif groupby in (:numa, :NUMA)
-        f = SysInfo.numa
+        f = (i) -> SysInfo.numa(i; compact)
         n = SysInfo.nnuma()
         label = "NUMA domain"
     elseif groupby in (:core, :cores)
@@ -187,6 +192,7 @@ function _visualize_affinity(io = getstdout();
     else
         throw(ArgumentError("Invalid groupby argument. Valid arguments are :socket, :numa, and :core."))
     end
+
     if slurm
         slurm_mask = SLURM.get_cpu_mask()
         if !isnothing(slurm_mask)
@@ -199,7 +205,9 @@ function _visualize_affinity(io = getstdout();
         end
     end
 
-    # printing
+    id = SysInfo.id
+
+    # printing loop
     for i in 1:n
         cpuids = f(i)
         printstyled(io, "$(label) $i\n"; bold = true, color = :cyan)
@@ -212,7 +220,7 @@ function _visualize_affinity(io = getstdout();
             else
                 if color
                     if cpuid in threads_cpuids
-                        printstyled(io, cpuid;
+                        printstyled(io, logical ? id(cpuid) : cpuid;
                             bold = true,
                             color = if (hyperthreading && SysInfo.ishyperthread(cpuid))
                                 :light_magenta
@@ -220,7 +228,7 @@ function _visualize_affinity(io = getstdout();
                                 :yellow
                             end)
                     else
-                        printstyled(io, cpuid;
+                        printstyled(io, logical ? id(cpuid) : cpuid;
                             color = if (hyperthreading && SysInfo.ishyperthread(cpuid))
                                 :light_black
                             else
@@ -229,7 +237,7 @@ function _visualize_affinity(io = getstdout();
                     end
                 else
                     if cpuid in threads_cpuids
-                        printstyled(io, cpuid; bold = true)
+                        printstyled(io, logical ? id(cpuid) : cpuid; bold = true)
                     else
                         print(io, "_")
                     end
