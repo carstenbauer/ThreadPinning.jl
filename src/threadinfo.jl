@@ -111,45 +111,18 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         threadpool, threads_cpuids, color, groupby, slurm, compact,
         logical, efficiency, hyperthreads, kwargs...)
 
-    # nhwthreads = SysInfo.ncputhreads()
-    # # extra information
-    # print(io, "Julia threads: ")
-    # if color
-    #     printstyled(io, njlthreads; color = njlthreads > nhwthreads ? :red : :green)
-    #     @static if VERSION >= v"1.9-"
-    #         if threadpool == :all
-    #             printstyled(io, " (", Threads.nthreads(:default), "+",
-    #                 Threads.nthreads(:interactive), ")")
-    #         elseif threadpool == :default && Threads.nthreads(:interactive) > 0
-    #             printstyled(io, " (+",
-    #                 Threads.nthreads(:interactive), " interactive)")
-    #         elseif threadpool == :interactive
-    #             printstyled(io, " (+",
-    #                 Threads.nthreads(:default), " default)")
-    #         end
-    #     end
-    #     print(io, "\n")
-    # else
-    #     printstyled(io, njlthreads, njlthreads > nhwthreads ? "(!)" : "", "\n")
-    # end
-    # print(io, "├ Occupied CPU-threads: ")
-    # if color
-    #     printstyled(io, noccupied_hwthreads, "\n";
-    #         color = noccupied_hwthreads < njlthreads ? :red : :green)
-    # else
-    #     printstyled(io, noccupied_hwthreads, noccupied_hwthreads < njlthreads ? "(!)" : "",
-    #         "\n")
-    # end
-    # print(io, "└ Mapping (Thread => CPUID):")
-    # # print(io, "   ")
-    # for (tid, core) in pairs(threads_cpuids)
-    #     print(io, " $tid => $core,")
-    #     if tid == 5
-    #         print(io, " ...")
-    #         break
-    #     end
-    # end
-    # println(io)
+    # extra information
+    s = (; color = :light_black)
+    printstyled(io, "\n(Mapping:"; s...)
+    for (tid, core) in pairs(threads_cpuids)
+        printstyled(io, " $tid => $core,"; s...)
+        if tid == 5
+            printstyled(io, " ..."; s...)
+            break
+        end
+    end
+    println(io, ")")
+
     # if blas
     #     println(io)
     #     libblas = BLAS_lib()
