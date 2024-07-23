@@ -290,26 +290,17 @@ function _visualize_affinity(io = getstdout();
     else
         printstyled(io, "#"; bold = true)
     end
-    print(io, " = Julia thread, ")
+    print(io, " = Julia thread")
     if hyperthreads
-        printstyled(io, "#"; color = :light_black)
+        printstyled(io, ", #"; color = :light_black)
         print(io, " = HT, ")
         printstyled(io, "#"; bold = true, color = :light_magenta)
-        print(io, " = Julia thread on HT, ")
+        print(io, " = Julia thread on HT")
     end
     if efficiency
+        print(io, ", ")
         printstyled(io, "#"; underline = true)
-        print(io, " = EC, ")
-    end
-    if groupby in (:sockets, :socket)
-        printstyled(io, "|"; bold = true)
-        print(io, " = CPU/Socket")
-    elseif groupby in (:numa, :NUMA)
-        printstyled(io, "|"; bold = true)
-        print(io, " = NUMA seperator")
-    elseif groupby in (:core, :cores)
-        printstyled(io, "|"; bold = true)
-        print(io, " = Core seperator")
+        print(io, " = EC")
     end
     println(io, "\n")
     return
