@@ -68,16 +68,17 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     end
     println(io)
 
-    # general info
-    threads_cpuids = @static if Sys.islinux()
-        ThreadPinningCore.getcpuids(; threadpool)
+    # query cpuids of Julia threads
+    @static if Sys.islinux()
+        threads_cpuids = ThreadPinningCore.getcpuids(; threadpool)
+        njlthreads = length(threads_cpuids)
+        if njlthreads == 0
+            printstyled(io, "No threads in threadpool :$threadpool.\n"; color = :red)
+            # return
+        end
     else
-        Int[]
-    end
-    njlthreads = length(threads_cpuids)
-    if njlthreads == 0
-        printstyled(io, "No threads in threadpool :$threadpool.\n"; color = :red)
-        # return
+        threads_cpuids = Int[]
+        njlthreads = length(ThreadPinningCore.threadids(; threadpool))
     end
 
     # visualization
