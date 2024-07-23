@@ -73,14 +73,14 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         threads_cpuids = ThreadPinningCore.getcpuids(; threadpool)
         njlthreads = length(threads_cpuids)
         if njlthreads == 0
-            printstyled(io, "No threads in threadpool :$threadpool.\n"; color = :red)
+            printstyled(io, "No threads in threadpool :$threadpool.\n\n"; color = :red)
             # return
         end
     else
         threads_cpuids = Int[]
         njlthreads = length(ThreadPinningCore.threadids(; threadpool))
         printstyled(
-            io, "Unsupported OS: Won't be able to highlight Julia threads.\n"; color = :red)
+            io, "Unsupported OS: Won't be able to highlight Julia threads.\n\n"; color = :red)
     end
 
     # visualization
