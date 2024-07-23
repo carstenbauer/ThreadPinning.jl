@@ -69,7 +69,11 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     println(io)
 
     # general info
-    threads_cpuids = ThreadPinningCore.getcpuids(; threadpool)
+    threads_cpuids = @static if Sys.islinux()
+        ThreadPinningCore.getcpuids(; threadpool)
+    else
+        Int[]
+    end
     njlthreads = length(threads_cpuids)
     if njlthreads == 0
         printstyled(io, "No threads in threadpool :$threadpool.\n"; color = :red)

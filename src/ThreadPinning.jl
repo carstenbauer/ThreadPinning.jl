@@ -14,29 +14,29 @@ getstdout() = something(DEFAULT_IO[], stdout)
 
 # includes
 include("utility.jl")
-@static if Sys.islinux()
-    # include("sysinfo.jl")
-    include("lscpu_examples.jl")
-    # include("libs/libc.jl")
-    # include("libs/libuv.jl")
-    # include("libs/libpthread.jl")
-    include("querying.jl")
-    include("slurm.jl")
-    include("pinning.jl")
-    # include("pinning_mpi.jl")
-    # include("setaffinity.jl")
-    # include("likwid-pin.jl")
-    # include("mkl.jl")
-    # include("openblas.jl")
-    include("threadinfo.jl")
-    # include("latency.jl")
-else
-    pinthreads(args...; kwargs...) = nothing
-    pinthread(args...; kwargs...) = nothing
-    setaffinity(args...; kwargs...) = nothing
-    pinthreads_likwidpin(args...; kwargs...) = nothing
-    pinthreads_mpi(args...; kwargs...) = nothing
-end
+# @static if Sys.islinux()
+# include("sysinfo.jl")
+include("lscpu_examples.jl")
+# include("libs/libc.jl")
+# include("libs/libuv.jl")
+# include("libs/libpthread.jl")
+include("querying.jl")
+include("slurm.jl")
+include("pinning.jl")
+# include("pinning_mpi.jl")
+# include("setaffinity.jl")
+# include("likwid-pin.jl")
+# include("mkl.jl")
+# include("openblas.jl")
+include("threadinfo.jl")
+# include("latency.jl")
+# else
+#     pinthreads(args...; kwargs...) = nothing
+#     pinthread(args...; kwargs...) = nothing
+#     setaffinity(args...; kwargs...) = nothing
+#     pinthreads_likwidpin(args...; kwargs...) = nothing
+#     pinthreads_mpi(args...; kwargs...) = nothing
+# end
 # include("preferences.jl")
 
 # function _try_get_autoupdate()
