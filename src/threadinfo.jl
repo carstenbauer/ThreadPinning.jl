@@ -297,12 +297,10 @@ function _visualize_affinity(io = getstdout();
         printstyled(io, "#"; bold = true, color = :light_magenta)
         print(io, " = Julia thread on HT, ")
     end
-    # if efficiency
-    #     printstyled(io, "#"; color = :light_black)
-    #     print(io, " = HT, ")
-    #     printstyled(io, "#"; bold = true, color = :light_magenta)
-    #     print(io, " = Julia thread on HT, ")
-    # end
+    if efficiency
+        printstyled(io, "#"; underline = true)
+        print(io, " = EC, ")
+    end
     if groupby in (:sockets, :socket)
         printstyled(io, "|"; bold = true)
         print(io, " = CPU/Socket")
