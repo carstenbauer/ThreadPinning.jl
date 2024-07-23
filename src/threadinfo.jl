@@ -56,27 +56,27 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
                 "\nSLURM: ",
                 SLURM.ncpus_per_task(),
                 " assigned CPU-threads\n";
-                color = :light_cyan)
+                color = color ? :light_cyan : :default)
         else
             printstyled(io,
                 "\nSLURM: Session doesn't seem to be running in a SLURM allocation.\n";
-                color = :red)
+                color = color ? :red : :default)
         end
     else
         if SLURM.isslurmjob()
             printstyled(io,
                 "\nYou seem to be running this inside of a SLURM Session. Consider using `threadinfo(; slurm=true)`.\n";
-                color = :red)
+                color = color ? :red : :default)
         end
     end
     if !efficiency && SysInfo.ncorekinds() > 1
         printstyled(io,
             "\nYour system seems to have CPU-cores of varying power efficiency. Consider using `threadinfo(; efficiency=true)`.\n";
-            color = :red)
+            color = color ? :red : :default)
     elseif efficiency && SysInfo.ncorekinds() == 1
         printstyled(io,
             "\nYour system doesn't seem to multiple CPU-core kinds. Won't be highlighting any efficiency cores.`.\n";
-            color = :red)
+            color = color ? :red : :default)
     end
     println(io)
 
@@ -85,15 +85,20 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         threads_cpuids = ThreadPinningCore.getcpuids(; threadpool)
         njlthreads = length(threads_cpuids)
         if njlthreads == 0
-            printstyled(io, "No threads in threadpool :$threadpool.\n\n"; color = :red)
+            printstyled(io, "No threads in threadpool :$threadpool.\n\n";
+                color = color ? :red : :default)
             # return
         end
     else
         threads_cpuids = Int[]
         njlthreads = length(ThreadPinningCore.threadids(; threadpool))
         printstyled(
-            io, "Unsupported OS: Won't be able to highlight Julia threads.\n\n"; color = :red)
+            io, "Unsupported OS: Won't be able to highlight Julia threads.\n\n";
+            color = color ? :red : :default)
     end
+
+    printstyled(io, "Julia threads: \t"; bold = true, color = color ? :green : :default)
+    printstyled(io, njlthreads, "\n\n"; bold = true, color = color ? :green : :default)
 
     # visualization
     _visualize_affinity(;
@@ -224,8 +229,7 @@ function _visualize_affinity(io = getstdout();
     # printing loop
     for i in 1:n
         cpuids = f(i)
-        printstyled(io, "$(label) $i\n"; bold = true, color = :cyan)
-        # printstyled(io, "| "; bold = true)
+        printstyled(io, "$(label) $i\n"; bold = true, color = color ? :cyan : :default)
         print(io, "  ")
         for (k, cpuid) in pairs(cpuids)
             if slurm && !(cpuid in slurm_cpuids)
@@ -234,13 +238,16 @@ function _visualize_affinity(io = getstdout();
             else
                 if color
                     if cpuid in threads_cpuids
+                        colorval = if count(==(cpuid), threads_cpuids) > 1
+                            :red
+                        elseif (hyperthreads && SysInfo.ishyperthread(cpuid))
+                            :light_magenta
+                        else
+                            :yellow
+                        end
                         printstyled(io, logical ? id(cpuid) : cpuid;
                             bold = true,
-                            color = if (hyperthreads && SysInfo.ishyperthread(cpuid))
-                                :light_magenta
-                            else
-                                :yellow
-                            end,
+                            color = color ? colorval : :default,
                             underline = efficiency && SysInfo.isefficiencycore(cpuid))
                     else
                         printstyled(io, logical ? id(cpuid) : cpuid;
@@ -264,37 +271,26 @@ function _visualize_affinity(io = getstdout();
                 mod(k, blocksize) == 0 && print(io, "\n  ")
             end
         end
-        # print(io, " | ")
-        # if ncputhreads > 32
-        #     printstyled(io, " |"; bold = true)
-        #     if !(i == n)
-        #         println(io)
-        #         printstyled(io, "| "; bold = true)
-        #     end
-        # else
-        #     printstyled(io, " | "; bold = true)
-        # end
         if i == n
-            # printstyled(io, " |\n"; bold = true)
             println(io)
         else
-            # printstyled(io, " |\n\n"; bold = true)
             println(io, "\n")
         end
     end
     println(io)
+
     # legend
     println(io)
     if color
-        printstyled(io, "#"; bold = true, color = :yellow)
+        printstyled(io, "#"; bold = true, color = color ? :yellow : :default)
     else
         printstyled(io, "#"; bold = true)
     end
     print(io, " = Julia thread")
     if hyperthreads
-        printstyled(io, ", #"; color = :light_black)
+        printstyled(io, ", #"; color = color ? :light_black : :default)
         print(io, " = HT, ")
-        printstyled(io, "#"; bold = true, color = :light_magenta)
+        printstyled(io, "#"; bold = true, color = color ? :light_magenta : :default)
         print(io, " = Julia thread on HT")
     end
     if efficiency
@@ -302,114 +298,114 @@ function _visualize_affinity(io = getstdout();
         printstyled(io, "#"; underline = true)
         print(io, " = EC")
     end
-    println(io, "\n")
+    println(io)
     return
 end
 
-function _color_mkl_num_threads(; hints = false)
-    jlthreads = Threads.nthreads()
-    cputhreads = ncputhreads()
-    cputhreads_per_jlthread = floor(Int, cputhreads / jlthreads)
-    blasthreads_per_jlthread = BLAS.get_num_threads()
-    if blasthreads_per_jlthread == 1
-        if jlthreads < ncputhreads()
-            hints &&
-                @info("blasthreads_per_jlthread == 1 && jlthreads < cputhreads. You "*
-                      "should set BLAS.set_num_threads($cputhreads_per_jlthread) or try "*
-                      "to increase the number of Julia threads to $cputhreads.")
-            return :yellow
-        elseif jlthreads == cputhreads
-            return :green
-        else
-            hints &&
-                @warn("jlthreads > cputhreads. You should decrease the number of Julia "*
-                "threads to $cputhreads.")
-            return :red
-        end
-    elseif blasthreads_per_jlthread < cputhreads_per_jlthread
-        hints &&
-            @info("blasthreads_per_jlthread < cputhreads_per_jlthread. You should "*
-                  "increase the number of MKL threads, i.e. "*
-                  "BLAS.set_num_threads($cputhreads_per_jlthread).")
-        return :yellow
-    elseif blasthreads_per_jlthread == cputhreads_per_jlthread
-        return :green
-    else
-        hints &&
-            @warn("blasthreads_per_jlthread > cputhreads_per_jlthread. You should "*
-                  "decrease the number of MKL threads, i.e. "*
-                  "BLAS.set_num_threads($cputhreads_per_jlthread).")
-        return :red
-    end
-end
+# function _color_mkl_num_threads(; hints = false)
+#     jlthreads = Threads.nthreads()
+#     cputhreads = ncputhreads()
+#     cputhreads_per_jlthread = floor(Int, cputhreads / jlthreads)
+#     blasthreads_per_jlthread = BLAS.get_num_threads()
+#     if blasthreads_per_jlthread == 1
+#         if jlthreads < ncputhreads()
+#             hints &&
+#                 @info("blasthreads_per_jlthread == 1 && jlthreads < cputhreads. You "*
+#                       "should set BLAS.set_num_threads($cputhreads_per_jlthread) or try "*
+#                       "to increase the number of Julia threads to $cputhreads.")
+#             return :yellow
+#         elseif jlthreads == cputhreads
+#             return :green
+#         else
+#             hints &&
+#                 @warn("jlthreads > cputhreads. You should decrease the number of Julia "*
+#                 "threads to $cputhreads.")
+#             return :red
+#         end
+#     elseif blasthreads_per_jlthread < cputhreads_per_jlthread
+#         hints &&
+#             @info("blasthreads_per_jlthread < cputhreads_per_jlthread. You should "*
+#                   "increase the number of MKL threads, i.e. "*
+#                   "BLAS.set_num_threads($cputhreads_per_jlthread).")
+#         return :yellow
+#     elseif blasthreads_per_jlthread == cputhreads_per_jlthread
+#         return :green
+#     else
+#         hints &&
+#             @warn("blasthreads_per_jlthread > cputhreads_per_jlthread. You should "*
+#                   "decrease the number of MKL threads, i.e. "*
+#                   "BLAS.set_num_threads($cputhreads_per_jlthread).")
+#         return :red
+#     end
+# end
 
-function _color_openblas_num_threads(; hints = false)
-    # BLAS uses `blasthreads` many threads in total
-    cputhreads = ncputhreads()
-    blasthreads = BLAS.get_num_threads()
-    jlthreads = Threads.nthreads()
-    if jlthreads != 1
-        if blasthreads == 1
-            return :green
-        else
-            # Not sure about this case...
-            if blasthreads < jlthreads
-                hints &&
-                    @warn("jlthreads != 1 && blasthreads < jlthreads. You should set "*
-                    "BLAS.set_num_threads(1).")
-                return :red
-            elseif blasthreads < cputhreads
-                hints &&
-                    @info("jlthreads != 1 && blasthreads < cputhreads. You should either "*
-                          "set BLAS.set_num_threads(1) (recommended!) or at least "*
-                          "BLAS.set_num_threads($cputhreads).")
-                return :yellow
-            elseif blasthreads == cputhreads
-                hints &&
-                    @info("For jlthreads != 1 we strongly recommend to set "*
-                    "BLAS.set_num_threads(1).")
-                return :green
-            else
-                hints &&
-                    @warn("jlthreads != 1 && blasthreads > cputhreads. You should set "*
-                          "BLAS.set_num_threads(1) (recommended!) or at least "*
-                          "BLAS.set_num_threads($cputhreads).")
-                return :red
-            end
-        end
-    else
-        # single Julia thread
-        if blasthreads < cputhreads
-            hints &&
-                @info("blasthreads < cputhreads. You should increase the number of "*
-                "OpenBLAS threads, i.e. BLAS.set_num_threads($cputhreads).")
-            return :yellow
-        elseif blasthreads == cputhreads
-            return :green
-        else
-            hints &&
-                @warn("blasthreads > cputhreads. You should decrease the number of "*
-                "OpenBLAS threads, i.e. BLAS.set_num_threads($cputhreads).")
-            return :red
-        end
-    end
-end
+# function _color_openblas_num_threads(; hints = false)
+#     # BLAS uses `blasthreads` many threads in total
+#     cputhreads = ncputhreads()
+#     blasthreads = BLAS.get_num_threads()
+#     jlthreads = Threads.nthreads()
+#     if jlthreads != 1
+#         if blasthreads == 1
+#             return :green
+#         else
+#             # Not sure about this case...
+#             if blasthreads < jlthreads
+#                 hints &&
+#                     @warn("jlthreads != 1 && blasthreads < jlthreads. You should set "*
+#                     "BLAS.set_num_threads(1).")
+#                 return :red
+#             elseif blasthreads < cputhreads
+#                 hints &&
+#                     @info("jlthreads != 1 && blasthreads < cputhreads. You should either "*
+#                           "set BLAS.set_num_threads(1) (recommended!) or at least "*
+#                           "BLAS.set_num_threads($cputhreads).")
+#                 return :yellow
+#             elseif blasthreads == cputhreads
+#                 hints &&
+#                     @info("For jlthreads != 1 we strongly recommend to set "*
+#                     "BLAS.set_num_threads(1).")
+#                 return :green
+#             else
+#                 hints &&
+#                     @warn("jlthreads != 1 && blasthreads > cputhreads. You should set "*
+#                           "BLAS.set_num_threads(1) (recommended!) or at least "*
+#                           "BLAS.set_num_threads($cputhreads).")
+#                 return :red
+#             end
+#         end
+#     else
+#         # single Julia thread
+#         if blasthreads < cputhreads
+#             hints &&
+#                 @info("blasthreads < cputhreads. You should increase the number of "*
+#                 "OpenBLAS threads, i.e. BLAS.set_num_threads($cputhreads).")
+#             return :yellow
+#         elseif blasthreads == cputhreads
+#             return :green
+#         else
+#             hints &&
+#                 @warn("blasthreads > cputhreads. You should decrease the number of "*
+#                 "OpenBLAS threads, i.e. BLAS.set_num_threads($cputhreads).")
+#             return :red
+#         end
+#     end
+# end
 
-function _general_hints()
-    jlthreads = Threads.nthreads()
-    cputhreads = ncputhreads()
-    threads_cpuids = getcpuids()
-    if jlthreads > cputhreads
-        @warn("jlthreads > cputhreads. You should decrease the number of Julia threads "*
-        "to $cputhreads.")
-    elseif jlthreads < cputhreads
-        @info("jlthreads < cputhreads. Perhaps increase number of Julia threads to "*
-        "$cputhreads?")
-    end
-    if length(unique(threads_cpuids)) < jlthreads
-        @warn("Overlap: Some Julia threads are running on the same CPU-threads")
-    end
-    return
-end
+# function _general_hints()
+#     jlthreads = Threads.nthreads()
+#     cputhreads = ncputhreads()
+#     threads_cpuids = getcpuids()
+#     if jlthreads > cputhreads
+#         @warn("jlthreads > cputhreads. You should decrease the number of Julia threads "*
+#         "to $cputhreads.")
+#     elseif jlthreads < cputhreads
+#         @info("jlthreads < cputhreads. Perhaps increase number of Julia threads to "*
+#         "$cputhreads?")
+#     end
+#     if length(unique(threads_cpuids)) < jlthreads
+#         @warn("Overlap: Some Julia threads are running on the same CPU-threads")
+#     end
+#     return
+# end
 
 end # module
