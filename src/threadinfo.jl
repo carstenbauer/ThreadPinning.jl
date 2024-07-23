@@ -42,7 +42,10 @@ import ThreadPinningCore
 
 function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         masks = false,
-        groupby = :sockets, threadpool = :default, slurm = false, compact = true, logical = false, kwargs...)
+        groupby = :sockets, threadpool = :default, slurm = false, compact = true,
+        logical = false, efficiency = false,
+        highlight = SysInfo.hyperthreading_is_enabled() || SysInfo.ncorekinds() > 1,
+        kwargs...)
     # print header
     SysInfo.Internals._print_sysinfo_header(; io, gpu = false)
 
@@ -85,7 +88,8 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
 
     # visualization
     _visualize_affinity(;
-        threadpool, threads_cpuids, color, groupby, slurm, compact, logical, kwargs...)
+        threadpool, threads_cpuids, color, groupby, slurm, compact,
+        logical, efficiency, highlight, kwargs...)
 
     # noccupied_hwthreads = length(unique(threads_cpuids))
     # nhwthreads = SysInfo.ncputhreads()
@@ -174,7 +178,8 @@ function _visualize_affinity(io = getstdout();
         slurm = false,
         compact = false,
         logical = false,
-        hyperthreading = SysInfo.hyperthreading_is_enabled())
+        efficiency = false,
+        highlight = false)
     # preparation
     ncputhreads = SysInfo.ncputhreads()
     if groupby in (:sockets, :socket)
@@ -191,6 +196,19 @@ function _visualize_affinity(io = getstdout();
         label = "Core"
     else
         throw(ArgumentError("Invalid groupby argument. Valid arguments are :socket, :numa, and :core."))
+    end
+
+    if !efficiency
+        ishighlight = SysInfo.ishyperthread
+        highlight_label = "HT"
+    else
+        nck = SysInfo.ncorekinds()
+        if nck > 1
+            ishighlight = (i) -> (SysInfo.cpuid_to_efficiency(i) < nck)
+        else
+            ishighlight = (i) -> false
+        end
+        highlight_label = "Efficency core"
     end
 
     if slurm
@@ -222,14 +240,14 @@ function _visualize_affinity(io = getstdout();
                     if cpuid in threads_cpuids
                         printstyled(io, logical ? id(cpuid) : cpuid;
                             bold = true,
-                            color = if (hyperthreading && SysInfo.ishyperthread(cpuid))
+                            color = if (highlight && ishighlight(cpuid))
                                 :light_magenta
                             else
                                 :yellow
                             end)
                     else
                         printstyled(io, logical ? id(cpuid) : cpuid;
-                            color = if (hyperthreading && SysInfo.ishyperthread(cpuid))
+                            color = if (highlight && ishighlight(cpuid))
                                 :light_black
                             else
                                 :default
@@ -275,11 +293,11 @@ function _visualize_affinity(io = getstdout();
         printstyled(io, "#"; bold = true)
     end
     print(io, " = Julia thread, ")
-    if hyperthreading
+    if highlight
         printstyled(io, "#"; color = :light_black)
-        print(io, " = HT, ")
+        print(io, " = $(highlight_label), ")
         printstyled(io, "#"; bold = true, color = :light_magenta)
-        print(io, " = Julia thread on HT, ")
+        print(io, " = Julia thread on $(highlight_label), ")
     end
     if groupby in (:sockets, :socket)
         printstyled(io, "|"; bold = true)
