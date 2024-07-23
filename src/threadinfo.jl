@@ -43,8 +43,7 @@ import ThreadPinningCore
 function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         masks = false,
         groupby = :sockets, threadpool = :default, slurm = false, compact = true,
-        logical = false, efficiency = !SysInfo.hyperthreading_is_enabled() &&
-            SysInfo.ncorekinds() > 1,
+        logical = false, efficiency = false,
         highlight = SysInfo.hyperthreading_is_enabled() || SysInfo.ncorekinds() > 1,
         kwargs...)
     # print header
@@ -69,6 +68,11 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
                 "\nYou seem to be running this inside of a SLURM Session. Consider using `threadinfo(; slurm=true)`.\n";
                 color = :red)
         end
+    end
+    if !efficiency
+        printstyled(io,
+            "\nYour system seems to have CPU-cores of varying power efficiency. Consider using `threadinfo(; efficiency=true)`.\n";
+            color = :red)
     end
     println(io)
 
