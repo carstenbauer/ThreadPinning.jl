@@ -10,10 +10,11 @@ Print information about Julia threads, e.g. on which CPU-threads (i.e. cores if
 hyperthreading is disabled) they are running.
 
 Keyword arguments:
+* `compact` (default: `true`): Toggle between compact and "cores before hyperthreads" ordering.
 * `color` (default: `true`): Toggle between colored and black-and-white output.
 * `blocksize` (default: `32`): Wrap to a new line after `blocksize` many CPU-threads.
-* `hyperthreading` (default: `true`): If `true`, we (try to) highlight CPU-threads
-  associated with hyperthreading in the `color=true` output.
+* `hyperthreads` (default: `true` if auto-detected): If `true`, we (try to) highlight CPU-threads
+  that aren't the first threads within a CPU-core.
 * `blas` (default: `false`): Show information about BLAS threads as well.
 * `slurm` (default: `false`): Only show the part of the system that is covered by the active SLURM session.
 * `hints` (default: `false`): Give some hints about how to improve the threading related
@@ -23,6 +24,9 @@ Keyword arguments:
 * `threadpool` (default: `:default`): Only consider Julia threads in the given thread pool.
                                   Supported values are `:default`, `:interactive`, and
                                   `:all`. Only works for Julia >= 1.9.
+* `efficiency` (default: `true` if auto-detected): If `true`, we highlight (underline)
+  CPU-threads that belong to efficiency cores.
+* `logical` (default: `false`): Toggle between logical and "physical" CPU-thread indices.
 """
 function threadinfo end
 
