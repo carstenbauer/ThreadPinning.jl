@@ -112,16 +112,18 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         logical, efficiency, hyperthreads, kwargs...)
 
     # extra information
-    s = (; color = :light_black)
-    printstyled(io, "\n(Mapping:"; s...)
-    for (tid, core) in pairs(threads_cpuids)
-        printstyled(io, " $tid => $core,"; s...)
-        if tid == 5
-            printstyled(io, " ..."; s...)
-            break
+    @static if Sys.islinux()
+        s = (; color = :light_black)
+        printstyled(io, "\n(Mapping:"; s...)
+        for (tid, core) in pairs(threads_cpuids)
+            printstyled(io, " $tid => $core,"; s...)
+            if tid == 5
+                printstyled(io, " ..."; s...)
+                break
+            end
         end
+        println(io, ")")
     end
-    println(io, ")")
 
     # if blas
     #     println(io)
