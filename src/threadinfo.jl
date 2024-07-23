@@ -170,15 +170,17 @@ function _visualize_affinity(io = getstdout();
     if groupby in (:sockets, :socket)
         f = SysInfo.socket
         n = SysInfo.nsockets()
+        label = "CPU socket"
     elseif groupby in (:numa, :NUMA)
         f = SysInfo.numa
         n = SysInfo.nnuma()
+        label = "NUMA domain"
     elseif groupby in (:core, :cores)
         f = SysInfo.core
         n = SysInfo.ncores()
+        label = "Core"
     else
-        (i) -> SysInfo.node()
-        n = 1
+        throw(ArgumentError("Invalid groupby argument. Valid arguments are :socket, :numa, and :core."))
     end
     if slurm
         slurm_mask = SLURM.get_cpu_mask()
@@ -193,9 +195,11 @@ function _visualize_affinity(io = getstdout();
     end
 
     # printing
-    printstyled(io, "| "; bold = true)
     for i in 1:n
         cpuids = f(i)
+        printstyled(io, "$(label) $i\n"; bold = true, color = :cyan)
+        # printstyled(io, "| "; bold = true)
+        print(io, "  ")
         for (k, cpuid) in pairs(cpuids)
             if slurm && !(cpuid in slurm_cpuids)
                 print(io, ".")
@@ -232,14 +236,21 @@ function _visualize_affinity(io = getstdout();
             end
         end
         # print(io, " | ")
-        if ncputhreads > 32
-            printstyled(io, " |"; bold = true)
-            if !(i == n)
-                println(io)
-                printstyled(io, "| "; bold = true)
-            end
+        # if ncputhreads > 32
+        #     printstyled(io, " |"; bold = true)
+        #     if !(i == n)
+        #         println(io)
+        #         printstyled(io, "| "; bold = true)
+        #     end
+        # else
+        #     printstyled(io, " | "; bold = true)
+        # end
+        if i == n
+            # printstyled(io, " |\n"; bold = true)
+            println(io)
         else
-            printstyled(io, " | "; bold = true)
+            # printstyled(io, " |\n\n"; bold = true)
+            println(io, "\n")
         end
     end
     println(io)
