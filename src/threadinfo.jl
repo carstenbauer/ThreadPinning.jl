@@ -97,8 +97,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
             color = color ? :red : :default)
     end
 
-    printstyled(io, "Julia threads: \t"; bold = true, color = color ? :green : :default)
-    printstyled(io, njlthreads, "\n\n"; bold = true, color = color ? :green : :default)
+    printstyled(io, "Julia threads: \t", njlthreads, "\n\n"; bold = true, color = color ? :green : :default)
 
     # visualization
     _visualize_affinity(;
