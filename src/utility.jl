@@ -47,13 +47,7 @@ end
 hasduplicates(xs) = length(xs) != length(Set(xs))
 
 "Returns the name of the loaded BLAS library (the first, if multiple are loaded)."
-function BLAS_lib()
-    @static if VERSION < v"1.7-"
-        string(BLAS.vendor())
-    else
-        basename(first(BLAS.get_config().loaded_libs).libname)
-    end
-end
+BLAS_lib() = basename(first(BLAS.get_config().loaded_libs).libname)
 
 "Number of BLAS threads."
 nblasthreads() = BLAS.get_num_threads()
@@ -68,7 +62,7 @@ function _execute(cmd::Cmd)
     close(err.in)
 
     out = (stdout = String(read(out)), stderr = String(read(err)),
-           exitcode = process.exitcode)
+        exitcode = process.exitcode)
     return out
 end
 
