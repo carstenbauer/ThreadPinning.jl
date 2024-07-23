@@ -1,5 +1,6 @@
+module Utility
+
 """
-$(TYPEDSIGNATURES)
 # Examples
 ```julia
 interweave([1,2,3,4], [5,6,7,8]) == [1,5,2,6,3,7,4,8]
@@ -73,3 +74,5 @@ end
 
 "Returns a (most likely) unique id for the calling task."
 taskid() = objectid(current_task())
+
+end # module

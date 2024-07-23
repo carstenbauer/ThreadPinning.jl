@@ -35,156 +35,150 @@ function threadinfo end
 module ThreadInfo
 
 import ThreadPinning: threadinfo
+using ThreadPinning: getstdout
+import ..SLURM
+import SysInfo
+import ThreadPinningCore
 
 function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         masks = false,
         groupby = :sockets, threadpool = :default, slurm = false, kwargs...)
-    println(io)
-    print(io, "System: ")
-    nsmt = ncputhreads_per_core()
-    if hyperthreading_is_enabled() && all(isequal(first(nsmt)), nsmt)
-        print(io, ncores(), " cores ($(first(nsmt))-way SMT)")
-    else
-        print(io, ncores(), " cores (no SMT)")
-    end
-    print(io, ", ", nsockets(), " sockets, ")
-    print(io, nnuma(), " NUMA domains")
-    println(io)
+    # print header
+    SysInfo.Internals._print_sysinfo_header(; io, gpu = false)
+
+    # slurm info
     if slurm
-        println(io)
         if SLURM.isslurmjob()
             printstyled(io,
-                "SLURM: ",
+                "\nSLURM: ",
                 SLURM.ncpus_per_task(),
-                " assigned CPU-threads";
+                " assigned CPU-threads\n";
                 color = :light_cyan)
         else
             printstyled(io,
-                "SLURM: Session doesn't seem to be running in a SLURM allocation.";
+                "\nSLURM: Session doesn't seem to be running in a SLURM allocation.\n";
                 color = :red)
         end
-        println(io)
+    else
+        if SLURM.isslurmjob()
+            printstyled(io,
+                "\nYou seem to be running this inside of a SLURM Session. Consider using `threadinfo(; slurm=true)`.\n";
+                color = :red)
+        end
     end
+    println(io)
+
     # general info
-    @static if VERSION >= v"1.9-"
-        if threadpool == :default || threadpool == :interactive
-            njlthreads = Threads.nthreads(threadpool)
-            if njlthreads == 0
-                println(io, "No threads in threadpool $threadpool.")
-                return
-            end
-            thread_cpuids = getcpuids(; threadpool)
-        elseif threadpool == :all
-            njlthreads = Threads.nthreads(:default) + Threads.nthreads(:interactive)
-            thread_cpuids = getcpuids(; threadpool = :all)
-        else
-            throw(ArgumentError("Unknown value for `threadpool` keyword argument. Supported " *
-                                "values are `:all`, `:default`, and `:interactive`."))
-        end
-    else
-        njlthreads = Threads.nthreads()
-        thread_cpuids = getcpuids()
+    threads_cpuids = ThreadPinningCore.getcpuids(; threadpool)
+    njlthreads = length(threads_cpuids)
+    if njlthreads == 0
+        printstyled(io, "No threads in threadpool :$threadpool.\n"; color = :red)
+        # return
     end
-    @assert length(thread_cpuids) == njlthreads
-    noccupied_hwthreads = length(unique(thread_cpuids))
-    nhwthreads = ncputhreads()
 
-    # visualize current pinning
-    println(io)
-    _visualize_affinity(; thread_cpuids, color, groupby, slurm, kwargs...)
+    # visualization
+    _visualize_affinity(; threadpool, threads_cpuids, color, groupby, slurm, kwargs...)
 
-    # extra information
-    print(io, "Julia threads: ")
-    if color
-        printstyled(io, njlthreads; color = njlthreads > nhwthreads ? :red : :green)
-        @static if VERSION >= v"1.9-"
-            if threadpool == :all
-                printstyled(io, " (", Threads.nthreads(:default), "+",
-                    Threads.nthreads(:interactive), ")")
-            elseif threadpool == :default && Threads.nthreads(:interactive) > 0
-                printstyled(io, " (+",
-                    Threads.nthreads(:interactive), " interactive)")
-            elseif threadpool == :interactive
-                printstyled(io, " (+",
-                    Threads.nthreads(:default), " default)")
-            end
-        end
-        print(io, "\n")
-    else
-        printstyled(io, njlthreads, njlthreads > nhwthreads ? "(!)" : "", "\n")
-    end
-    print(io, "├ Occupied CPU-threads: ")
-    if color
-        printstyled(io, noccupied_hwthreads, "\n";
-            color = noccupied_hwthreads < njlthreads ? :red : :green)
-    else
-        printstyled(io, noccupied_hwthreads, noccupied_hwthreads < njlthreads ? "(!)" : "",
-            "\n")
-    end
-    print(io, "└ Mapping (Thread => CPUID):")
-    # print(io, "   ")
-    for (tid, core) in pairs(thread_cpuids)
-        print(io, " $tid => $core,")
-        if tid == 5
-            print(io, " ...")
-            break
-        end
-    end
-    println(io)
-    if blas
-        println(io)
-        libblas = BLAS_lib()
-        println(io, "BLAS: ", libblas)
-        if contains(libblas, "openblas")
-            print(io, "└ openblas_get_num_threads: ")
-            if color
-                printstyled(io, BLAS.get_num_threads(), "\n";
-                    color = _color_openblas_num_threads())
-            else
-                printstyled(io, BLAS.get_num_threads(),
-                    _color_openblas_num_threads() == :red ? "(!)" : "",
-                    "\n")
-            end
-            println(io)
-            _color_openblas_num_threads(; hints)
-        elseif contains(libblas, "mkl")
-            print(io, "├ mkl_get_num_threads: ")
-            if color
-                printstyled(io, BLAS.get_num_threads(), "\n";
-                    color = _color_mkl_num_threads())
-            else
-                printstyled(io, BLAS.get_num_threads(),
-                    _color_mkl_num_threads() == :red ? "(!)" : "",
-                    "\n")
-            end
-            println(io, "└ mkl_get_dynamic: ", Bool(mkl_get_dynamic()))
-            println(io)
-            _color_mkl_num_threads(; hints)
-        end
-    end
-    if masks
-        print_affinity_masks(; groupby, threadpool, io)
-    end
-    hints && _general_hints()
+    # noccupied_hwthreads = length(unique(threads_cpuids))
+    # nhwthreads = SysInfo.ncputhreads()
+    # # extra information
+    # print(io, "Julia threads: ")
+    # if color
+    #     printstyled(io, njlthreads; color = njlthreads > nhwthreads ? :red : :green)
+    #     @static if VERSION >= v"1.9-"
+    #         if threadpool == :all
+    #             printstyled(io, " (", Threads.nthreads(:default), "+",
+    #                 Threads.nthreads(:interactive), ")")
+    #         elseif threadpool == :default && Threads.nthreads(:interactive) > 0
+    #             printstyled(io, " (+",
+    #                 Threads.nthreads(:interactive), " interactive)")
+    #         elseif threadpool == :interactive
+    #             printstyled(io, " (+",
+    #                 Threads.nthreads(:default), " default)")
+    #         end
+    #     end
+    #     print(io, "\n")
+    # else
+    #     printstyled(io, njlthreads, njlthreads > nhwthreads ? "(!)" : "", "\n")
+    # end
+    # print(io, "├ Occupied CPU-threads: ")
+    # if color
+    #     printstyled(io, noccupied_hwthreads, "\n";
+    #         color = noccupied_hwthreads < njlthreads ? :red : :green)
+    # else
+    #     printstyled(io, noccupied_hwthreads, noccupied_hwthreads < njlthreads ? "(!)" : "",
+    #         "\n")
+    # end
+    # print(io, "└ Mapping (Thread => CPUID):")
+    # # print(io, "   ")
+    # for (tid, core) in pairs(threads_cpuids)
+    #     print(io, " $tid => $core,")
+    #     if tid == 5
+    #         print(io, " ...")
+    #         break
+    #     end
+    # end
+    # println(io)
+    # if blas
+    #     println(io)
+    #     libblas = BLAS_lib()
+    #     println(io, "BLAS: ", libblas)
+    #     if contains(libblas, "openblas")
+    #         print(io, "└ openblas_get_num_threads: ")
+    #         if color
+    #             printstyled(io, BLAS.get_num_threads(), "\n";
+    #                 color = _color_openblas_num_threads())
+    #         else
+    #             printstyled(io, BLAS.get_num_threads(),
+    #                 _color_openblas_num_threads() == :red ? "(!)" : "",
+    #                 "\n")
+    #         end
+    #         println(io)
+    #         _color_openblas_num_threads(; hints)
+    #     elseif contains(libblas, "mkl")
+    #         print(io, "├ mkl_get_num_threads: ")
+    #         if color
+    #             printstyled(io, BLAS.get_num_threads(), "\n";
+    #                 color = _color_mkl_num_threads())
+    #         else
+    #             printstyled(io, BLAS.get_num_threads(),
+    #                 _color_mkl_num_threads() == :red ? "(!)" : "",
+    #                 "\n")
+    #         end
+    #         println(io, "└ mkl_get_dynamic: ", Bool(mkl_get_dynamic()))
+    #         println(io)
+    #         _color_mkl_num_threads(; hints)
+    #     end
+    # end
+    # if masks
+    #     print_affinity_masks(; groupby, threadpool, io)
+    # end
+    # hints && _general_hints()
     return
 end
 
 function _visualize_affinity(io = getstdout();
-        thread_cpuids = getcpuids(),
+        threadpool = :default,
+        threads_cpuids = ThreadPinningCore.getcpuids(; threadpool),
         blocksize = 16,
         color = true,
         groupby = :sockets,
         slurm = false,
-        hyperthreading = hyperthreading_is_enabled())
-    ncpuids = ncputhreads()
-    cpuids_grouped = if groupby in (:sockets, :socket)
-        cpuids_per_socket()
+        hyperthreading = SysInfo.hyperthreading_is_enabled())
+    # preparation
+    ncputhreads = SysInfo.ncputhreads()
+    if groupby in (:sockets, :socket)
+        f = SysInfo.socket
+        n = SysInfo.nsockets()
     elseif groupby in (:numa, :NUMA)
-        cpuids_per_numa()
+        f = SysInfo.numa
+        n = SysInfo.nnuma()
     elseif groupby in (:core, :cores)
-        cpuids_per_core()
+        f = SysInfo.core
+        n = SysInfo.ncores()
     else
-        [cpuids_all()]
+        (i) -> SysInfo.node()
+        n = 1
     end
     if slurm
         slurm_mask = SLURM.get_cpu_mask()
@@ -197,32 +191,35 @@ function _visualize_affinity(io = getstdout();
             slurm_cpuids = Int[]
         end
     end
+
+    # printing
     printstyled(io, "| "; bold = true)
-    for (i, cpuids) in pairs(cpuids_grouped)
+    for i in 1:n
+        cpuids = f(i)
         for (k, cpuid) in pairs(cpuids)
             if slurm && !(cpuid in slurm_cpuids)
                 print(io, ".")
                 # continue
             else
                 if color
-                    if cpuid in thread_cpuids
+                    if cpuid in threads_cpuids
                         printstyled(io, cpuid;
                             bold = true,
-                            color = if (hyperthreading && ishyperthread(cpuid))
+                            color = if (hyperthreading && SysInfo.ishyperthread(cpuid))
                                 :light_magenta
                             else
                                 :yellow
                             end)
                     else
                         printstyled(io, cpuid;
-                            color = if (hyperthreading && ishyperthread(cpuid))
+                            color = if (hyperthreading && SysInfo.ishyperthread(cpuid))
                                 :light_black
                             else
                                 :default
                             end)
                     end
                 else
-                    if cpuid in thread_cpuids
+                    if cpuid in threads_cpuids
                         printstyled(io, cpuid; bold = true)
                     else
                         print(io, "_")
@@ -235,9 +232,9 @@ function _visualize_affinity(io = getstdout();
             end
         end
         # print(io, " | ")
-        if ncpuids > 32
+        if ncputhreads > 32
             printstyled(io, " |"; bold = true)
-            if !(i == length(cpuids_grouped))
+            if !(i == n)
                 println(io)
                 printstyled(io, "| "; bold = true)
             end
@@ -262,7 +259,7 @@ function _visualize_affinity(io = getstdout();
     end
     if groupby in (:sockets, :socket)
         printstyled(io, "|"; bold = true)
-        print(io, " = Socket seperator")
+        print(io, " = CPU/Socket")
     elseif groupby in (:numa, :NUMA)
         printstyled(io, "|"; bold = true)
         print(io, " = NUMA seperator")
@@ -366,7 +363,7 @@ end
 function _general_hints()
     jlthreads = Threads.nthreads()
     cputhreads = ncputhreads()
-    thread_cpuids = getcpuids()
+    threads_cpuids = getcpuids()
     if jlthreads > cputhreads
         @warn("jlthreads > cputhreads. You should decrease the number of Julia threads "*
         "to $cputhreads.")
@@ -374,7 +371,7 @@ function _general_hints()
         @info("jlthreads < cputhreads. Perhaps increase number of Julia threads to "*
         "$cputhreads?")
     end
-    if length(unique(thread_cpuids)) < jlthreads
+    if length(unique(threads_cpuids)) < jlthreads
         @warn("Overlap: Some Julia threads are running on the same CPU-threads")
     end
     return

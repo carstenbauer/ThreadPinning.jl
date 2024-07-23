@@ -1,6 +1,7 @@
 module SLURM
 
-import ..ThreadPinning: ncputhreads, _execute
+import ThreadPinning: ncputhreads
+import ..Utility
 
 """
 Returns `true` if the current Julia session is (most likely) running in an
@@ -67,7 +68,7 @@ function query_cpu_ids()::Union{Nothing, Vector{Int}}
     end
     jobid = ENV["SLURM_JOBID"]
     cmd = `scontrol show job -d $(jobid)`
-    res = _execute(cmd)
+    res = Utility._execute(cmd)
     if res.exitcode != 0
         @debug("Received non-zero exit code.", cmd)
         return
