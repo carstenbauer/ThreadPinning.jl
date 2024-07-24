@@ -12,11 +12,12 @@ hyperthreading is disabled) they are running.
 Keyword arguments:
 * `compact` (default: `true`): Toggle between compact and "cores before hyperthreads" ordering.
 * `color` (default: `true`): Toggle between colored and black-and-white output.
-* `blocksize` (default: `32`): Wrap to a new line after `blocksize` many CPU-threads.
+* `blocksize` (default: `16`): Wrap to a new line after `blocksize` many CPU-threads.
+   May also be set to `:numa` in which case the line break will occur after each numa domain.
 * `hyperthreads` (default: `true` if auto-detected): If `true`, we (try to) highlight CPU-threads
   that aren't the first threads within a CPU-core.
 * `blas` (default: `false`): Show information about BLAS threads as well.
-* `slurm` (default: `false`): Only show the part of the system that is covered by the active SLURM session.
+* `slurm` (default: `false`): Only show the part of the system that is covered by the active SLURM allocation.
 * `hints` (default: `false`): Give some hints about how to improve the threading related
   settings.
 * `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, `:cores`, or `:none`.
@@ -50,17 +51,24 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         logical = false, efficiency = SysInfo.ncorekinds() > 1,
         hyperthreads = SysInfo.hyperthreading_is_enabled(),
         kwargs...)
+    # which sys object
+    sys = !slurm ? SysInfo.stdsys() : SLURM.slurmsys()
+
     # print header
-    SysInfo.Internals._print_sysinfo_header(; io, gpu = false)
+    SysInfo.Internals._print_sysinfo_header(;
+        sys = SysInfo.stdsys(), io, gpu = false, always_show_total = true)
 
     # slurm info
     if slurm
         if SLURM.isslurmjob()
+            ncput = SysInfo.ncputhreads(; sys)
             printstyled(io,
                 "\nSLURM: ",
-                SLURM.ncpus_per_task(),
-                " assigned CPU-threads\n";
-                color = color ? :light_cyan : :default)
+                ncput,
+                " assigned CPU-threads",
+                ncput == SysInfo.ncputhreads() ? " (entire node).\n" :
+                ". Will only show those below.\n";
+                color = color ? :red : :default)
         else
             printstyled(io,
                 "\nSLURM: Session doesn't seem to be running in a SLURM allocation.\n";
@@ -69,15 +77,15 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     else
         if SLURM.isslurmjob()
             printstyled(io,
-                "\nYou seem to be running this inside of a SLURM Session. Consider using `threadinfo(; slurm=true)`.\n";
+                "\nYou seem to be inside of a SLURM allocation. Consider using `threadinfo(; slurm=true)`.\n";
                 color = color ? :red : :default)
         end
     end
-    if !efficiency && SysInfo.ncorekinds() > 1
+    if !efficiency && SysInfo.ncorekinds(; sys) > 1
         printstyled(io,
             "\nYour system seems to have CPU-cores of varying power efficiency. Consider using `threadinfo(; efficiency=true)`.\n";
             color = color ? :red : :default)
-    elseif efficiency && SysInfo.ncorekinds() == 1
+    elseif efficiency && SysInfo.ncorekinds(; sys) == 1
         printstyled(io,
             "\nYour system doesn't seem to multiple CPU-core kinds. Won't be highlighting any efficiency cores.`.\n";
             color = color ? :red : :default)
@@ -111,7 +119,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     println(io, "\n")
 
     # visualization
-    _visualize_affinity(;
+    _visualize_affinity(; sys,
         threadpool, threads_cpuids, color, groupby, slurm, compact,
         logical, efficiency, hyperthreads, kwargs...)
 
@@ -160,17 +168,26 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     #         _color_mkl_num_threads(; hints)
     #     end
     # end
-    # if masks
-    #     print_affinity_masks(; groupby, threadpool, io)
-    # end
+    if masks
+        print_affinity_masks(; groupby, threadpool, io)
+    end
     # hints && _general_hints()
     return
 end
 
+function choose_blocksize(io, sys)
+    _, cols = displaysize(io)
+    n = SysInfo.ncputhreads(; sys)
+    ndigits = floor(Int, log10(n)) + 1
+    blocksize = (cols - 10) ÷ (ndigits + 1)
+    return min(blocksize, 16)
+end
+
 function _visualize_affinity(io = getstdout();
+        sys = SysInfo.stdsys(),
         threadpool = :default,
         threads_cpuids = ThreadPinningCore.getcpuids(; threadpool),
-        blocksize = 16,
+        blocksize = choose_blocksize(io, sys),
         color = true,
         groupby = :sockets,
         slurm = false,
@@ -179,36 +196,25 @@ function _visualize_affinity(io = getstdout();
         efficiency = false,
         hyperthreads = false)
     # preparation
-    ncputhreads = SysInfo.ncputhreads()
+    ncputhreads = SysInfo.ncputhreads(; sys)
     if groupby in (:sockets, :socket)
-        f = (i) -> SysInfo.socket(i; compact)
-        n = SysInfo.nsockets()
+        f = (i) -> SysInfo.socket(i; compact, sys)
+        n = SysInfo.nsockets(; sys)
         label = "CPU socket"
     elseif groupby in (:numa, :NUMA)
-        f = (i) -> SysInfo.numa(i; compact)
-        n = SysInfo.nnuma()
+        f = (i) -> SysInfo.numa(i; compact, sys)
+        n = SysInfo.nnuma(; sys)
         label = "NUMA domain"
     elseif groupby in (:core, :cores)
-        f = SysInfo.core
-        n = SysInfo.ncores()
+        f = (i) -> SysInfo.core(i; sys)
+        n = SysInfo.ncores(; sys)
         label = "Core"
     else
         throw(ArgumentError("Invalid groupby argument. Valid arguments are :socket, :numa, and :core."))
     end
 
-    if slurm
-        slurm_mask = SLURM.get_cpu_mask()
-        if !isnothing(slurm_mask)
-            slurm_cpuids = Int[c for (i, c) in pairs(cpuids_all()) if slurm_mask[i] == 1]
-        else
-            slurm_cpuids = SLURM.query_cpu_ids()
-        end
-        if isnothing(slurm_cpuids)
-            slurm_cpuids = Int[]
-        end
-    end
-
-    id = SysInfo.id
+    blocksize_was_numa = blocksize == :numa
+    id = (i) -> SysInfo.id(i; sys)
 
     # printing loop
     for i in 1:n
@@ -216,38 +222,36 @@ function _visualize_affinity(io = getstdout();
         printstyled(io, "$(label) $i\n"; bold = true, color = color ? :cyan : :default)
         print(io, "  ")
         for (k, cpuid) in pairs(cpuids)
-            if slurm && !(cpuid in slurm_cpuids)
-                print(io, ".")
-                # continue
-            else
-                if color
-                    if cpuid in threads_cpuids
-                        colorval = if count(==(cpuid), threads_cpuids) > 1
-                            :red
-                        elseif (hyperthreads && SysInfo.ishyperthread(cpuid))
-                            :light_magenta
-                        else
-                            :yellow
-                        end
-                        printstyled(io, logical ? id(cpuid) : cpuid;
-                            bold = true,
-                            color = color ? colorval : :default,
-                            underline = efficiency && SysInfo.isefficiencycore(cpuid))
+            if blocksize_was_numa && groupby in (:sockets, :socket)
+                blocksize = length(SysInfo.numa(SysInfo.cpuid_to_numanode(cpuid); sys))
+            end
+            if color
+                if cpuid in threads_cpuids
+                    colorval = if count(==(cpuid), threads_cpuids) > 1
+                        :red
+                    elseif (hyperthreads && SysInfo.ishyperthread(cpuid; sys))
+                        :light_magenta
                     else
-                        printstyled(io, logical ? id(cpuid) : cpuid;
-                            color = if (hyperthreads && SysInfo.ishyperthread(cpuid))
-                                :light_black
-                            else
-                                :default
-                            end,
-                            underline = efficiency && SysInfo.isefficiencycore(cpuid))
+                        :yellow
                     end
+                    printstyled(io, logical ? id(cpuid) : cpuid;
+                        bold = true,
+                        color = color ? colorval : :default,
+                        underline = efficiency && SysInfo.isefficiencycore(cpuid; sys))
                 else
-                    if cpuid in threads_cpuids
-                        printstyled(io, logical ? id(cpuid) : cpuid; bold = true)
-                    else
-                        print(io, "_")
-                    end
+                    printstyled(io, logical ? id(cpuid) : cpuid;
+                        color = if (hyperthreads && SysInfo.ishyperthread(cpuid; sys))
+                            :light_black
+                        else
+                            :default
+                        end,
+                        underline = efficiency && SysInfo.isefficiencycore(cpuid; sys))
+                end
+            else
+                if cpuid in threads_cpuids
+                    printstyled(io, logical ? id(cpuid) : cpuid; bold = true)
+                else
+                    print(io, "_")
                 end
             end
             if !(cpuid == last(cpuids))

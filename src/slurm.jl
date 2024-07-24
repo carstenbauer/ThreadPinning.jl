@@ -2,6 +2,16 @@ module SLURM
 
 import ThreadPinning: ncputhreads
 import ..Utility
+import SysInfo
+
+const sys = Ref{Union{Nothing, SysInfo.Internals.System}}(nothing)
+
+function slurmsys()
+    if isnothing(sys[])
+        sys[] = SysInfo.getsystem(; backend = :hwloc, disallowed = false)
+    end
+    return sys[]
+end
 
 """
 Returns `true` if the current Julia session is (most likely) running in an
@@ -18,11 +28,31 @@ function hasfullnode()
     if !isslurmjob()
         return true
     end
-    slurm_cpus_on_node = get(ENV, "SLURM_CPUS_ON_NODE", nothing)
-    if !isnothing(slurm_cpus_on_node)
-        return parse(Int64, slurm_cpus_on_node) == ncputhreads()
+    ncpus_on_node = get_cpus_on_node()
+    if !isnothing(ncpus_on_node)
+        return ncpus_on_node == SysInfo.ncputhreads()
     end
     return true
+end
+
+"""
+Returns the number of CPU-threads that are assigned to the process within the SLURM
+allocation. (This isn't 100% reliable!)
+"""
+function ncputhreads_assigned()::Int
+    ncpus_per_task = get_cpus_per_task()
+    if !isnothing(ncpus_per_task)
+        return ncpus_per_task
+    end
+    slurm_mask = get_cpu_mask()
+    if !isnothing(slurm_mask)
+        return count(isequal(1), slurm_mask)
+    end
+    ncpus_on_node = get_cpus_on_node()
+    if !isnothing(ncpus_on_node)
+        return ncpus_on_node
+    end
+    return
 end
 
 function get_cpu_mask_str()
@@ -43,23 +73,27 @@ end
 
 function get_cpu_mask(mask_str = get_cpu_mask_str())
     if isnothing(mask_str)
-        @debug("`get_cpu_mask_str()` returned nothing. Neither `SLURM_CPU_BIND_LIST` nor `SLURM_CPU_BIN` seems to be set?")
+        @debug("`get_cpu_mask_str()` returned nothing. Neither `SLURM_CPU_BIND_LIST` nor `SLURM_CPU_BIND` seems to be set?")
         return
     end
     mask = parse(Int, mask_str)
     return digits(mask; base = 2, pad = ncputhreads())
 end
 
-function ncpus_per_task()::Int
+function get_cpus_per_task()
     n = get(ENV, "SLURM_CPUS_PER_TASK", nothing)
     if !isnothing(n)
         return parse(Int, n)
     end
-    slurm_mask = get_cpu_mask()
-    if !isnothing(slurm_mask)
-        return count(isequal(1), slurm_mask)
+    return
+end
+
+function get_cpus_on_node()
+    slurm_cpus_on_node = get(ENV, "SLURM_CPUS_ON_NODE", nothing)
+    if !isnothing(slurm_cpus_on_node)
+        return parse(Int64, slurm_cpus_on_node)
     end
-    return 0
+    return
 end
 
 function query_cpu_ids()::Union{Nothing, Vector{Int}}
