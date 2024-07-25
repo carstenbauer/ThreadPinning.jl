@@ -239,7 +239,6 @@ function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
     else
         cpuids = Utility.affinitymask2cpuids(mask; compact = true)
     end
-    @show cpuids
     pinthreads(cpuids; nthreads, warn, kwargs...)
     return
 end

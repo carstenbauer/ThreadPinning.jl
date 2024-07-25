@@ -15,24 +15,29 @@ getstdout() = something(DEFAULT_IO[], stdout)
 # includes
 include("public_macro.jl")
 include("utility.jl")
-# @static if Sys.islinux()
 include("slurm.jl")
 include("threadinfo.jl")
 include("querying.jl")
-include("pinning.jl")
-# include("pinning_mpi.jl")
-# include("setaffinity.jl")
-# include("likwid-pin.jl")
-# include("mkl.jl")
-# include("openblas.jl")
-# include("latency.jl")
-# else
-#     pinthreads(args...; kwargs...) = nothing
-#     pinthread(args...; kwargs...) = nothing
-#     setaffinity(args...; kwargs...) = nothing
-#     pinthreads_likwidpin(args...; kwargs...) = nothing
-#     pinthreads_mpi(args...; kwargs...) = nothing
-# end
+@static if Sys.islinux()
+    include("pinning.jl")
+    # include("pinning_mpi.jl")
+    # include("setaffinity.jl")
+    # include("likwid-pin.jl")
+    # include("mkl.jl")
+    # include("openblas.jl")
+    # include("latency.jl")
+else
+    # make core pinning functions no-ops
+    pinthreads(args...; kwargs...) = nothing
+    pinthread(args...; kwargs...) = nothing
+    unpinthreads(args...; kwargs...) = nothing
+    unpinthread(args...; kwargs...) = nothing
+    setaffinity(args...; kwargs...) = nothing
+    setaffinity_cpuids(args...; kwargs...) = nothing
+    with_pinthreads(f, args...; kwargs...) = f()
+    # pinthreads_likwidpin(args...; kwargs...) = nothing
+    # pinthreads_mpi(args...; kwargs...) = nothing
+end
 # include("preferences.jl")
 
 # function _try_get_autoupdate()
