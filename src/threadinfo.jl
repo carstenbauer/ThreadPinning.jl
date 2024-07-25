@@ -289,7 +289,7 @@ function visualization(io = getstdout();
         if efficiency
             print(io, ", ")
             printstyled(io, "#"; underline = true)
-            print(io, " = Julia thread on EC")
+            print(io, " = Efficiency core")
         end
         println(io)
     end
