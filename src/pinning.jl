@@ -48,9 +48,8 @@ Simply provide an `AbstractVector{<:Integer}` of CPU IDs. The latter are expecte
 * `:random`: pin threads randomly to CPU-threads
 * `:current`: pin threads to the CPU-threads they are currently running on
 * `:firstn`: pin threads to CPU-threads in "physical" order (as specified by lscpu).
-* `:affinitymask`: pin threads to different CPU-threads in accordance with their
-                   affinity mask (must be the same for all of them). By default,
-                   `hyperthreads_last=true`.
+* `:affinitymask`: pin threads to different CPU-threads in accordance with the process
+                   affinity. By default, `hyperthreads_last=true`.
 
 **3) Logical Specification**
 
@@ -156,6 +155,19 @@ import ThreadPinningCore
 import SysInfo
 import ..Utility
 
+# direct forwards
+setaffinity(mask; kwargs...) = ThreadPinningCore.setaffinity(mask; kwargs...)
+unpinthread(; kwargs...) = ThreadPinningCore.unpinthread(; kwargs...)
+unpinthreads(; kwargs...) = ThreadPinningCore.unpinthreads(; kwargs...)
+with_pinthreads(args...; kwargs...) = ThreadPinningCore.with_pinthreads(args...; kwargs...)
+
+function setaffinity_cpuids(cpuids::AbstractVector{<:Integer}; kwargs...)
+    _check_cpuids(cpuids)
+    mask = Utility.cpuids2affinitymask(cpuids)
+    ThreadPinningCore.setaffinity(mask; kwargs...)
+    return
+end
+
 function pinthread(
         cpuid::Integer; warn::Bool = ThreadPinningCore.is_first_pin_attempt(), kwargs...)
     if warn
@@ -168,130 +180,88 @@ end
 
 function pinthreads(cpuids::AbstractVector{<:Integer};
         warn::Bool = ThreadPinningCore.is_first_pin_attempt(),
-        force = true,
-        threadpool = :default,
-        nthreads = nothing)
-    if force || ThreadPinningCore.is_first_pin_attempt()
-        if warn
-            # _check_environment()
-            # _check_slurm()
-        end
-        _check_cpuids(cpuids)
-        tids = ThreadPinningCore.threadids(; threadpool)
-        # TODO: maybe add `periodic` kwarg for PBC as alternative to strict `min` below.
-        if isnothing(nthreads)
-            nthreads = length(tids)
-        end
-        limit = min(length(cpuids), nthreads)
-        @debug("pinthreads", limit, nthreads, tids)
-        for (i, tid) in pairs(@view(tids[1:limit]))
-            pinthread(cpuids[i]; threadid = tid, warn = false)
-        end
+        kwargs...)
+    _check_cpuids(cpuids)
+    if warn
+        # _check_environment()
+        # _check_slurm()
     end
+    ThreadPinningCore.pinthreads(cpuids; kwargs...)
     return
 end
 
-# # concatenation
-# function pinthreads(cpuids_vec::AbstractVector{T};
-#         kwargs...) where {T <: AbstractVector{<:Integer}}
-#     return pinthreads(reduce(vcat, cpuids_vec); kwargs...)
-# end
-# function pinthreads(cpuids_args::AbstractVector{<:Integer}...; kwargs...)
-#     return pinthreads(reduce(vcat, cpuids_args); kwargs...)
-# end
+# concatenation
+function pinthreads(cpuids_vec::AbstractVector{T};
+        kwargs...) where {T <: AbstractVector{<:Integer}}
+    return pinthreads(reduce(vcat, cpuids_vec); kwargs...)
+end
+function pinthreads(cpuids_args::AbstractVector{<:Integer}...; kwargs...)
+    return pinthreads(reduce(vcat, cpuids_args); kwargs...)
+end
 
-# # convenience symbols
-# pinthreads(symb::Symbol; kwargs...) = pinthreads(Val(symb); kwargs...)
-# function pinthreads(::Union{Val{:compact}, Val{:threads}, Val{:cputhreads}}; kwargs...)
-#     pinthreads(node(; compact = true); kwargs...)
-# end
-# function pinthreads(::Union{Val{:cores}}; kwargs...)
-#     pinthreads(node(; compact = false); kwargs...)
-# end
-# function pinthreads(::Val{:sockets}; compact = false, kwargs...)
-#     pinthreads(sockets(; compact); kwargs...)
-# end
-# function pinthreads(::Union{Val{:numa}, Val{:numas}}; compact = false, kwargs...)
-#     pinthreads(numas(; compact); kwargs...)
-# end
-# pinthreads(::Val{:random}; kwargs...) = pinthreads(node(; shuffle = true); kwargs...)
-# pinthreads(::Val{:firstn}; kwargs...) = pinthreads(cpuids_all(); kwargs...)
-# pinthreads(::Val{:current}; kwargs...) = pinthreads(getcpuids(); kwargs...)
-# function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
-#         nthreads = Threads.nthreads(), warn = false, kwargs...)
-#     mask = initial_affinity_mask()
-#     isnothing(mask) && error("No (or non-unique) external affinity mask set.")
-#     cpuids = affinitymask2cpuids(mask)
-#     if length(cpuids) < nthreads
-#         error("More Julia threads than CPU-threads specified by affinity mask.")
-#     end
-#     if hyperthreads_last
-#         # sort cpuids such that hyperthreads come last
-#         by_func(c) = (c, ishyperthread(c))
-#         lt_func(x, y) =
-#             if x[2] != y[2]
-#                 return x[2] < y[2] # non-hyperthreads first
-#             else
-#                 return x[1] < y[1] # lower cpuid first
-#             end
-#         sort!(cpuids; lt = lt_func, by = by_func)
-#     end
-#     pinthreads(cpuids; nthreads, warn, kwargs...)
-#     return
-# end
-
-# function with_pinthreads(f::F,
-#         args...;
-#         threadpool = :default,
-#         soft = false,
-#         kwargs...) where {F}
-#     masks_prior = uv_thread_getaffinity.(threadids(threadpool))
-#     cpuids_prior = getcpuids()
-#     pinthreads(args...; threadpool, kwargs...)
-#     res = f()
-#     soft || pinthreads(cpuids_prior)
-#     uv_thread_setaffinity.(threadids(threadpool), masks_prior)
-#     return res
-# end
-
-# function unpinthreads()
-#     masksize = uv_cpumask_size()
-#     cpumask = zeros(Cchar, masksize)
-#     fill!(cpumask, 1)
-#     for tid in threadids()
-#         uv_thread_setaffinity(tid, cpumask)
-#     end
-#     return
-# end
-
-# function unpinthread(threadid::Integer)
-#     if !(1 ≤ threadid ≤ Threads.nthreads())
-#         throw(ArgumentError("Invalid thread id (out of bounds)."))
-#     end
-#     masksize = uv_cpumask_size()
-#     cpumask = zeros(Cchar, masksize)
-#     fill!(cpumask, 1)
-#     return uv_thread_setaffinity(threadid, cpumask)
-# end
+# convenience symbols
+pinthreads(symb::Symbol; kwargs...) = pinthreads(Val(symb); kwargs...)
+function pinthreads(::Union{Val{:compact}, Val{:threads}, Val{:cputhreads}}; kwargs...)
+    pinthreads(SysInfo.node(; compact = true); kwargs...)
+end
+function pinthreads(::Union{Val{:cores}}; kwargs...)
+    pinthreads(SysInfo.node(; compact = false); kwargs...)
+end
+function pinthreads(::Val{:sockets}; compact = false, kwargs...)
+    pinthreads(sockets(; compact); kwargs...)
+end
+function pinthreads(::Union{Val{:numa}, Val{:numas}}; compact = false, kwargs...)
+    pinthreads(numas(; compact); kwargs...)
+end
+function pinthreads(::Val{:random}; kwargs...)
+    pinthreads(SysInfo.node(; shuffle = true); kwargs...)
+end
+pinthreads(::Val{:firstn}; kwargs...) = pinthreads(sort(SysInfo.cpuids()); kwargs...)
+pinthreads(::Val{:current}; kwargs...) = pinthreads(ThreadPinning.getcpuids(); kwargs...)
+function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
+        nthreads = Threads.nthreads(), warn = false, kwargs...)
+    mask = ThreadPinningCore.get_initial_affinity_mask()
+    isnothing(mask) && error("No (or non-unique) external affinity mask set.")
+    if hyperthreads_last
+        cpuids = Utility.affinitymask2cpuids(mask)
+        # should be unnecessary now because cpuids are sorted interally,
+        # see compact for SysInfo.cpuids
+        #
+        # sort cpuids such that hyperthreads come last
+        # by_func(c) = (c, SysInfo.ishyperthread(c))
+        # lt_func(x, y) =
+        #     if x[2] != y[2]
+        #         return x[2] < y[2] # non-hyperthreads first
+        #     else
+        #         return x[1] < y[1] # lower cpuid first
+        #     end
+        # sort!(cpuids; lt = lt_func, by = by_func)
+    else
+        cpuids = Utility.affinitymask2cpuids(mask; compact = true)
+    end
+    @show cpuids
+    pinthreads(cpuids; nthreads, warn, kwargs...)
+    return
+end
 
 # Potentially throw warnings if the environment is such that thread pinning might not work.
-function _check_environment()
-    if Base.Threads.nthreads() > 1 && mkl_is_loaded() && mkl_get_dynamic() == 1
-        @warn("Found MKL_DYNAMIC == true. Be aware that calling an MKL function can "*
-              "spoil the pinning of Julia threads! Use `ThreadPinning.mkl_set_dynamic(0)` "*
-              "to be safe. See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
-    end
-    return
-end
+# function _check_environment()
+#     if Base.Threads.nthreads() > 1 && mkl_is_loaded() && mkl_get_dynamic() == 1
+#         @warn("Found MKL_DYNAMIC == true. Be aware that calling an MKL function can "*
+#               "spoil the pinning of Julia threads! Use `ThreadPinning.mkl_set_dynamic(0)` "*
+#               "to be safe. See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
+#     end
+#     return
+# end
 
-function _check_slurm()
-    if SLURM.isslurmjob() && !SLURM.hasfullnode()
-        @warn("You seem to be running in a SLURM allocation that doesn't cover the entire "*
-              "node. Most likely, only a subset of the available CPU-threads will be "*
-              "accessible. This might lead to unexpected/wrong pinning results.")
-    end
-    return
-end
+# function _check_slurm()
+#     if SLURM.isslurmjob() && !SLURM.hasfullnode()
+#         @warn("You seem to be running in a SLURM allocation that doesn't cover the entire "*
+#               "node. Most likely, only a subset of the available CPU-threads will be "*
+#               "accessible. This might lead to unexpected/wrong pinning results.")
+#     end
+#     return
+# end
 
 function _check_cpuid(cpuid)
     if !(cpuid in SysInfo.cpuids())
@@ -309,30 +279,5 @@ function _check_cpuids(cpuids)
     end
     return
 end
-
-function setaffinity_cpuids(cpuids::AbstractVector{<:Integer}; kwargs...)
-    _check_cpuids(cpuids)
-    mask = Utility.cpuids2affinitymask(cpuids)
-    ThreadPinningCore.setaffinity(mask; kwargs...)
-    return
-end
-
-setaffinity(mask; kwargs...) = ThreadPinningCore.setaffinity(mask; kwargs...)
-
-# # global "constants"
-# const INITIAL_AFFINITY_MASK = Ref{Union{Nothing, Vector{Cchar}}}(nothing)
-
-# get_initial_affinity_mask() = INITIAL_AFFINITY_MASK[]
-# function set_initial_affinity_mask()
-#     masks = [getaffinity(; threadid = id) for id in 1:Threads.nthreads()]
-#     mask = first(masks)
-#     if !all(isequal(mask), masks)
-#         @debug("No unique initial affinity mask.")
-#         INITIAL_AFFINITY_MASK[] = nothing
-#     else
-#         INITIAL_AFFINITY_MASK[] = mask
-#     end
-#     return
-# end
 
 end # module
