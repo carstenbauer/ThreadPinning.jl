@@ -20,11 +20,9 @@ include("querying.jl")
 @static if Sys.islinux()
     include("pinning.jl")
     # include("pinning_mpi.jl")
-    # include("setaffinity.jl")
     # include("likwid-pin.jl")
     # include("mkl.jl")
     # include("openblas.jl")
-    # include("latency.jl")
 else
     # make core pinning functions no-ops
     pinthreads(args...; kwargs...) = nothing
@@ -98,65 +96,6 @@ end
 #     return
 # end
 
-# precompile
-# import PrecompileTools
-# PrecompileTools.@compile_workload begin
-#     @static if Sys.islinux()
-#         try
-#             ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
-#             update_sysinfo!()
-#             lscpu_string()
-#             cs = cpuids_all()[1:4]
-#             pinthread(cs[2]; warn = false)
-#             pinthreads(cs; warn = false)
-#             if all(==(1), diff(cs))
-#                 pinthreads(minimum(cs):maximum(cs); warn = false)
-#             end
-#             pinthreads(:compact; nthreads = 1, warn = false)
-#             pinthreads(:cores; nthreads = 1, warn = false)
-#             pinthreads(:random; nthreads = 1, warn = false)
-#             pinthreads(:current; nthreads = 1, warn = false)
-#             if nsockets() > 1 &&
-#                all(x -> length(x) == length(cpuids_per_socket()[1]), cpuids_per_socket())
-#                 pinthreads(:sockets; nthreads = 1, warn = false)
-#             end
-#             if nnuma() > 1 &&
-#                all(x -> length(x) == length(cpuids_per_numa()[1]), cpuids_per_numa())
-#                 pinthreads(:numa; nthreads = 1, warn = false)
-#             end
-#             setaffinity(node(1:2))
-#             getcpuid()
-#             getcpuids()
-#             getnumanode()
-#             getnumanodes()
-#             nsockets()
-#             nnuma()
-#             cpuids_all()
-#             cpuids_per_socket()
-#             cpuids_per_numa()
-#             cpuids_per_node()
-#             cpuids_per_core()
-#             ncputhreads()
-#             ncputhreads_per_socket()
-#             ncputhreads_per_numa()
-#             ncputhreads_per_core()
-#             ncores()
-#             ncores_per_socket()
-#             ncores_per_numa()
-#             socket(1, 1:1)
-#             socket(1, [1])
-#             numa(1, 1:1)
-#             numa(1, [1])
-#             node(1:1)
-#             node([1])
-#             core(1, [1])
-#             sockets()
-#             numas()
-#         catch err
-#         end
-#     end
-# end
-
 # exports
 ## threadinfo
 export threadinfo
@@ -176,5 +115,72 @@ export setaffinity, setaffinity_cpuids
 ## re-export
 using StableTasks: @spawnat
 export @spawnat
+
+# precompile
+import PrecompileTools
+PrecompileTools.@compile_workload begin
+    try
+        redirect_stdout(Base.DevNull()) do
+            threadinfo()
+            threadinfo(; slurm = true)
+            threadinfo(; groupby = :numa)
+            threadinfo(; compact = false)
+
+            @static if Sys.islinux()
+                c = getcpuid()
+                pinthread(c; warn = false)
+                pinthreads([c]; warn = false)
+                pinthreads(c:c; warn = false)
+                pinthreads(:compact; nthreads = 1, warn = false)
+                pinthreads(:cores; nthreads = 1, warn = false)
+                pinthreads(:random; nthreads = 1, warn = false)
+                pinthreads(:current; nthreads = 1, warn = false)
+                if nsockets() > 1
+                    pinthreads(:sockets; nthreads = 1, warn = false)
+                end
+                if nnuma() > 1
+                    pinthreads(:numa; nthreads = 1, warn = false)
+                end
+                setaffinity_cpuids([c])
+                getcpuid()
+                getcpuids()
+                getnumanode()
+                getnumanodes()
+                nsockets()
+                nnuma()
+                cpuids()
+                # cpuids_per_socket()
+                # cpuids_per_numa()
+                # cpuids_per_node()
+                # cpuids_per_core()
+                ncputhreads()
+                # ncputhreads_per_socket()
+                # ncputhreads_per_numa()
+                # ncputhreads_per_core()
+                ncores()
+                # ncores_per_socket()
+                # ncores_per_numa()
+                socket(1, 1:1)
+                socket(1, [1])
+                numa(1, 1:1)
+                numa(1, [1])
+                node(1:1)
+                node([1])
+                core(1, [1])
+                sockets()
+                numas()
+                ispinned()
+                ishyperthread(c)
+                hyperthreading_is_enabled()
+                unpinthread()
+                unpinthreads()
+                printaffinity()
+                printaffinities()
+                visualize_affinity()
+            end
+        end
+    catch err
+    end
+end
 
 end

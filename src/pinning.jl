@@ -208,16 +208,16 @@ function pinthreads(::Union{Val{:cores}}; kwargs...)
     pinthreads(SysInfo.node(; compact = false); kwargs...)
 end
 function pinthreads(::Val{:sockets}; compact = false, kwargs...)
-    pinthreads(sockets(; compact); kwargs...)
+    pinthreads(SysInfo.sockets(; compact); kwargs...)
 end
 function pinthreads(::Union{Val{:numa}, Val{:numas}}; compact = false, kwargs...)
-    pinthreads(numas(; compact); kwargs...)
+    pinthreads(SysInfo.numas(; compact); kwargs...)
 end
 function pinthreads(::Val{:random}; kwargs...)
     pinthreads(SysInfo.node(; shuffle = true); kwargs...)
 end
 pinthreads(::Val{:firstn}; kwargs...) = pinthreads(sort(SysInfo.cpuids()); kwargs...)
-pinthreads(::Val{:current}; kwargs...) = pinthreads(ThreadPinning.getcpuids(); kwargs...)
+pinthreads(::Val{:current}; kwargs...) = pinthreads(ThreadPinningCore.getcpuids(); kwargs...)
 function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
         nthreads = Threads.nthreads(), warn = false, kwargs...)
     mask = ThreadPinningCore.get_initial_affinity_mask()
@@ -253,14 +253,14 @@ end
 #     return
 # end
 
-# function _check_slurm()
-#     if SLURM.isslurmjob() && !SLURM.hasfullnode()
-#         @warn("You seem to be running in a SLURM allocation that doesn't cover the entire "*
-#               "node. Most likely, only a subset of the available CPU-threads will be "*
-#               "accessible. This might lead to unexpected/wrong pinning results.")
-#     end
-#     return
-# end
+function _check_slurm()
+    if SLURM.isslurmjob() && !SLURM.hasfullnode()
+        @warn("You seem to be running in a SLURM allocation that doesn't cover the entire "*
+              "node. Most likely, only a subset of the available CPU-threads will be "*
+              "accessible. This might lead to unexpected/wrong pinning results.")
+    end
+    return
+end
 
 function _check_cpuid(cpuid)
     if !(cpuid in SysInfo.cpuids())
