@@ -13,22 +13,18 @@ const DEFAULT_IO = Ref{Union{IO, Nothing}}(nothing)
 getstdout() = something(DEFAULT_IO[], stdout)
 
 # includes
+include("public_macro.jl")
 include("utility.jl")
 # @static if Sys.islinux()
-# include("sysinfo.jl")
-include("lscpu_examples.jl")
-# include("libs/libc.jl")
-# include("libs/libuv.jl")
-# include("libs/libpthread.jl")
-include("querying.jl")
 include("slurm.jl")
+include("threadinfo.jl")
+include("querying.jl")
 include("pinning.jl")
 # include("pinning_mpi.jl")
 # include("setaffinity.jl")
 # include("likwid-pin.jl")
 # include("mkl.jl")
 # include("openblas.jl")
-include("threadinfo.jl")
 # include("latency.jl")
 # else
 #     pinthreads(args...; kwargs...) = nothing
@@ -158,43 +154,58 @@ include("threadinfo.jl")
 # end
 
 # exports
-export threadinfo,
-       pinthreads,
-       pinthreads_likwidpin,
-       pinthreads_mpi,
-       pinthread,
-       with_pinthreads,
-       setaffinity,
-       getcpuids,
-       getcpuid,
-       getnumanode,
-       getnumanodes,
-       unpinthreads,
-       unpinthread,
-       @tspawnat,
-       print_affinity_mask,
-       print_affinity_masks,
-       ncputhreads,
-       ncores,
-       nnuma,
-       nsockets,
-       ncputhreads_per_core,
-       ncputhreads_per_numa,
-       ncputhreads_per_socket,
-       ncores_per_numa,
-       ncores_per_socket,
-       hyperthreading_is_enabled,
-       ishyperthread,
-       cpuids_all,
-       cpuids_per_core,
-       cpuids_per_numa,
-       cpuids_per_socket,
-       cpuids_per_node,
-       node,
-       socket,
-       sockets,
-       numa,
-       numas,
-       core
+## threadinfo
+export threadinfo
+
+## querying
+export getcpuid, getcpuids, getaffinity, getnumanode, getnumanodes
+export core, numa, socket, node, cores, numas, sockets
+export printaffinity, printaffinities, visualize_affinity
+export ispinned, hyperthreading_is_enabled, ishyperthread
+export ncputhreads, ncores, nnuma, nsockets
+@public cpuids
+
+## pinning
+export pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
+export setaffinity, setaffinity_cpuids
+
+# export threadinfo,
+#        pinthreads,
+#        pinthreads_likwidpin,
+#        pinthreads_mpi,
+#        pinthread,
+#        with_pinthreads,
+#        setaffinity,
+#        getcpuids,
+#        getcpuid,
+#        getnumanode,
+#        getnumanodes,
+#        unpinthreads,
+#        unpinthread,
+#        @tspawnat,
+#        print_affinity_mask,
+#        print_affinity_masks,
+#        ncputhreads,
+#        ncores,
+#        nnuma,
+#        nsockets,
+#        ncputhreads_per_core,
+#        ncputhreads_per_numa,
+#        ncputhreads_per_socket,
+#        ncores_per_numa,
+#        ncores_per_socket,
+#        hyperthreading_is_enabled,
+#        ishyperthread,
+#        cpuids_all,
+#        cpuids_per_core,
+#        cpuids_per_numa,
+#        cpuids_per_socket,
+#        cpuids_per_node,
+#        node,
+#        socket,
+#        sockets,
+#        numa,
+#        numas,
+#        core
 #    cores
 end

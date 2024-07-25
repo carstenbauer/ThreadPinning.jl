@@ -1,5 +1,22 @@
 module Utility
 
+import ThreadPinningCore
+import SysInfo
+
+function cpuids2affinitymask(cpuids::AbstractVector{<:Integer})
+    mask = ThreadPinningCore.emptymask()
+    for (i, c) in pairs(SysInfo.cpuids())
+        if c in cpuids
+            mask[i] = one(eltype(mask))
+        end
+    end
+    return mask
+end
+
+function affinitymask2cpuids(mask::Vector{<:Integer})
+    return [i - 1 for (i, v) in enumerate(mask) if v == 1]
+end
+
 """
 # Examples
 ```julia

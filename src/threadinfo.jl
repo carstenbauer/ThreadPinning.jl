@@ -116,10 +116,10 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
             io, " (", Threads.nthreads(:default), " + ", Threads.nthreads(:interactive),
             ")"; bold = true, color = color ? :green : :default)
     end
-    println(io, "\n")
+    println(io)
 
     # visualization
-    _visualize_affinity(; sys,
+    visualization(; sys,
         threadpool, threads_cpuids, color, groupby, slurm, compact,
         logical, efficiency, hyperthreads, kwargs...)
 
@@ -183,7 +183,7 @@ function choose_blocksize(io, sys)
     return min(blocksize, 16)
 end
 
-function _visualize_affinity(io = getstdout();
+function visualization(io = getstdout();
         sys = SysInfo.stdsys(),
         threadpool = :default,
         threads_cpuids = ThreadPinningCore.getcpuids(; threadpool),
@@ -191,10 +191,11 @@ function _visualize_affinity(io = getstdout();
         color = true,
         groupby = :sockets,
         slurm = false,
-        compact = false,
+        compact = true,
         logical = false,
         efficiency = false,
-        hyperthreads = false)
+        hyperthreads = SysInfo.hyperthreading_is_enabled(),
+        legend = true)
     # preparation
     ncputhreads = SysInfo.ncputhreads(; sys)
     if groupby in (:sockets, :socket)
@@ -217,6 +218,7 @@ function _visualize_affinity(io = getstdout();
     id = (i) -> SysInfo.id(i; sys)
 
     # printing loop
+    println(io)
     for i in 1:n
         cpuids = f(i)
         printstyled(io, "$(label) $i\n"; bold = true, color = color ? :cyan : :default)
@@ -268,27 +270,29 @@ function _visualize_affinity(io = getstdout();
     println(io)
 
     # legend
-    println(io)
-    if color
-        printstyled(io, "#"; bold = true, color = color ? :yellow : :default)
-    else
-        printstyled(io, "#"; bold = true)
-    end
-    print(io, " = Julia thread")
-    if hyperthreads
+    if legend
+        println(io)
+        if color
+            printstyled(io, "#"; bold = true, color = color ? :yellow : :default)
+        else
+            printstyled(io, "#"; bold = true)
+        end
+        print(io, " = Julia thread")
+        if hyperthreads
+            print(io, ", ")
+            printstyled(io, "#"; bold = true, color = color ? :light_magenta : :default)
+            print(io, " = Julia thread on HT")
+        end
         print(io, ", ")
-        printstyled(io, "#"; bold = true, color = color ? :light_magenta : :default)
-        print(io, " = Julia thread on HT")
+        printstyled(io, "#"; bold = true, color = color ? :red : :default)
+        print(io, " = >1 Julia thread")
+        if efficiency
+            print(io, ", ")
+            printstyled(io, "#"; underline = true)
+            print(io, " = Julia thread on EC")
+        end
+        println(io)
     end
-    print(io, ", ")
-    printstyled(io, "#"; bold = true, color = color ? :red : :default)
-    print(io, " = >1 Julia thread")
-    if efficiency
-        print(io, ", ")
-        printstyled(io, "#"; underline = true)
-        print(io, " = Julia thread on EC")
-    end
-    println(io)
     return
 end
 

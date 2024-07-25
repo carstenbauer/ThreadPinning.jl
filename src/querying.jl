@@ -38,6 +38,11 @@ function sockets end
 function numas end
 
 """
+All valid CPU IDs on the system.
+"""
+function cpuids end
+
+"""
 Returns the ID (starting at zero) of the NUMA node corresponding to the CPU thread on
 which the calling thread is currently running. A `threadid` may be provided to consider
 a Julia thread that is different from the calling one.
@@ -65,6 +70,12 @@ function printaffinity end
 Print the affinity masks of all Julia threads. See [`printaffinity`](@ref) for options.
 """
 function printaffinities end
+
+"""
+Visualize the affinity mask of a Julia thread. Many of the keyword options of `threadinfo`
+work here as well.
+"""
+function visualize_affinity end
 
 """
 Get the thread affinity of a Julia thread. Returns the affinity mask as a vector of zeros
@@ -121,10 +132,10 @@ function ncores_per_socket end
 module Querying
 
 import ThreadPinning: getcpuid, getcpuids, getnumanode, getnumanodes
-import ThreadPinning: printaffinity, printaffinities, getaffinity
+import ThreadPinning: printaffinity, printaffinities, getaffinity, visualize_affinity
 import ThreadPinning: ispinned, ishyperthread, hyperthreading_is_enabled
 import ThreadPinning: ncputhreads, ncores, nnuma, nsockets, ncputhreads_per_core
-import ThreadPinning: core, numa, socket, node, cores, sockets, numas
+import ThreadPinning: core, numa, socket, node, cores, sockets, numas, cpuids
 
 # ncputhreads_per_numa, ncputhreads_per_socket, ncores_per_numa, ncores_per_socket,
 #                       cpuids_all, cpuids_per_core, cpuids_per_numa, cpuids_per_socket,
@@ -134,6 +145,8 @@ using ThreadPinning: getstdout
 using SysInfo: SysInfo
 using ThreadPinningCore: ThreadPinningCore
 using StableTasks: @fetchfrom
+import ..ThreadInfo
+import ..Utility
 
 # forwarding to SysInfo
 ncputhreads() = SysInfo.ncputhreads()
@@ -147,6 +160,7 @@ node(args...; kwargs...) = SysInfo.node(args...; kwargs...)
 cores(args...; kwargs...) = SysInfo.cores(args...; kwargs...)
 sockets(args...; kwargs...) = SysInfo.sockets(args...; kwargs...)
 numas(args...; kwargs...) = SysInfo.numas(args...; kwargs...)
+cpuids(args...; kwargs...) = collect(SysInfo.cpuids(args...; kwargs...))
 hyperthreading_is_enabled() = SysInfo.hyperthreading_is_enabled()
 ishyperthread(cpuid::Integer) = SysInfo.ishyperthread(cpuid)
 
@@ -186,10 +200,23 @@ function _affinity_to_string(mask; groupby = :sockets)
     str = "|"
     for s in 1:nf()
         cpuids = f(s)
-        idcs = SysInfo.id.(cpuids)
+        idcs = cpuids .+ 1
         str = string(str, bitstr[idcs], "|")
     end
     return str
+end
+
+function visualize_affinity(io = getstdout(); threadid::Integer = Threads.threadid())
+    mask = getaffinity(; threadid)
+    cpuids = Utility.affinitymask2cpuids(mask)
+    println(io)
+    printstyled(io, "Thread affinity of Julia thread $(threadid)."; bold = :true)
+    println(io)
+    ThreadInfo.visualization(io; threads_cpuids = cpuids, legend = false)
+    printstyled(io, "(The highlighted CPU-threads are set to 1 in the affinity mask.)";
+        color = :light_black)
+    println(io)
+    return
 end
 
 function getnumanode(; threadid::Union{Integer, Nothing} = nothing)
@@ -209,10 +236,6 @@ function getnumanodes(; threadpool = :default)::Vector{Int}
     end
     return numanodes
 end
-
-# function affinity_to_cpuids(mask::Vector{<:Integer})
-#     [SysInfo.cpuid(i) for (i, v) in enumerate(mask) if v == 1]
-# end
 
 # ncputhreads_per_core() = length.(unsafe_cpuids_per_core())
 

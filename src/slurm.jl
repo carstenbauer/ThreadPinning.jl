@@ -1,6 +1,5 @@
 module SLURM
 
-import ThreadPinning: ncputhreads
 import ..Utility
 import SysInfo
 
@@ -77,7 +76,7 @@ function get_cpu_mask(mask_str = get_cpu_mask_str())
         return
     end
     mask = parse(Int, mask_str)
-    return digits(mask; base = 2, pad = ncputhreads())
+    return digits(mask; base = 2, pad = SysInfo.ncputhreads())
 end
 
 function get_cpus_per_task()

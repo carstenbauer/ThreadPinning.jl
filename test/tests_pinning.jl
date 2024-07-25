@@ -153,15 +153,15 @@ end
 
 @testset "First pin attempt" begin
     @test isnothing(ThreadPinning.forget_pin_attempts())
-    @test ThreadPinning.first_pin_attempt()
+    @test ThreadPinningCore.is_first_pin_attempt()
     pinthreads(:random)
-    @test !ThreadPinning.first_pin_attempt()
+    @test !ThreadPinningCore.is_first_pin_attempt()
 
     # pinthreads with force=false
     ThreadPinning.forget_pin_attempts()
-    @test ThreadPinning.first_pin_attempt()
+    @test ThreadPinningCore.is_first_pin_attempt()
     pinthreads(:compact; force = false)
-    @test !ThreadPinning.first_pin_attempt()
+    @test !ThreadPinningCore.is_first_pin_attempt()
     cpuids = getcpuids()
     pinthreads(reverse(cpuids); force = false)
     @test getcpuids() == cpuids
