@@ -16,7 +16,7 @@ Keyword arguments:
    May also be set to `:numa` in which case the line break will occur after each numa domain.
 * `hyperthreads` (default: `true` if auto-detected): If `true`, we (try to) highlight CPU-threads
   that aren't the first threads within a CPU-core.
-* `blas` (default: `false`): Show information about BLAS threads as well.
+* `blas` (default: `false`): Visualize BLAS threads instead of Julia threads.
 * `slurm` (default: `false`): Only show the part of the system that is covered by the active SLURM allocation.
 * `hints` (default: `false`): Give some hints about how to improve the threading related
   settings.
@@ -92,26 +92,34 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     end
     println(io)
 
-    # query cpuids of Julia threads
+    # query cpuids of threads
+    local threadslabel
     @static if Sys.islinux()
-        threads_cpuids = ThreadPinningCore.getcpuids(; threadpool)
-        njlthreads = length(threads_cpuids)
-        if njlthreads == 0
-            printstyled(io, "No threads in threadpool :$threadpool.\n\n";
-                color = color ? :red : :default)
-            # return
+        if blas
+            threads_cpuids = ThreadPinningCore.openblas_getcpuids()
+            threadslabel = "BLAS"
+            nthreads = length(threads_cpuids)
+        else
+            threads_cpuids = ThreadPinningCore.getcpuids(; threadpool)
+            nthreads = length(threads_cpuids)
+            threadslabel = "Julia"
+            if nthreads == 0
+                printstyled(io, "No threads in threadpool :$threadpool.\n\n";
+                    color = color ? :red : :default)
+                # return
+            end
         end
     else
         threads_cpuids = Int[]
-        njlthreads = length(ThreadPinningCore.threadids(; threadpool))
+        nthreads = length(ThreadPinningCore.threadids(; threadpool))
         printstyled(
-            io, "Unsupported OS: Won't be able to highlight Julia threads.\n\n";
+            io, "Unsupported OS: Won't be able to highlight $(threadslabel) threads.\n\n";
             color = color ? :red : :default)
     end
 
-    printstyled(io, "Julia threads: \t", njlthreads;
-        bold = true, color = color ? :green : :default)
-    if threadpool == :all
+    printstyled(io, "$(threadslabel) threads: \t", nthreads;
+        bold = true, color = color ? (blas ? :red : :green) : :default)
+    if threadpool == :all && !blas
         printstyled(
             io, " (", Threads.nthreads(:default), " + ", Threads.nthreads(:interactive),
             ")"; bold = true, color = color ? :green : :default)
@@ -121,7 +129,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     # visualization
     visualization(; sys,
         threadpool, threads_cpuids, color, groupby, slurm, compact,
-        logical, efficiency, hyperthreads, kwargs...)
+        logical, efficiency, hyperthreads, threadslabel, kwargs...)
 
     # extra information
     @static if Sys.islinux()
@@ -187,6 +195,7 @@ function visualization(io = getstdout();
         sys = SysInfo.stdsys(),
         threadpool = :default,
         threads_cpuids = ThreadPinningCore.getcpuids(; threadpool),
+        threadslabel = "Julia",
         blocksize = choose_blocksize(io, sys),
         color = true,
         groupby = :sockets,
@@ -277,15 +286,15 @@ function visualization(io = getstdout();
         else
             printstyled(io, "#"; bold = true)
         end
-        print(io, " = Julia thread")
+        print(io, " = $(threadslabel) thread")
         if hyperthreads
             print(io, ", ")
             printstyled(io, "#"; bold = true, color = color ? :light_magenta : :default)
-            print(io, " = Julia thread on HT")
+            print(io, " = $(threadslabel) thread on HT")
         end
         print(io, ", ")
         printstyled(io, "#"; bold = true, color = color ? :red : :default)
-        print(io, " = >1 Julia thread")
+        print(io, " = >1 $(threadslabel) thread")
         if efficiency
             print(io, ", ")
             printstyled(io, "#"; underline = true)

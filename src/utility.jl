@@ -13,7 +13,7 @@ function cpuids2affinitymask(cpuids::AbstractVector{<:Integer})
     return mask
 end
 
-function affinitymask2cpuids(mask::Vector{<:Integer}; kwargs...)
+function affinitymask2cpuids(mask::Union{AbstractVector{<:Integer}, BitVector}; kwargs...)
     cpuids_all = SysInfo.cpuids(; kwargs...)
     return [cpuids_all[i] for (i, v) in enumerate(mask) if v == 1]
 end

@@ -206,8 +206,10 @@ function _affinity_to_string(mask; groupby = :sockets)
     return str
 end
 
-function visualize_affinity(io = getstdout(); threadid::Integer = Threads.threadid())
-    mask = getaffinity(; threadid)
+function visualize_affinity(io = getstdout(); threadid::Integer = Threads.threadid(), mask = nothing)
+    if isnothing(mask)
+        mask = getaffinity(; threadid)
+    end
     cpuids = Utility.affinitymask2cpuids(mask)
     println(io)
     printstyled(io, "Thread affinity of Julia thread $(threadid)."; bold = :true)
