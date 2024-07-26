@@ -1,11 +1,6 @@
 module ThreadPinning
 
 # imports
-# using Base.Threads: @threads, nthreads, threadid
-# using Libdl: Libdl
-# using LinearAlgebra: BLAS, rank
-# using Random: Random
-# using DelimitedFiles: readdlm
 using DocStringExtensions: SIGNATURES, TYPEDSIGNATURES
 
 const DEFAULT_IO = Ref{Union{IO, Nothing}}(nothing)
@@ -35,66 +30,6 @@ else
     # pinthreads_likwidpin(args...; kwargs...) = nothing
     # pinthreads_mpi(args...; kwargs...) = nothing
 end
-# include("preferences.jl")
-
-# function _try_get_autoupdate()
-#     try
-#         x = Prefs.get_autoupdate()
-#         if isnothing(x)
-#             return true # default
-#         else
-#             return x
-#         end
-#     catch err
-#         @warn("Couldn't parse autoupdate preference \"$x\" (not a boolean?). Falling "*
-#         "back to default (true).")
-#         return true # default
-#     end
-# end
-
-# const AUTOUPDATE = _try_get_autoupdate() # compile-time preference
-
-# function maybe_autopin()
-#     JULIA_PIN = get(ENV, "JULIA_PIN", Prefs.get_pin())
-#     JULIA_LIKWID_PIN = get(ENV, "JULIA_LIKWID_PIN", Prefs.get_likwidpin())
-#     if !isnothing(JULIA_PIN)
-#         @debug "Autopinning" JULIA_PIN
-#         try
-#             str = startswith(JULIA_PIN, ':') ? JULIA_PIN[2:end] : JULIA_PIN
-#             pinthreads(Symbol(lowercase(str)))
-#         catch err
-#             error("Unsupported value for environment variable JULIA_PIN: ", JULIA_PIN)
-#         end
-#     elseif !isnothing(JULIA_LIKWID_PIN)
-#         @debug "Autopinning" JULIA_LIKWID_PIN
-#         try
-#             pinthreads_likwidpin(JULIA_LIKWID_PIN)
-#         catch err
-#             error("Unsupported value for environment variable JULIA_PIN: ", JULIA_PIN)
-#         end
-#     end
-#     return
-# end
-
-# initialization
-# function __init__()
-#     @static if Sys.islinux()
-#         set_initial_affinity_mask()
-#         forget_pin_attempts()
-#         if AUTOUPDATE
-#             update_sysinfo!(; fromscratch = true)
-#         end
-#         maybe_autopin()
-#     else
-#         os_warning = Prefs.get_os_warning()
-#         if isnothing(os_warning) || os_warning
-#             @warn("Operating system not supported by ThreadPinning.jl."*
-#                   " Functions like `pinthreads` will be no-ops!\n"*
-#                   "(Hide this warning via `ThreadPinning.Prefs.set_os_warning(false)`.)")
-#         end
-#     end
-#     return
-# end
 
 # exports
 ## threadinfo
