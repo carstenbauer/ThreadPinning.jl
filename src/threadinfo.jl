@@ -28,6 +28,7 @@ Keyword arguments:
 * `efficiency` (default: `true` if auto-detected): If `true`, we highlight (underline)
   CPU-threads that belong to efficiency cores.
 * `logical` (default: `false`): Toggle between logical and "physical" CPU-thread indices.
+* `coregaps` (default: `false`): Put an extra space ("gap") between different CPU-cores, when printing.
 """
 function threadinfo end
 
@@ -49,7 +50,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
         masks = false,
         groupby = :sockets, threadpool = :default, slurm = false, compact = true,
         logical = false, efficiency = SysInfo.ncorekinds() > 1,
-        hyperthreads = SysInfo.hyperthreading_is_enabled(),
+        hyperthreads = SysInfo.hyperthreading_is_enabled(), coregaps = false,
         kwargs...)
     # which sys object
     sys = !slurm ? SysInfo.stdsys() : SLURM.slurmsys()
@@ -132,7 +133,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     # visualization
     visualization(; sys,
         threadpool, threads_cpuids, color, groupby, slurm, compact,
-        logical, efficiency, hyperthreads, threadslabel, kwargs...)
+        logical, efficiency, hyperthreads, threadslabel, coregaps, kwargs...)
 
     # extra information
     @static if Sys.islinux()
@@ -207,9 +208,9 @@ function visualization(io = getstdout();
         logical = false,
         efficiency = false,
         hyperthreads = SysInfo.hyperthreading_is_enabled(),
+        coregaps = false,
         legend = true)
     # preparation
-    ncputhreads = SysInfo.ncputhreads(; sys)
     if groupby in (:sockets, :socket)
         f = (i) -> SysInfo.socket(i; compact, sys)
         n = SysInfo.nsockets(; sys)
@@ -226,10 +227,12 @@ function visualization(io = getstdout();
         throw(ArgumentError("Invalid groupby argument. Valid arguments are :socket, :numa, and :core."))
     end
 
+    nsmt = SysInfo.nsmt(; sys)
     blocksize_was_numa = blocksize == :numa
     id = (i) -> SysInfo.id(i; sys)
 
     # printing loop
+    breakline_asap = false
     println(io)
     for i in 1:n
         cpuids = f(i)
@@ -270,7 +273,23 @@ function visualization(io = getstdout();
             end
             if !(cpuid == last(cpuids))
                 print(io, ",")
-                mod(k, blocksize) == 0 && print(io, "\n  ")
+                if mod(k, blocksize) == 0
+                    breakline_asap = true
+                end
+                if coregaps
+                    if SysInfo.Internals.is_last_hyperthread_in_core(cpuid)
+                        print(io, " ")
+                        if breakline_asap
+                            print(io, "\n  ")
+                            breakline_asap = false
+                        end
+                    end
+                else
+                    if breakline_asap
+                        print(io, "\n  ")
+                        breakline_asap = false
+                    end
+                end
             end
         end
         if i == n
