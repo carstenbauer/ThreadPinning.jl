@@ -54,6 +54,8 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
     # which sys object
     sys = !slurm ? SysInfo.stdsys() : SLURM.slurmsys()
 
+    kwargs_msg_red = (; color = color ? :red : :default, bold = true)
+
     # print header
     SysInfo.Internals._print_sysinfo_header(;
         sys = SysInfo.stdsys(), io, gpu = false, always_show_total = true)
@@ -68,27 +70,27 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
                 " assigned CPU-threads",
                 ncput == SysInfo.ncputhreads() ? " (entire node).\n" :
                 ". Will only show those below.\n";
-                color = color ? :red : :default)
+                kwargs_msg_red...)
         else
             printstyled(io,
                 "\nSLURM: Session doesn't seem to be running in a SLURM allocation.\n";
-                color = color ? :red : :default)
+                kwargs_msg_red...)
         end
     else
         if SLURM.isslurmjob()
             printstyled(io,
                 "\nYou seem to be inside of a SLURM allocation. Consider using `threadinfo(; slurm=true)`.\n";
-                color = color ? :red : :default)
+                kwargs_msg_red...)
         end
     end
     if !efficiency && SysInfo.ncorekinds(; sys) > 1
         printstyled(io,
             "\nYour system seems to have CPU-cores of varying power efficiency. Consider using `threadinfo(; efficiency=true)`.\n";
-            color = color ? :red : :default)
+            kwargs_msg_red...)
     elseif efficiency && SysInfo.ncorekinds(; sys) == 1
         printstyled(io,
             "\nYour system doesn't seem to multiple CPU-core kinds. Won't be highlighting any efficiency cores.`.\n";
-            color = color ? :red : :default)
+            kwargs_msg_red...)
     end
     println(io)
 
@@ -105,16 +107,17 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
             threadslabel = "Julia"
             if nthreads == 0
                 printstyled(io, "No threads in threadpool :$threadpool.\n\n";
-                    color = color ? :red : :default)
+                    kwargs_msg_red...)
                 # return
             end
         end
     else
         threads_cpuids = Int[]
         nthreads = length(ThreadPinningCore.threadids(; threadpool))
+        threadslabel = blas ? "BLAS" : "Julia"
         printstyled(
             io, "Unsupported OS: Won't be able to highlight $(threadslabel) threads.\n\n";
-            color = color ? :red : :default)
+            kwargs_msg_red...)
     end
 
     printstyled(io, "$(threadslabel) threads: \t", nthreads;
