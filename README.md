@@ -6,8 +6,11 @@
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stable-url]: https://carstenbauer.github.io/ThreadPinning.jl/stable
 
-[ci-img]: https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/badges/main/pipeline.svg?key_text=CI@PC2
-[ci-url]: https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/-/pipelines
+[ci-img]: https://github.com/carstenbauer/SysInfo.jl/actions/workflows/CI.yml/badge.svg?branch=main
+[ci-url]: https://github.com/carstenbauer/SysInfo.jl/actions/workflows/CI.yml?query=branch%3Amain
+
+[ci-pc2-img]: https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/badges/main/pipeline.svg?key_text=CI@PC2
+[ci-pc2-url]: https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/-/pipelines
 
 [cov-img]: https://codecov.io/gh/carstenbauer/ThreadPinning.jl/branch/main/graph/badge.svg?token=Ze61CbGoO5
 [cov-url]: https://codecov.io/gh/carstenbauer/ThreadPinning.jl
