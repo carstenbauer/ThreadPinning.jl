@@ -2,6 +2,7 @@ module Utility
 
 import ThreadPinningCore
 import SysInfo
+using LinearAlgebra: BLAS
 
 function cpuids2affinitymask(cpuids::AbstractVector{<:Integer})
     mask = ThreadPinningCore.emptymask()

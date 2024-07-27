@@ -51,6 +51,9 @@ export setaffinity, setaffinity_cpuids
 using StableTasks: @spawnat
 export @spawnat
 
+using ThreadPinningCore: threadids
+@public threadids
+
 # precompile
 import PrecompileTools
 PrecompileTools.@compile_workload begin
