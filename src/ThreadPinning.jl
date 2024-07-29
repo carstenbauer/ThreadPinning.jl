@@ -39,9 +39,9 @@ export threadinfo
 export getcpuid, getcpuids, getaffinity, getnumanode, getnumanodes
 export core, numa, socket, node, cores, numas, sockets
 export printaffinity, printaffinities, visualize_affinity
-export ispinned, hyperthreading_is_enabled, ishyperthread
-export ncputhreads, ncores, nnuma, nsockets
-@public cpuids
+export ispinned, hyperthreading_is_enabled, ishyperthread, isefficiencycore
+export ncputhreads, ncores, nnuma, nsockets, ncorekinds, nsmt
+@public cpuids, id, cpuid
 
 ## pinning
 export pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads

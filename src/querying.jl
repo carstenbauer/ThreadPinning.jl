@@ -5,14 +5,6 @@
 ##
 
 """
-    ispinned(; threadid = Threads.threadid())
-
-Returns `true` if the thread is pinned, that is, if it has an affinity mask that
-highlights a single CPU-thread.
-"""
-function ispinned end
-
-"""
     getcpuid(; threadid = nothing)
 
 Returns the ID of the CPU thread on which a Julia thread is currently running.
@@ -30,6 +22,32 @@ The keyword argument `threadpool` (default: `:default`) may be used to specify a
 thread pool.
 """
 function getcpuids end
+
+"""
+    getaffinity(; threadid = Threads.threadid(), cutoff = cpuidlimit())
+
+Get the thread affinity of a Julia thread. Returns the affinity mask as a vector of zeros
+and ones.
+By default, the mask is cut off at `Sys.CPU_THREADS`. This can be tuned via the
+`cutoff` keyword argument (`nothing` means no cutoff).
+"""
+function getaffinity end
+
+"""
+Returns the ID (starting at zero) of the NUMA node corresponding to the CPU thread on
+which the calling thread is currently running. A `threadid` may be provided to consider
+a Julia thread that is different from the calling one.
+"""
+function getnumanode end
+
+"""
+Returns the IDs (starting at zero) of the NUMA nodes corresponding to the CPU threads on
+which the Julia threads are currently running.
+
+The keyword argument `threadpool` (default: `:default`) may be used to consider only those
+Julia threads that belong to a specific thread pool.
+"""
+function getnumanodes end
 
 """
 Returns the CPU IDs that belong to core `i` (logical index, starts at 1).
@@ -96,27 +114,6 @@ Optional first argument: Logical indices to select a subset of the sockets.
 function numas end
 
 """
-All valid CPU IDs of the system.
-"""
-function cpuids end
-
-"""
-Returns the ID (starting at zero) of the NUMA node corresponding to the CPU thread on
-which the calling thread is currently running. A `threadid` may be provided to consider
-a Julia thread that is different from the calling one.
-"""
-function getnumanode end
-
-"""
-Returns the IDs (starting at zero) of the NUMA nodes corresponding to the CPU threads on
-which the Julia threads are currently running.
-
-The keyword argument `threadpool` (default: `:default`) may be used to consider only those
-Julia threads that belong to a specific thread pool.
-"""
-function getnumanodes end
-
-"""
     printaffinity(; threadid::Integer = Threads.threadid())
 
 Print the affinity mask of the Julia thread.
@@ -140,14 +137,12 @@ work here as well.
 function visualize_affinity end
 
 """
-    getaffinity(; threadid = Threads.threadid(), cutoff = cpuidlimit())
+    ispinned(; threadid = Threads.threadid())
 
-Get the thread affinity of a Julia thread. Returns the affinity mask as a vector of zeros
-and ones.
-By default, the mask is cut off at `Sys.CPU_THREADS`. This can be tuned via the
-`cutoff` keyword argument (`nothing` means no cutoff).
+Returns `true` if the thread is pinned, that is, if it has an affinity mask that
+highlights a single CPU-thread.
 """
-function getaffinity end
+function ispinned end
 
 """
 Check whether simultaneous multithreading (SMT) / "hyperthreading" is enabled.
@@ -187,6 +182,11 @@ The number of SMT-threads in a core. If this number varies between different cor
 maximum is returned.
 """
 function nsmt end
+
+"""
+All valid CPU IDs of the system.
+"""
+function cpuids end
 
 """
 Returns the logical index (starts at 1) that corresponds to the given
