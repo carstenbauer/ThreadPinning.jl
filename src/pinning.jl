@@ -5,38 +5,47 @@
 ##
 
 """
+    pinthread(cpuid::Integer; threadid = Threads.threadid())
+
 Pin the a Julia thread to the given CPU-thread.
 """
 function pinthread end
 
 """
-    pinthreads(cpuids[; nthreads, force=true, warn=is_first_pin_attempt(), threadpool=:default])
-Pin the first `min(length(cpuids), nthreads)` Julia threads to an explicit or implicit list
-of CPU IDs. The latter can be specified in three ways:
+    pinthreads(cpuids;
+        nthreads   = nothing,
+        force      = true,
+        warn       = is_first_pin_attempt(),
+        threadpool = :default
+    )
+Pin Julia threads to an explicit or implicit list of CPU IDs. The latter can be specified
+in three ways:
 
-1) explicitly (e.g. `0:3` or `[0,12,4]`),
-2) by passing one of several predefined symbols (e.g. `:cores` or `:sockets`),
-3) by providing a logical specification via helper functions (e.g. `node` and `socket`).
+1) by passing one of several predefined symbols (e.g. `pinthreads(:cores)` or `pinthreads(:sockets)`),
+2) by providing a logical specification via helper functions (e.g. `pinthreads(numa(2, 1:4))`),
+3) explicitly (e.g. `0:3` or `[0,12,4]`).
 
-See below for more information.
+See `??pinthreads` for more information on these variants and keyword arguments.
 
-If `force=false` the `pinthreads` call will only pin threads
-if this is the first attempt to pin threads with ThreadPinning.jl. Otherwise it will be a
-no-op. This may be particularly useful for packages that merely want to specify a
-"default pinning".
+# Keyword arguments
+
+If set, the keyword argument `nthreads` serves as a cutoff, that is, the first
+`min(length(cpuids), nthreads)` Julia threads will get pinned.
+
+The keyword argument `threadpool` can be used to indicate the pool of Julia threads that
+should be considered. Supported values are `:default` (default), `:interactive`, or `:all`.
+On Julia >= 1.11, there is also experimental support for `:gc`.
+
+If `force=false`, threads will only get pinned if this is the very first pin attempt
+(otherwise the call is a no-op). This may be particularly useful for packages that merely
+want to specify an (overrulable) "default pinning".
 
 The option `warn` toggles general warnings, such as unwanted interference with BLAS thread
 settings.
 
-The keyword argument `threadpool` can be used to indicate the pool of threads to be pinned.
-Supported values are `:default`, `:interactive`, or `:all`.
+# Extended help
 
-**1) Explicit**
-
-Simply provide an `AbstractVector{<:Integer}` of CPU IDs. The latter are expected to be the
-"physical" ids, i.e. as provided by `lscpu`, and thus start at zero!
-
-**2) Predefined Symbols**
+**1) Predefined Symbols**
 
 * `:cputhreads` or `:compact`: successively pin to all available CPU-threads.
 * `:cores`: spread threads across all available cores, only use hyperthreads if necessary.
@@ -51,7 +60,7 @@ Simply provide an `AbstractVector{<:Integer}` of CPU IDs. The latter are expecte
 * `:affinitymask`: pin threads to different CPU-threads in accordance with the process
                    affinity. By default, `hyperthreads_last=true`.
 
-**3) Logical Specification**
+**2) Logical Specification**
 
 The functions [`node`](@ref), [`socket`](@ref), [`numa`](@ref), and [`core`](@ref) can be
 used to to specify CPU IDs of/within a certain domain. Moreover, the functions
@@ -75,10 +84,20 @@ arguments to `pinthreads`.
 
 * `pinthreads([socket(1, 1:3), numa(2, 4:6)])`
 * `pinthreads(socket(1, 1:3), numa(2, 4:6))`
+
+**3) Explicit**
+
+Simply provide an `AbstractVector{<:Integer}` of CPU IDs. The latter are expected to be
+"physical" OS indices (e.g. from hwloc or lscpu) that start at zero!
 """
 function pinthreads end
 
 """
+    with_pinthreads(f::F, args...;
+        soft = false,
+        kwargs...
+    )
+
 Runs the function `f` with the specified pinning and restores the previous thread affinities
 afterwards. Typically to be used in combination with do-syntax.
 
@@ -114,12 +133,16 @@ julia> getcpuids()
 function with_pinthreads end
 
 """
+    unpinthread(; threadid::Integer = Threads.threadid())
+
 Unpins the given Julia thread by setting the affinity mask to all unity.
 Afterwards, the OS is free to move the Julia thread from one CPU thread to another.
 """
 function unpinthread end
 
 """
+    unpinthreads(; threadpool::Symbol = :default)
+
 Unpins all Julia threads by setting the affinity mask of all threads to all unity.
 Afterwards, the OS is free to move any Julia thread from one CPU thread to another.
 """
@@ -128,7 +151,7 @@ function unpinthreads end
 """
 Set the affinity of a Julia thread to the given CPU-threads.
 
-*Example:*
+*Examples:*
 * `setaffinity(socket(1))` # set the affinity to the first socket
 * `setaffinity(numa(2))` # set the affinity to the second NUMA domain
 * `setaffinity(socket(1, 1:3))` # set the affinity to the first three cores in the first NUMA domain
@@ -137,7 +160,9 @@ Set the affinity of a Julia thread to the given CPU-threads.
 function setaffinity_cpuids end
 
 """
-Set the affinity of a Julia thread based on the given mask.
+    setaffinity(mask; threadid = Threads.threadid())
+
+Set the affinity of a Julia thread based on the given mask (a vector of ones and zeros).
 """
 function setaffinity end
 

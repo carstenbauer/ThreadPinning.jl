@@ -5,30 +5,45 @@
 ##
 
 """
-$(SIGNATURES)
+    threadinfo(;
+        groupby = :sockets,
+        threadpool = :default,
+        blas = false,
+        slurm = false,
+        hints = false,
+        compact = true,
+        hyperthreads = SysInfo.hyperthreading_is_enabled(),
+        efficiency = SysInfo.ncorekinds() > 1,
+        masks = false,
+        coregaps = false,
+        logical = false,
+        color = true,
+        blocksize = choose_blocksize()
+    )
+
 Print information about Julia threads, e.g. on which CPU-threads (i.e. cores if
 hyperthreading is disabled) they are running.
 
-Keyword arguments:
-* `compact` (default: `true`): Toggle between compact and "cores before hyperthreads" ordering.
-* `color` (default: `true`): Toggle between colored and black-and-white output.
-* `blocksize` (default: `16`): Wrap to a new line after `blocksize` many CPU-threads.
-   May also be set to `:numa` in which case the line break will occur after each numa domain.
-* `hyperthreads` (default: `true` if auto-detected): If `true`, we (try to) highlight CPU-threads
-  that aren't the first threads within a CPU-core.
-* `blas` (default: `false`): Visualize BLAS threads instead of Julia threads.
-* `slurm` (default: `false`): Only show the part of the system that is covered by the active SLURM allocation.
-* `hints` (default: `false`): Give some hints about how to improve the threading related
-  settings.
-* `groupby` (default: `:sockets`): Options are `:sockets`, `:numa`, `:cores`, or `:none`.
-* `masks` (default: `false`): Show the affinity masks of all Julia threads.
-* `threadpool` (default: `:default`): Only consider Julia threads in the given thread pool.
+# Keyword arguments
+* `groupby`: Options are `:sockets`, `:numa`, `:cores`, or `:none`.
+* `threadpool`: Only consider Julia threads in the given thread pool.
                                   Supported values are `:default`, `:interactive`, and
-                                  `:all`. Only works for Julia >= 1.9.
-* `efficiency` (default: `true` if auto-detected): If `true`, we highlight (underline)
+                                  `:all`.
+* `blas`: Visualize BLAS threads instead of Julia threads.
+* `slurm`: Only show the part of the system that is covered by the active SLURM allocation.
+* `hints`: Give some hints about how to improve the threading related
+  settings.
+* `compact`: Toggle between compact and "cores before hyperthreads" ordering.
+* `hyperthreads`: If `true`, we (try to) highlight CPU-threads
+  that aren't the first threads within a CPU-core.
+* `efficiency`: If `true`, we highlight (underline)
   CPU-threads that belong to efficiency cores.
-* `logical` (default: `false`): Toggle between logical and "physical" CPU-thread indices.
-* `coregaps` (default: `false`): Put an extra space ("gap") between different CPU-cores, when printing.
+* `masks`: Show the affinity masks of all Julia threads.
+* `coregaps`: Put an extra space ("gap") between different CPU-cores, when printing.
+* `logical`: Toggle between logical and "physical" CPU-thread indices.
+* `color`: Toggle between colored and black-and-white output.
+* `blocksize`: Wrap to a new line after `blocksize` many CPU-threads.
+   May also be set to `:numa` in which case the line break will occur after each numa domain.
 """
 function threadinfo end
 
@@ -46,11 +61,19 @@ import ..SLURM
 import SysInfo
 import ThreadPinningCore
 
-function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
+function threadinfo(io = getstdout();
+        groupby = :sockets,
+        threadpool = :default,
+        blas = false,
+        slurm = false,
+        hints = false,
+        compact = true,
+        hyperthreads = SysInfo.hyperthreading_is_enabled(),
+        efficiency = SysInfo.ncorekinds() > 1,
         masks = false,
-        groupby = :sockets, threadpool = :default, slurm = false, compact = true,
-        logical = false, efficiency = SysInfo.ncorekinds() > 1,
-        hyperthreads = SysInfo.hyperthreading_is_enabled(), coregaps = false,
+        coregaps = false,
+        logical = false,
+        color = true,
         kwargs...)
     # which sys object
     sys = !slurm ? SysInfo.stdsys() : SLURM.slurmsys()

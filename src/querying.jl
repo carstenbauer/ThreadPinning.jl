@@ -5,40 +5,98 @@
 ##
 
 """
-Returns `true` if the thread is pinned, i.e. if it has an affinity mask that comprises a
-single CPU-thread.
+    ispinned(; threadid = Threads.threadid())
+
+Returns `true` if the thread is pinned, that is, if it has an affinity mask that
+highlights a single CPU-thread.
 """
 function ispinned end
 
 """
-Returns the ID of the CPU thread on which the calling thread is currently running.
+    getcpuid(; threadid = nothing)
+
+Returns the ID of the CPU thread on which a Julia thread is currently running.
+
+If `threadid=nothing` (default), we query the id directly from the calling thread.
 """
 function getcpuid end
 
 """
-Returns the IDs of the CPU-threads on which the Julia threads are currently running.
+    getcpuids(; threadpool = :default)
+
+Returns the IDs of the CPU-threads on which the Julia threads are currently running on.
 
 The keyword argument `threadpool` (default: `:default`) may be used to specify a specific
 thread pool.
 """
 function getcpuids end
 
+"""
+Returns the CPU IDs that belong to core `i` (logical index, starts at 1).
+Set `shuffle=true` to randomize.
+
+Optional second argument: Logical indices to select a subset of the CPU-threads.
+"""
 function core end
 
+"""
+Returns the CPU IDs that belong to the `i`th NUMA domain (logical index, starts at 1).
+By default, an "cores before hyperthreads" ordering is used. Set `compact=true` if you want
+compact ordering. Set `shuffle=true` to randomize.
+
+Optional second argument: Logical indices to select a subset of the CPU-threads.
+"""
 function numa end
 
+"""
+Returns the CPU IDs that belong to the `i`th CPU/socket (logical index, starts at 1).
+By default, an "cores before hyperthreads" ordering is used. Set `compact=true` if you want
+compact ordering. Set `shuffle=true` to randomize.
+
+Optional second argument: Logical indices to select a subset of the CPU-threads.
+"""
 function socket end
 
+"""
+Returns all CPU IDs of the system/compute node (logical index, starts at 1).
+By default, an "cores before hyperthreads" ordering is used. Set `compact=true` if you want
+compact ordering. Set `shuffle=true` to randomize.
+
+Optional second argument: Logical indices to select a subset of the CPU-threads.
+"""
 function node end
 
+"""
+Returns the CPU IDs of the system as obtained by a round-robin scattering
+between CPU cores. This is the same as `nodes(; compact=false)`.
+Set `shuffle=true` to randomize.
+
+Optional first argument: Logical indices to select a subset of the sockets.
+"""
 function cores end
 
+"""
+Returns the CPU IDs of the system as obtained by a round-robin scattering
+between sockets. By default, within each socket, a round-robin ordering among CPU cores is
+used ("cores before hyperthreads"). Provide `compact=true` to get compact ordering within
+each socket. Set `shuffle=true` to randomize.
+
+Optional first argument: Logical indices to select a subset of the sockets.
+"""
 function sockets end
 
+"""
+Returns the CPU IDs of the system as obtained by a round-robin scattering
+between NUMA domains. Within each NUMA domain, a round-robin ordering among
+CPU cores is used ("cores before hyperthreads"). Provide `compact=true` to get compact ordering
+within each NUMA domain. Set `shuffle=true` to randomize.
+
+Optional first argument: Logical indices to select a subset of the sockets.
+"""
 function numas end
 
 """
-All valid CPU IDs on the system.
+All valid CPU IDs of the system.
 """
 function cpuids end
 
@@ -59,7 +117,9 @@ Julia threads that belong to a specific thread pool.
 function getnumanodes end
 
 """
-Print the affinity mask of a Julia thread.
+    printaffinity(; threadid::Integer = Threads.threadid())
+
+Print the affinity mask of the Julia thread.
 
 The keyword argument `groupby` may be used to change how CPU-threads are grouped visually.
 It defaults to `groupby=:socket`. Other valid values are `:numa` and `:core`.
@@ -67,6 +127,8 @@ It defaults to `groupby=:socket`. Other valid values are `:numa` and `:core`.
 function printaffinity end
 
 """
+    printaffinities(; threadpool = :default, kwargs...)
+
 Print the affinity masks of all Julia threads. See [`printaffinity`](@ref) for options.
 """
 function printaffinities end
@@ -78,6 +140,8 @@ work here as well.
 function visualize_affinity end
 
 """
+    getaffinity(; threadid = Threads.threadid(), cutoff = cpuidlimit())
+
 Get the thread affinity of a Julia thread. Returns the affinity mask as a vector of zeros
 and ones.
 By default, the mask is cut off at `Sys.CPU_THREADS`. This can be tuned via the
@@ -96,6 +160,13 @@ first CPU-thread in the CPU-core).
 """
 function ishyperthread end
 
+"""
+Returns true if the given CPU-thread lies inside of a CPU-core that has the highest power
+efficiency of all the CPU-cores (i.e. an efficiency value of 1). If
+there is only a single CPU-core kind, the return value is false for all CPU IDs.
+"""
+function isefficiencycore end
+
 "Number of CPU-threads"
 function ncputhreads end
 
@@ -105,23 +176,29 @@ function ncores end
 "Number of NUMA nodes"
 function nnuma end
 
-"Number of CPU sockets"
+"Number of CPU-sockets / CPUs"
 function nsockets end
 
-"Number of CPU-threads per core"
-function ncputhreads_per_core end
+"Number of different kinds of cores (e.g. efficiency and performance cores)."
+function ncorekinds end
 
-"Number of CPU-threads per NUMA domain"
-function ncputhreads_per_numa end
+"""
+The number of SMT-threads in a core. If this number varies between different cores, the
+maximum is returned.
+"""
+function nsmt end
 
-"Number of CPU-threads per socket"
-function ncputhreads_per_socket end
+"""
+Returns the logical index (starts at 1) that corresponds to the given
+CPU ID ("physical" OS index).
+"""
+function id end
 
-"Number of CPU-cores per NUMA domain"
-function ncores_per_numa end
-
-"Number of CPU-cores per socket"
-function ncores_per_socket end
+"""
+Returns the CPU ID ("physical" OS index) that corresponds to the given
+logical index (starts at 1).
+"""
+function cpuid end
 
 ##
 ##
@@ -133,13 +210,10 @@ module Querying
 
 import ThreadPinning: getcpuid, getcpuids, getnumanode, getnumanodes
 import ThreadPinning: printaffinity, printaffinities, getaffinity, visualize_affinity
-import ThreadPinning: ispinned, ishyperthread, hyperthreading_is_enabled
-import ThreadPinning: ncputhreads, ncores, nnuma, nsockets, ncputhreads_per_core
+import ThreadPinning: ispinned, ishyperthread, hyperthreading_is_enabled, isefficiencycore
+import ThreadPinning: ncputhreads, ncores, nnuma, nsockets, ncorekinds, nsmt
 import ThreadPinning: core, numa, socket, node, cores, sockets, numas, cpuids
-
-# ncputhreads_per_numa, ncputhreads_per_socket, ncores_per_numa, ncores_per_socket,
-#                       cpuids_all, cpuids_per_core, cpuids_per_numa, cpuids_per_socket,
-#                       cpuids_per_node,
+import ThreadPinning: id, cpuid
 
 using ThreadPinning: getstdout
 using SysInfo: SysInfo
@@ -153,6 +227,10 @@ ncputhreads() = SysInfo.ncputhreads()
 ncores() = SysInfo.ncores()
 nnuma() = SysInfo.nnuma()
 nsockets() = SysInfo.nsockets()
+ncorekinds() = SysInfo.ncorekinds()
+nsmt() = SysInfo.nsmt()
+id(cpuid::Integer) = SysInfo.id(cpuid)
+cpuid(id::Integer) = SysInfo.cpuid(id)
 core(args...; kwargs...) = SysInfo.core(args...; kwargs...)
 socket(args...; kwargs...) = SysInfo.socket(args...; kwargs...)
 numa(args...; kwargs...) = SysInfo.numa(args...; kwargs...)
@@ -163,6 +241,7 @@ numas(args...; kwargs...) = SysInfo.numas(args...; kwargs...)
 cpuids(args...; kwargs...) = collect(SysInfo.cpuids(args...; kwargs...))
 hyperthreading_is_enabled() = SysInfo.hyperthreading_is_enabled()
 ishyperthread(cpuid::Integer) = SysInfo.ishyperthread(cpuid)
+isefficiencycore(cpuid::Integer) = SysInfo.isefficiencycore(cpuid)
 
 # forwarding to ThreadPinningCore
 getcpuid(; kwargs...) = ThreadPinningCore.getcpuid(; kwargs...)
@@ -206,7 +285,8 @@ function _affinity_to_string(mask; groupby = :sockets)
     return str
 end
 
-function visualize_affinity(io = getstdout(); threadid::Integer = Threads.threadid(), mask = nothing)
+function visualize_affinity(
+        io = getstdout(); threadid::Integer = Threads.threadid(), mask = nothing)
     if isnothing(mask)
         mask = getaffinity(; threadid)
     end
@@ -238,15 +318,5 @@ function getnumanodes(; threadpool = :default)::Vector{Int}
     end
     return numanodes
 end
-
-# ncputhreads_per_core() = length.(unsafe_cpuids_per_core())
-
-# ncputhreads_per_numa() = length.(unsafe_cpuids_per_numa())
-
-# ncputhreads_per_socket() = length.(unsafe_cpuids_per_socket())
-
-# ncores_per_numa() = count.(!ishyperthread, unsafe_cpuids_per_numa())
-
-# ncores_per_socket() = count.(!ishyperthread, unsafe_cpuids_per_socket())
 
 end # module
