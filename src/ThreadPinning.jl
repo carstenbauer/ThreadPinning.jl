@@ -26,7 +26,7 @@ else
     setaffinity(args...; kwargs...) = nothing
     setaffinity_cpuids(args...; kwargs...) = nothing
     with_pinthreads(f, args...; kwargs...) = f()
-    # pinthreads_likwidpin(args...; kwargs...) = nothing
+    pinthreads_likwidpin(args...; kwargs...) = nothing
     # pinthreads_mpi(args...; kwargs...) = nothing
 end
 
