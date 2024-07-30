@@ -1,5 +1,6 @@
 """
-$(SIGNATURES)
+    pinthreads_likwidpin(str::AbstractString; onebased = false)
+
 Pins Julia threads to CPU-threads based on the given `likwid-pin` compatible string.
 Checkout the [LIKWID documentation](https://github.com/RRZE-HPC/likwid/wiki/Likwid-Pin)
 for more information.
@@ -14,17 +15,35 @@ affect the explicit pinning mode where "physical" CPU IDs always start at zero.
 * `pinthreads_likwidpin("S:scatter")`
 * `pinthreads_likwidpin("E:N:4:1:2")`
 """
+function pinthreads_likwidpin end
+
+"""
+    likwidpin_to_cpuids(lpstr::AbstractString; onebased = false)
+
+Convert the given likwid-pin compatible string into a CPU ID list.
+See [`pinthreads_likwidpin`](@ref) for more information.
+"""
+function likwidpin_to_cpuids end
+
+"""
+    likwidpin_domains(; onebased = false)
+
+The likwid-pin compatible domains that are available for the system.
+"""
+function likwidpin_domains end
+
+module LIKWID
+
+import ThreadPinning: pinthreads_likwidpin, likwidpin_domains, likwidpin_to_cpuids
+
+using ThreadPinning: nsockets, nnuma, node, socket, numa, sockets, numas, pinthreads
+
 function pinthreads_likwidpin(str::AbstractString; onebased = false)
     cpuids = likwidpin_to_cpuids(str; onebased)
     @debug "CPU IDs" cpuids
     pinthreads(cpuids)
 end
 
-"""
-$(SIGNATURES)
-Convert the given likwid-pin compatible string into a CPU ID list.
-See [`pinthreads_likwidpin`](@ref) for more information.
-"""
 function likwidpin_to_cpuids(lpstr::AbstractString; onebased = false)
     blocks = split(lpstr, '@')
     blocks_cpuids = Vector{Vector{Int}}(undef, length(blocks))
@@ -111,10 +130,6 @@ function _lp_check_domain(domain; onebased = false)
     return
 end
 
-"""
-$(SIGNATURES)
-The likwid-pin compatible domains that are available for the system.
-"""
 function likwidpin_domains(; onebased = false)
     # ('N','S','D','M','C')
     domains = ["N", "S", "M"]
@@ -135,17 +150,17 @@ end
 function _lp_scatter_cpuids(domain, numthreads; onebased = false)
     offset = onebased ? 0 : 1
     if domain == "N"
-        domain_cpuids = cpuids_per_node()
+        domain_cpuids = node()
     elseif domain == "S"
-        domain_cpuids = interweave(cpuids_per_socket()...)
+        domain_cpuids = sockets()
     elseif domain == "M"
-        domain_cpuids = interweave(cpuids_per_numa()...)
+        domain_cpuids = numas()
     elseif startswith(domain, "S")
         socketid = parse(Int, domain[2:end])
-        domain_cpuids = cpuids_per_socket()[socketid + offset]
+        domain_cpuids = socket(socketid + offset)
     elseif startswith(domain, "M")
         numaid = parse(Int, domain[2:end])
-        domain_cpuids = cpuids_per_numa()[numaid + offset]
+        domain_cpuids = numa(numaid + offset)
     else
         throw(ArgumentError("Don't know how to handle domain \"$domain\" in " *
                             "domain:scatter mode."))
@@ -165,13 +180,13 @@ function _lp_domain_cpuids(domain, lp_idcs; onebased = false)
     offset = onebased ? 0 : 1
     idcs = lp_idcs .+ offset
     if domain == "N"
-        domain_cpuids = cpuids_per_node()
+        domain_cpuids = node()
     elseif startswith(domain, "S") && length(domain) > 1
         socketid = parse(Int, domain[2:end])
-        domain_cpuids = cpuids_per_socket()[socketid + offset]
+        domain_cpuids = socket(socketid + offset)
     elseif startswith(domain, "M") && length(domain) > 1
         numaid = parse(Int, domain[2:end])
-        domain_cpuids = cpuids_per_numa()[numaid + offset]
+        domain_cpuids = numa(numaid + offset)
     else
         throw(ArgumentError("Don't know how to handle domain \"$domain\" in " *
                             "domain:explicit mode."))
@@ -197,13 +212,13 @@ function _lp_expression_cpuids(domain, numthreads, chunk_size, stride; onebased)
     # Note: compact order!
     offset = onebased ? 0 : 1
     if domain == "N"
-        domain_cpuids = cpuids_per_node(; compact = true)
+        domain_cpuids = node(; compact = true)
     elseif startswith(domain, "S") && length(domain) > 1
         socketid = parse(Int, domain[2:end])
-        domain_cpuids = cpuids_per_socket(; compact = true)[socketid + offset]
+        domain_cpuids = socket(socketid + offset; compact = true)
     elseif startswith(domain, "M") && length(domain) > 1
         numaid = parse(Int, domain[2:end])
-        domain_cpuids = cpuids_per_numa(; compact = true)[numaid + offset]
+        domain_cpuids = numa(numaid + offset; compact = true)
     else
         throw(ArgumentError("Don't know how to handle domain \"$domain\" in expression."))
     end
@@ -243,3 +258,5 @@ function _lp_expression_cpuids(domain, numthreads, chunk_size, stride; onebased)
     end
     return cpuids
 end
+
+end # module

@@ -25,7 +25,8 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
             pinthreads_cpuids = ThreadPinning.likwidpin_to_cpuids(lp_explicit_ranges)
             @test pinthreads_cpuids[1:4] == vcat(2:3, 5:6)
 
-            @testset "Errors" begin @test_throws ArgumentError ThreadPinning.likwidpin_to_cpuids("0,-1,2")
+            @testset "Errors" begin
+                @test_throws ArgumentError ThreadPinning.likwidpin_to_cpuids("0,-1,2")
                 # @test_throws ArgumentError ThreadPinning.likwidpin_to_cpuids("0,10,12345")
             end
         end
@@ -34,7 +35,7 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
             # logical order, physical cores first(!), starts with 0(!)
             @testset "domain:explicit" begin
                 for lpstr in ("N:0-3", "N:0,1,2,3", "S0:0-3", "S0:0,1,2,3", "M0:0-3",
-                              "M0:0,1,2,3") # 4 threads to first 4 cores in node
+                    "M0:0,1,2,3") # 4 threads to first 4 cores in node
                     pinthreads_cpuids = ThreadPinning.likwidpin_to_cpuids(lpstr)
                     @test pinthreads_cpuids[1:4] == cpuids_per_node()[1:4]
                 end
@@ -100,10 +101,12 @@ for (system, lscpustr) in ThreadPinning.lscpu_SYSTEMS
         end
 
         @testset "likwid-pin: expression" begin
-            @testset "E:domain:numthreads" begin for lpstr in ("E:N:3", "E:S0:3", "E:M0:3")
-                pinthreads_cpuids = ThreadPinning.likwidpin_to_cpuids(lpstr)
-                @test pinthreads_cpuids[1:3] == cpuids_per_node(; compact = true)[1:3]
-            end end
+            @testset "E:domain:numthreads" begin
+                for lpstr in ("E:N:3", "E:S0:3", "E:M0:3")
+                    pinthreads_cpuids = ThreadPinning.likwidpin_to_cpuids(lpstr)
+                    @test pinthreads_cpuids[1:3] == cpuids_per_node(; compact = true)[1:3]
+                end
+            end
 
             @testset "E:domain:numthreads:chunk_size:stride" begin
                 # TODO

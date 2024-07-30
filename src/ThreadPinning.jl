@@ -15,7 +15,7 @@ include("querying.jl")
 @static if Sys.islinux()
     include("pinning.jl")
     # include("pinning_mpi.jl")
-    # include("likwid-pin.jl")
+    include("likwid-pin.jl")
     # include("mkl.jl")
     # include("openblas.jl")
 else
@@ -46,6 +46,7 @@ export ncputhreads, ncores, nnuma, nsockets, ncorekinds, nsmt
 ## pinning
 export pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
 export setaffinity, setaffinity_cpuids
+export pinthreads_likwidpin, likwidpin_domains, likwidpin_to_cpuids
 
 ## re-export
 using StableTasks: @spawnat
