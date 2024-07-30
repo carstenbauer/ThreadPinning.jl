@@ -1,8 +1,5 @@
 module ThreadPinning
 
-# imports
-using DocStringExtensions: SIGNATURES, TYPEDSIGNATURES
-
 const DEFAULT_IO = Ref{Union{IO, Nothing}}(nothing)
 getstdout() = something(DEFAULT_IO[], stdout)
 
@@ -12,11 +9,11 @@ include("utility.jl")
 include("slurm.jl")
 include("threadinfo.jl")
 include("querying.jl")
+include("mkl.jl")
 @static if Sys.islinux()
     include("pinning.jl")
-    # include("pinning_mpi.jl")
+    include("mpi.jl")
     include("likwid-pin.jl")
-    # include("mkl.jl")
 else
     # make core pinning functions no-ops
     pinthreads(args...; kwargs...) = nothing
@@ -27,7 +24,7 @@ else
     setaffinity_cpuids(args...; kwargs...) = nothing
     with_pinthreads(f, args...; kwargs...) = f()
     pinthreads_likwidpin(args...; kwargs...) = nothing
-    # pinthreads_mpi(args...; kwargs...) = nothing
+    pinthreads_mpi(args...; kwargs...) = nothing
 end
 
 # exports
@@ -46,6 +43,7 @@ export ncputhreads, ncores, nnuma, nsockets, ncorekinds, nsmt
 export pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
 export setaffinity, setaffinity_cpuids
 export pinthreads_likwidpin, likwidpin_domains, likwidpin_to_cpuids
+export pinthreads_mpi
 
 ## re-export
 using StableTasks: @spawnat
