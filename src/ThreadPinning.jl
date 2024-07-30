@@ -17,7 +17,6 @@ include("querying.jl")
     # include("pinning_mpi.jl")
     include("likwid-pin.jl")
     # include("mkl.jl")
-    # include("openblas.jl")
 else
     # make core pinning functions no-ops
     pinthreads(args...; kwargs...) = nothing
