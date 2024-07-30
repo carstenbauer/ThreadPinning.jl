@@ -9,8 +9,8 @@ Threads.nthreads() ≥ 4 ||
 # @testitem "preferences" begin include("tests_preferences.jl") end
 # @testitem "threadinfo" begin include("tests_slurm.jl") end
 
-# @testitem "querying" begin include("tests_querying.jl") end
-# @testitem "threadinfo" begin include("tests_threadinfo.jl") end
+@testitem "querying" begin include("tests_querying.jl") end
+@testitem "threadinfo" begin include("tests_threadinfo.jl") end
 # @testitem "pinning" begin include("tests_pinning.jl") end
 # @testitem "setaffinity" begin include("tests_setaffinity.jl") end
 

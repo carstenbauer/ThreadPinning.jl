@@ -34,6 +34,8 @@ By default, the mask is cut off at `Sys.CPU_THREADS`. This can be tuned via the
 function getaffinity end
 
 """
+    getnumanode(; threadid = nothing)
+
 Returns the ID (starting at zero) of the NUMA node corresponding to the CPU thread on
 which the calling thread is currently running. A `threadid` may be provided to consider
 a Julia thread that is different from the calling one.
@@ -41,6 +43,8 @@ a Julia thread that is different from the calling one.
 function getnumanode end
 
 """
+    getnumanodes(; threadpool = :default)
+
 Returns the IDs (starting at zero) of the NUMA nodes corresponding to the CPU threads on
 which the Julia threads are currently running.
 
