@@ -269,7 +269,6 @@ function printaffinities(; threadpool = :default, io = getstdout(), kwargs...)
     return
 end
 function _affinity_to_string(mask; groupby = :sockets)
-    bitstr = join(mask)[1:SysInfo.ncputhreads()]
     if groupby in (:numa, :NUMA)
         f = SysInfo.numa
         nf = SysInfo.nnuma
@@ -284,7 +283,7 @@ function _affinity_to_string(mask; groupby = :sockets)
     for s in 1:nf()
         cpuids = f(s)
         idcs = cpuids .+ 1
-        str = string(str, bitstr[idcs], "|")
+        str = string(str, mask[idcs]..., "|")
     end
     return str
 end

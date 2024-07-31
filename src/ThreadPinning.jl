@@ -6,6 +6,7 @@ getstdout() = something(DEFAULT_IO[], stdout)
 # includes
 include("public_macro.jl")
 include("utility.jl")
+include("faking.jl")
 include("slurm.jl")
 include("threadinfo.jl")
 include("querying.jl")

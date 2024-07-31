@@ -2,10 +2,14 @@ module SLURM
 
 import ..Utility
 import SysInfo
+import ..Faking: isfaking
 
 const sys = Ref{Union{Nothing, SysInfo.Internals.System}}(nothing)
 
 function slurmsys()
+    if isfaking()
+        return SysInfo.stdsys()
+    end
     if isnothing(sys[])
         sys[] = SysInfo.getsystem(; backend = :hwloc, disallowed = false)
     end

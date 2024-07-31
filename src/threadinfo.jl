@@ -56,7 +56,7 @@ function threadinfo end
 module ThreadInfo
 
 import ThreadPinning: threadinfo
-using ThreadPinning: getstdout
+using ThreadPinning: ThreadPinning, getstdout
 import ..SLURM
 import SysInfo
 import ThreadPinningCore
@@ -119,12 +119,21 @@ function threadinfo(io = getstdout();
     println(io)
 
     # query cpuids of threads
+    local threads_cpuids
     local threadslabel
+    local nthreads
     @static if Sys.islinux()
         if blas
-            threads_cpuids = ThreadPinningCore.openblas_getcpuids()
-            threadslabel = "BLAS"
-            nthreads = length(threads_cpuids)
+            try
+                threads_cpuids = ThreadPinningCore.openblas_getcpuids()
+                threadslabel = "BLAS"
+                nthreads = length(threads_cpuids)
+            catch _
+                printstyled(io,
+                    "Couldn't get the CPU IDs of the BLAS threads. Maybe you haven't pinned them yet?.\n\n";
+                    kwargs_msg_red...)
+                return
+            end
         else
             threads_cpuids = ThreadPinningCore.getcpuids(; threadpool)
             nthreads = length(threads_cpuids)
@@ -204,7 +213,8 @@ function threadinfo(io = getstdout();
     #     end
     # end
     if masks
-        print_affinity_masks(; groupby, threadpool, io)
+        println(io)
+        ThreadPinning.printaffinities(; groupby, threadpool, io)
     end
     # hints && _general_hints()
     return
