@@ -38,6 +38,8 @@ export core, numa, socket, node, cores, numas, sockets
 export printaffinity, printaffinities, visualize_affinity
 export ispinned, hyperthreading_is_enabled, ishyperthread, isefficiencycore
 export ncputhreads, ncores, nnuma, nsockets, ncorekinds, nsmt
+export openblas_getaffinity, openblas_getcpuid, openblas_getcpuids,
+       openblas_ispinned, openblas_printaffinity, openblas_printaffinities
 @public cpuids, id, cpuid
 
 ## pinning
@@ -45,6 +47,8 @@ export pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
 export setaffinity, setaffinity_cpuids
 export pinthreads_likwidpin, likwidpin_domains, likwidpin_to_cpuids
 export pinthreads_mpi
+export openblas_setaffinity, openblas_pinthread, openblas_pinthreads,
+       openblas_unpinthread, openblas_unpinthreads
 
 ## re-export
 using StableTasks: @spawnat

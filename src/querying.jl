@@ -204,6 +204,53 @@ logical index (starts at 1).
 """
 function cpuid end
 
+# OpenBLAS
+"""
+    openblas_getaffinity(; threadid, convert = true)
+
+Query the affinity of the OpenBLAS thread with the given `threadid`
+(typically `1:BLAS.get_num_threads()`).
+By default, returns a vector respresenting the mask.
+If `convert=false` a `Ccpu_set_t` is returned instead.
+"""
+function openblas_getaffinity end
+
+"""
+    openblas_getcpuid(; threadid)
+
+Get the id of the CPU thread on which the OpenBLAS thread with the given `threadid` is
+running on **according to its affinity**.
+
+**Note:** If the OpenBLAS thread has not been pinned before, this function will error
+because the affinity mask highlights more than a single CPU thread by default.
+"""
+function openblas_getcpuid end
+
+"""
+    openblas_getcpuids()
+
+Get the ids of the CPU threads on which the OpenBLAS threads are running on
+**according to their affinity**. See [`openblas_getcpuid`](@ref) for more information."
+"""
+function openblas_getcpuids end
+
+"""
+    openblas_ispinned(; threadid)
+
+Check if the OpenBLAS thread is pinned to a single CPU thread.
+"""
+function openblas_ispinned end
+
+"""
+    openblas_printaffinity(; threadid)
+
+Print the affinity of an OpenBLAS thread.
+"""
+function openblas_printaffinity end
+
+"Print the affinities of all OpenBLAS threads."
+function openblas_printaffinities end
+
 ##
 ##
 ## -------------- Internals / Implementation --------------
@@ -218,6 +265,8 @@ import ThreadPinning: ispinned, ishyperthread, hyperthreading_is_enabled, iseffi
 import ThreadPinning: ncputhreads, ncores, nnuma, nsockets, ncorekinds, nsmt
 import ThreadPinning: core, numa, socket, node, cores, sockets, numas, cpuids
 import ThreadPinning: id, cpuid
+import ThreadPinning: openblas_getaffinity, openblas_getcpuid, openblas_getcpuids,
+                      openblas_ispinned, openblas_printaffinity, openblas_printaffinities
 
 using ThreadPinning: getstdout
 using SysInfo: SysInfo
@@ -225,6 +274,7 @@ using ThreadPinningCore: ThreadPinningCore
 using StableTasks: @fetchfrom
 import ..ThreadInfo
 import ..Utility
+using LinearAlgebra: BLAS
 
 # forwarding to SysInfo
 ncputhreads() = SysInfo.ncputhreads()
@@ -252,6 +302,10 @@ getcpuid(; kwargs...) = ThreadPinningCore.getcpuid(; kwargs...)
 getcpuids(; kwargs...) = ThreadPinningCore.getcpuids(; kwargs...)
 getaffinity(; kwargs...) = ThreadPinningCore.getaffinity(; kwargs...)
 ispinned(; kwargs...) = ThreadPinningCore.ispinned(; kwargs...)
+openblas_getaffinity(; kwargs...) = ThreadPinningCore.openblas_getaffinity(; kwargs...)
+openblas_getcpuid(; kwargs...) = ThreadPinningCore.openblas_getcpuid(; kwargs...)
+openblas_getcpuids(; kwargs...) = ThreadPinningCore.openblas_getcpuids(; kwargs...)
+openblas_ispinned(; kwargs...) = ThreadPinningCore.openblas_ispinned(; kwargs...)
 
 # no (direct) forwarding
 function printaffinity(; threadid = Threads.threadid(), io = getstdout(), kwargs...)
@@ -265,6 +319,21 @@ function printaffinities(; threadpool = :default, io = getstdout(), kwargs...)
     tids = ThreadPinningCore.threadids(; threadpool)
     for threadid in tids
         printaffinity(; threadid, io, kwargs...)
+    end
+    return
+end
+function openblas_printaffinity(;
+        threadid = Threads.threadid(), io = getstdout(), kwargs...)
+    mask = ThreadPinningCore.openblas_getaffinity(; threadid)
+    str = _affinity_to_string(mask; kwargs...)
+    print(io, rpad("$(threadid):", 5))
+    println(io, str)
+    return
+end
+function openblas_printaffinities(; io = getstdout(), kwargs...)
+    tids = 1:BLAS.get_num_threads()
+    for threadid in tids
+        openblas_printaffinity(; threadid, io, kwargs...)
     end
     return
 end
@@ -283,7 +352,8 @@ function _affinity_to_string(mask; groupby = :sockets)
     for s in 1:nf()
         cpuids = f(s)
         idcs = cpuids .+ 1
-        str = string(str, mask[idcs]..., "|")
+        x = Int.(mask[idcs])
+        str = string(str, x..., "|")
     end
     return str
 end

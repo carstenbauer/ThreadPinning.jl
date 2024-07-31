@@ -214,7 +214,11 @@ function threadinfo(io = getstdout();
     # end
     if masks
         println(io)
-        ThreadPinning.printaffinities(; groupby, threadpool, io)
+        if blas
+            ThreadPinning.openblas_printaffinities(; groupby, io)
+        else
+            ThreadPinning.printaffinities(; groupby, threadpool, io)
+        end
     end
     # hints && _general_hints()
     return

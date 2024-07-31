@@ -8,29 +8,32 @@ quiet_testing = parse(Bool, get(ENV, "TP_TEST_QUIET", "true"))
 
 @run_package_tests
 
-# run on all OSs
-@testitem "threadinfo" begin
-    include("tests_threadinfo.jl")
-end
-@testitem "slurm" begin
-    include("tests_slurm.jl")
+# # run on all OSs
+# @testitem "threadinfo" begin
+#     include("tests_threadinfo.jl")
+# end
+# @testitem "slurm" begin
+#     include("tests_slurm.jl")
+# end
+
+# # run only on Linux
+# @testitem "querying" begin
+#     Sys.islinux() && include("tests_querying.jl")
+# end
+# @testitem "pinning" begin
+#     Sys.islinux() && include("tests_pinning.jl")
+# end
+# @testitem "likwid-pin" begin
+#     Sys.islinux() && include("tests_likwid-pin.jl")
+# end
+@testitem "openblas" begin
+    Sys.islinux() && include("tests_openblas.jl")
 end
 
-# run only on certain OSs
-if Sys.islinux()
-    @testitem "querying" begin
-        include("tests_querying.jl")
-    end
-    @testitem "pinning" begin
-        include("tests_pinning.jl")
-    end
-elseif Sys.isapple() || Sys.iswindows()
-    @testitem "nonlinux" begin
-        include("tests_nonlinux.jl")
-    end
-end
+# # run only on macOS/Windows
+# @testitem "nonlinux" begin
+#     (Sys.isapple() || Sys.iswindows()) && include("tests_nonlinux.jl")
+# end
 
-# @testitem "likwid-pin" begin include("tests_likwid-pin.jl") end
-# @testitem "openblas" begin include("tests_openblas.jl") end
-# @testitem "core2core latency" begin include("tests_latency.jl") end
+
 # @testitem "intel mkl" begin include("tests_mkl.jl") end

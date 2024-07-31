@@ -2,6 +2,7 @@ include("common.jl")
 using ThreadPinning
 using Test
 using Statistics
+import SysInfo
 
 Threads.nthreads() ≥ 4 ||
     error("Need at least 4 Julia threads! Forgot to set `JULIA_NUM_THREADS`?")
@@ -30,37 +31,40 @@ function likwidpin_tests()
     @testset "likwid-pin: domain-based" begin
         # logical order, physical cores first(!), starts with 0(!)
         @testset "domain:explicit" begin
-            for lpstr in ("N:0-3", "N:0,1,2,3", "S0:0-3", "S0:0,1,2,3", "M0:0-3",
-                "M0:0,1,2,3") # 4 threads to first 4 cores in node
-                pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
-                @test pinthreads_cpuids[1:4] == cpuids_per_node()[1:4]
+            if SysInfo.ncputhreads_within_numa(1) >= 4
+                for lpstr in ("N:0-3", "N:0,1,2,3", "S0:0-3", "S0:0,1,2,3", "M0:0-3",
+                    "M0:0,1,2,3") # 4 threads to first 4 cores in node
+                    pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
+                    @test pinthreads_cpuids[1:4] == node(1:4)
+                end
             end
-            if nsockets() > 1
+            if nsockets() > 1 && SysInfo.ncputhreads_within_socket(2) >= 4
                 lpstr = "S1:0-3"
                 pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
-                @test pinthreads_cpuids[1:4] == cpuids_per_socket()[2][1:4]
+                @test pinthreads_cpuids[1:4] == socket(2, 1:4)
             end
-            if nnuma() > 1
+            if nnuma() > 1 && SysInfo.ncputhreads_within_numa(2) >= 4
                 lpstr = "M1:0,1,2,3"
                 pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
-                @test pinthreads_cpuids[1:4] == cpuids_per_numa()[2][1:4]
+                @test pinthreads_cpuids[1:4] == numa(2, 1:4)
             end
         end
 
         @testset "domain:scatter[:numthreads]" begin
-            for lpstr in ("S0:scatter", "M0:scatter", "N:scatter")
-                pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
-                @test pinthreads_cpuids[1:4] == cpuids_per_node()[1:4]
+            if SysInfo.ncputhreads_within_numa(1) >= 4
+                for lpstr in ("S0:scatter", "M0:scatter", "N:scatter")
+                    pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
+                    @test pinthreads_cpuids[1:4] == node(1:4)
+                end
             end
 
             let lpstr = "S:scatter"
                 pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
                 num_threads = 4
-                cpuids_socket = cpuids_per_socket()
                 cpuids = zeros(Int, num_threads)
                 for i in 1:num_threads
                     c, s = divrem(i - 1, nsockets()) .+ (1, 1)
-                    cpuids[i] = cpuids_socket[s][c]
+                    cpuids[i] = only(socket(s, c))
                 end
                 @test pinthreads_cpuids[1:num_threads] == cpuids
 
@@ -72,11 +76,10 @@ function likwidpin_tests()
             let lpstr = "M:scatter"
                 pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
                 num_threads = 4
-                cpuids_numa = cpuids_per_numa()
                 cpuids = zeros(Int, num_threads)
                 for i in 1:num_threads
                     c, n = divrem(i - 1, nnuma()) .+ (1, 1)
-                    cpuids[i] = cpuids_numa[n][c]
+                    cpuids[i] = only(numa(n, c))
                 end
                 @test pinthreads_cpuids[1:num_threads] == cpuids
 
@@ -97,10 +100,12 @@ function likwidpin_tests()
     end
 
     @testset "likwid-pin: expression" begin
-        @testset "E:domain:numthreads" begin
-            for lpstr in ("E:N:3", "E:S0:3", "E:M0:3")
-                pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
-                @test pinthreads_cpuids[1:3] == cpuids_per_node(; compact = true)[1:3]
+        if SysInfo.ncputhreads_within_numa(1) >= 4
+            @testset "E:domain:numthreads" begin
+                for lpstr in ("E:N:3", "E:S0:3", "E:M0:3")
+                    pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
+                    @test pinthreads_cpuids[1:3] == node(1:3; compact = true)
+                end
             end
         end
 
@@ -117,36 +122,35 @@ function likwidpin_tests()
     end
 
     @testset "likwidpin: @ concatenation" begin
-        let lpstr = "S0:0-1@S0:2-3"
-            pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
-            cs = cpuids_per_socket()
-            @test pinthreads_cpuids[1:4] == cs[1][1:4]
+        if SysInfo.ncputhreads_within_socket(1) >= 4
+            let lpstr = "S0:0-1@S0:2-3"
+                pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
+                @test pinthreads_cpuids[1:4] == socket(1, 1:4)
+            end
+            let lpstr = "S0:0@S0:1@S0:2@S0:3"
+                pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
+                @test pinthreads_cpuids[1:4] == socket(1, 1:4)
+            end
         end
-        let lpstr = "S0:0@S0:1@S0:2@S0:3"
-            pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
-            cs = cpuids_per_socket()
-            @test pinthreads_cpuids[1:4] == cs[1][1:4]
-        end
-        if nsockets() > 1
+        if nsockets() > 1 && SysInfo.ncputhreads_within_socket(1) >= 2 &&
+           SysInfo.ncputhreads_within_socket(2) >= 2
             let lpstr = "S0:0-1@S1:1-2" # 2 threads per socket
                 pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
-                cs = cpuids_per_socket()
-                @test pinthreads_cpuids[1:4] == vcat(cs[1][1:2], cs[2][2:3])
+                @test pinthreads_cpuids[1:4] == vcat(socket(1, 1:2), socket(2, 2:3))
             end
         end
-        if nnuma() > 1
+        if nnuma() > 1 && SysInfo.ncputhreads_within_numa(1) >= 2 &&
+           SysInfo.ncputhreads_within_numa(2) >= 2
             let lpstr = "M0:0-1@M1:1-2" # 2 threads per memory domain
                 pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
-                cn = cpuids_per_numa()
-                @test pinthreads_cpuids[1:4] == vcat(cn[1][1:2], cn[2][2:3])
+                @test pinthreads_cpuids[1:4] == vcat(numa(1, 1:2), numa(2, 2:3))
             end
         end
-        if nnuma() > 1 && nsockets() > 1
+        if nnuma() > 1 && nsockets() > 1 && SysInfo.ncputhreads_within_numa(1) >= 2 &&
+           SysInfo.ncputhreads_within_socket(2) >= 2
             let lpstr = "M0:0-1@S1:1-2"
                 pinthreads_cpuids = ThreadPinning.LIKWID.likwidpin_to_cpuids(lpstr)
-                cs = cpuids_per_socket()
-                cn = cpuids_per_numa()
-                @test pinthreads_cpuids[1:4] == vcat(cn[1][1:2], cs[2][2:3])
+                @test pinthreads_cpuids[1:4] == vcat(numa(1, 1:2), socket(2, 2:3))
             end
         end
     end

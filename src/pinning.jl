@@ -166,6 +166,50 @@ Set the affinity of a Julia thread based on the given mask (a vector of ones and
 """
 function setaffinity end
 
+# OpenBLAS
+"""
+    openblas_setaffinity(mask; threadid)
+
+Set the affinity of the OpenBLAS thread with the given `threadid` to the given `mask`.
+
+The input `mask` should be one of the following:
+   * a `BitArray` to indicate the mask directly
+   * a vector of cpuids (in which case the mask will be constructed automatically)
+"""
+function openblas_setaffinity end
+
+"""
+    openblas_pinthread(cpuid; threadid)
+
+Pin the OpenBLAS thread with the given `threadid` to the given CPU-thread (`cpuid`).
+"""
+function openblas_pinthread end
+
+"""
+    openblas_pinthreads(cpuids; nthreads = BLAS.get_num_threads())
+
+Pin the OpenBLAS threads to the given CPU IDs. The optional keyword argument `nthreads`
+serves as a cutoff.
+"""
+function openblas_pinthreads end
+
+"""
+    openblas_unpinthread(; threadid)
+
+Unpins the OpenBLAS thread with the given `threadid` by setting its affinity mask to all
+unity. Afterwards, the OS is free to move the OpenBLAS thread from one CPU thread
+to another.
+"""
+function openblas_unpinthread end
+
+"""
+    openblas_unpinthreads(; threadpool = :default)
+
+Unpins all OpenBLAS threads by setting their affinity masks all unity.
+Afterwards, the OS is free to move any OpenBLAS thread from one CPU thread to another.
+"""
+function openblas_unpinthreads end
+
 ##
 ##
 ## -------------- Internals / Implementation --------------
@@ -176,15 +220,23 @@ module Pinning
 
 import ThreadPinning: pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
 import ThreadPinning: setaffinity, setaffinity_cpuids
+import ThreadPinning: openblas_setaffinity, openblas_pinthread, openblas_pinthreads,
+                      openblas_unpinthread, openblas_unpinthreads
 using ThreadPinning: getaffinity, getcpuids
 import ThreadPinningCore
 import SysInfo
 import ..Utility
+import ..SLURM
 
 # direct forwards
 setaffinity(mask; kwargs...) = ThreadPinningCore.setaffinity(mask; kwargs...)
 unpinthread(; kwargs...) = ThreadPinningCore.unpinthread(; kwargs...)
 unpinthreads(; kwargs...) = ThreadPinningCore.unpinthreads(; kwargs...)
+function openblas_setaffinity(mask; kwargs...)
+    ThreadPinningCore.openblas_setaffinity(mask; kwargs...)
+end
+openblas_unpinthread(; kwargs...) = ThreadPinningCore.openblas_unpinthread(; kwargs...)
+openblas_unpinthreads(; kwargs...) = ThreadPinningCore.openblas_unpinthreads(; kwargs...)
 
 function with_pinthreads(
         f::F,
@@ -220,7 +272,7 @@ function pinthread(
         cpuid::Integer; warn::Bool = ThreadPinningCore.is_first_pin_attempt(), kwargs...)
     if warn
         # _check_environment()
-        # _check_slurm()
+        _check_slurm()
     end
     _check_cpuid(cpuid)
     return ThreadPinningCore.pinthread(cpuid; kwargs...)
@@ -232,9 +284,31 @@ function pinthreads(cpuids::AbstractVector{<:Integer};
     _check_cpuids(cpuids)
     if warn
         # _check_environment()
-        # _check_slurm()
+        _check_slurm()
     end
     ThreadPinningCore.pinthreads(cpuids; kwargs...)
+    return
+end
+
+function openblas_pinthread(
+        cpuid::Integer; warn::Bool = ThreadPinningCore.is_first_pin_attempt(), kwargs...)
+    if warn
+        # _check_environment()
+        _check_slurm()
+    end
+    _check_cpuid(cpuid)
+    return ThreadPinningCore.openblas_pinthread(cpuid; kwargs...)
+end
+
+function openblas_pinthreads(cpuids::AbstractVector{<:Integer};
+        warn::Bool = ThreadPinningCore.is_first_pin_attempt(),
+        kwargs...)
+    _check_cpuids(cpuids)
+    if warn
+        # _check_environment()
+        _check_slurm()
+    end
+    ThreadPinningCore.openblas_pinthreads(cpuids; kwargs...)
     return
 end
 
