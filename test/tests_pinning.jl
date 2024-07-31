@@ -181,6 +181,18 @@ function pinning_tests()
             @test !ispinned(; threadid)
         end
     end
+
+    @testset "setaffinity" begin
+        mask = getaffinity()
+        @test isnothing(setaffinity(mask))
+        @test isnothing(setaffinity(mask; threadid = randtid))
+
+        cpuid1, cpuid2 = get_two_cpuids()
+        @test isnothing(setaffinity_cpuids([cpuid2, cpuid1]))
+        @test ThreadPinning.Utility.affinitymask2cpuids(getaffinity())[1:2] ==
+              [cpuid2, cpuid1]
+        @test isnothing(setaffinity_cpuids([cpuid2, cpuid1]; threadid = randtid))
+    end
 end
 
 @testset "TestSystems" begin
