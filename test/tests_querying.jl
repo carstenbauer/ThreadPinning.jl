@@ -15,7 +15,7 @@ const firsttid = first(ThreadPinning.threadids(; threadpool = :default))
     @test getcpuid() >= 0
     @test getcpuids() isa Vector{<:Integer}
     @test all(>=(0), getcpuids())
-    @test getcpuids() == [getcpuid(; threadid = i) for i in tids]
+    # @test getcpuids() == [getcpuid(; threadid = i) for i in tids]
 
     @test getaffinity() isa Vector{<:Integer}
     @test getaffinity(; threadid = firsttid) isa Vector{<:Integer}

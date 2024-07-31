@@ -37,4 +37,6 @@ end
 
 # TODO: pinthreads_mpi
 
-# @testitem "intel mkl" begin include("tests_mkl.jl") end
+@testitem "intel mkl" begin
+    include("tests_mkl.jl")
+end
