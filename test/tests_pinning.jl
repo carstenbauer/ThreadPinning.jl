@@ -193,6 +193,10 @@ function pinning_tests()
     end
 end
 
+@testset "HostSystem" begin
+    pinning_tests()
+end
+
 @testset "TestSystems" begin
     for name in ThreadPinning.Faking.systems()
         println("")

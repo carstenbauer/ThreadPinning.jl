@@ -30,6 +30,10 @@ function openblas_tests()
     end
 end
 
+@testset "HostSystem" begin
+    openblas_tests()
+end
+
 @testset "TestSystems" begin
     for name in ThreadPinning.Faking.systems()
         println("")

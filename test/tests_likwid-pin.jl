@@ -154,6 +154,15 @@ function likwidpin_tests()
             end
         end
     end
+
+    @testset "pinthreads_likwidpin" begin
+        if SysInfo.ncputhreads_within_socket(1) >= 4
+            @test isnothing(pinthreads_likwidpin("S0:0-3"))
+        end
+        if SysInfo.nnuma() > 1 && SysInfo.ncputhreads_within_numa(2) >= 5
+            @test isnothing(pinthreads_likwidpin("M1:0,2,4"))
+        end
+    end
 end
 
 @testset "TestSystems" begin
