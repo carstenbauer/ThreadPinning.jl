@@ -16,6 +16,11 @@ end
     include("tests_slurm.jl")
 end
 
+# run only on macOS/Windows
+@testitem "nonlinux" begin
+    (Sys.isapple() || Sys.iswindows()) && include("tests_nonlinux.jl")
+end
+
 # run only on Linux
 @testitem "querying" begin
     Sys.islinux() && include("tests_querying.jl")
@@ -29,14 +34,8 @@ end
 @testitem "openblas" begin
     Sys.islinux() && include("tests_openblas.jl")
 end
-
-# run only on macOS/Windows
-@testitem "nonlinux" begin
-    (Sys.isapple() || Sys.iswindows()) && include("tests_nonlinux.jl")
+@testitem "intel mkl" begin
+    Sys.islinux() && include("tests_mkl.jl")
 end
 
 # TODO: pinthreads_mpi
-
-@testitem "intel mkl" begin
-    include("tests_mkl.jl")
-end
