@@ -1,12 +1,13 @@
 module Utility
 
+import ThreadPinning
 import ThreadPinningCore
 import SysInfo
 using LinearAlgebra: BLAS
 
 function cpuids2affinitymask(cpuids::AbstractVector{<:Integer})
     mask = ThreadPinningCore.emptymask()
-    for (i, c) in pairs(SysInfo.cpuids())
+    for (i, c) in pairs(ThreadPinning.cpuids())
         if c in cpuids
             mask[i] = one(eltype(mask))
         end
@@ -15,7 +16,7 @@ function cpuids2affinitymask(cpuids::AbstractVector{<:Integer})
 end
 
 function affinitymask2cpuids(mask::Union{AbstractVector{<:Integer}, BitVector}; kwargs...)
-    cpuids_all = SysInfo.cpuids(; kwargs...)
+    cpuids_all = ThreadPinning.cpuids(; kwargs...)
     return [cpuids_all[i] for (i, v) in enumerate(mask) if v == 1]
 end
 

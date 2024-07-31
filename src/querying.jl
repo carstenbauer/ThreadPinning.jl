@@ -188,7 +188,7 @@ maximum is returned.
 function nsmt end
 
 """
-All valid CPU IDs of the system.
+All valid CPU IDs of the system (sorted).
 """
 function cpuids end
 
@@ -242,7 +242,7 @@ node(args...; kwargs...) = SysInfo.node(args...; kwargs...)
 cores(args...; kwargs...) = SysInfo.cores(args...; kwargs...)
 sockets(args...; kwargs...) = SysInfo.sockets(args...; kwargs...)
 numas(args...; kwargs...) = SysInfo.numas(args...; kwargs...)
-cpuids(args...; kwargs...) = collect(SysInfo.cpuids(args...; kwargs...))
+cpuids(args...; kwargs...) = sort(SysInfo.cpuids(args...; kwargs...))
 hyperthreading_is_enabled() = SysInfo.hyperthreading_is_enabled()
 ishyperthread(cpuid::Integer) = SysInfo.ishyperthread(cpuid)
 isefficiencycore(cpuid::Integer) = SysInfo.isefficiencycore(cpuid)

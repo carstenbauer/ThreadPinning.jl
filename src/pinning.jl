@@ -56,7 +56,7 @@ settings.
            domain.
 * `:random`: pin threads randomly to CPU-threads
 * `:current`: pin threads to the CPU-threads they are currently running on
-* `:firstn`: pin threads to CPU-threads in "physical" order (as specified by lscpu).
+* `:firstn`: pin threads to CPU-threads in order according to there OS index.
 * `:affinitymask`: pin threads to different CPU-threads in accordance with the process
                    affinity. By default, `hyperthreads_last=true`.
 
@@ -176,6 +176,7 @@ module Pinning
 
 import ThreadPinning: pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
 import ThreadPinning: setaffinity, setaffinity_cpuids
+using ThreadPinning: getaffinity, getcpuids
 import ThreadPinningCore
 import SysInfo
 import ..Utility
@@ -184,7 +185,29 @@ import ..Utility
 setaffinity(mask; kwargs...) = ThreadPinningCore.setaffinity(mask; kwargs...)
 unpinthread(; kwargs...) = ThreadPinningCore.unpinthread(; kwargs...)
 unpinthreads(; kwargs...) = ThreadPinningCore.unpinthreads(; kwargs...)
-with_pinthreads(args...; kwargs...) = ThreadPinningCore.with_pinthreads(args...; kwargs...)
+
+function with_pinthreads(
+        f::F,
+        args...;
+        soft = false,
+        threadpool::Symbol = :default,
+        kwargs...
+) where {F}
+    tids = ThreadPinningCore.threadids(; threadpool)
+    masks_prior = [getaffinity(; threadid = i) for i in tids]
+    cpuids_prior = getcpuids()
+    pinthreads(args...; threadpool, kwargs...)
+    local res
+    try
+        res = f()
+    finally
+        soft || pinthreads(cpuids_prior)
+        for (i, threadid) in pairs(tids)
+            setaffinity(masks_prior[i]; threadid)
+        end
+    end
+    return res
+end
 
 function setaffinity_cpuids(cpuids::AbstractVector{<:Integer}; kwargs...)
     _check_cpuids(cpuids)
@@ -242,25 +265,15 @@ function pinthreads(::Val{:random}; kwargs...)
     pinthreads(SysInfo.node(; shuffle = true); kwargs...)
 end
 pinthreads(::Val{:firstn}; kwargs...) = pinthreads(sort(SysInfo.cpuids()); kwargs...)
-pinthreads(::Val{:current}; kwargs...) = pinthreads(ThreadPinningCore.getcpuids(); kwargs...)
+function pinthreads(::Val{:current}; kwargs...)
+    pinthreads(ThreadPinningCore.getcpuids(); kwargs...)
+end
 function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
         nthreads = Threads.nthreads(), warn = false, kwargs...)
     mask = ThreadPinningCore.get_initial_affinity_mask()
     isnothing(mask) && error("No (or non-unique) external affinity mask set.")
     if hyperthreads_last
         cpuids = Utility.affinitymask2cpuids(mask)
-        # should be unnecessary now because cpuids are sorted interally,
-        # see compact for SysInfo.cpuids
-        #
-        # sort cpuids such that hyperthreads come last
-        # by_func(c) = (c, SysInfo.ishyperthread(c))
-        # lt_func(x, y) =
-        #     if x[2] != y[2]
-        #         return x[2] < y[2] # non-hyperthreads first
-        #     else
-        #         return x[1] < y[1] # lower cpuid first
-        #     end
-        # sort!(cpuids; lt = lt_func, by = by_func)
     else
         cpuids = Utility.affinitymask2cpuids(mask; compact = true)
     end
