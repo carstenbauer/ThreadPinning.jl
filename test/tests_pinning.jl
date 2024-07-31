@@ -83,7 +83,7 @@ function pinning_tests()
                 @test getcpuids()[1:2] == socket(1, 1:2)
             end
         end
-        if !ThreadPinning.Faking.isfaking()
+        if !ThreadPinning.Faking.isfaking() && !IS_GITHUB_CI
             @testset ":affinitymask" begin
                 test_external_affinity = (cmd, numthreads, code) -> begin
                     julia = Base.julia_cmd()
