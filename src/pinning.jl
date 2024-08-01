@@ -179,6 +179,17 @@ The input `mask` should be one of the following:
 function openblas_setaffinity end
 
 """
+Set the affinity of the OpenBLAS thread to the given CPU-threads.
+
+*Examples:*
+* `openblas_setaffinity_cpuids(socket(1))` # set the affinity to the first socket
+* `openblas_setaffinity_cpuids(numa(2))` # set the affinity to the second NUMA domain
+* `openblas_setaffinity_cpuids(socket(1, 1:3))` # set the affinity to the first three cores in the first NUMA domain
+* `openblas_setaffinity_cpuids([1,3,5])` # set the affinity to the CPU-threads with the IDs 1, 3, and 5.
+"""
+function openblas_setaffinity_cpuids end
+
+"""
     openblas_pinthread(cpuid; threadid)
 
 Pin the OpenBLAS thread with the given `threadid` to the given CPU-thread (`cpuid`).
@@ -220,13 +231,15 @@ module Pinning
 
 import ThreadPinning: pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
 import ThreadPinning: setaffinity, setaffinity_cpuids
-import ThreadPinning: openblas_setaffinity, openblas_pinthread, openblas_pinthreads,
+import ThreadPinning: openblas_setaffinity, openblas_setaffinity_cpuids,
+                      openblas_pinthread, openblas_pinthreads,
                       openblas_unpinthread, openblas_unpinthreads
-using ThreadPinning: getaffinity, getcpuids
+using ThreadPinning: ThreadPinning, getaffinity, getcpuids
 import ThreadPinningCore
 import SysInfo
 import ..Utility
 import ..SLURM
+using LinearAlgebra: BLAS
 
 # direct forwards
 setaffinity(mask; kwargs...) = ThreadPinningCore.setaffinity(mask; kwargs...)
@@ -268,91 +281,89 @@ function setaffinity_cpuids(cpuids::AbstractVector{<:Integer}; kwargs...)
     return
 end
 
-function pinthread(
-        cpuid::Integer; warn::Bool = ThreadPinningCore.is_first_pin_attempt(), kwargs...)
-    if warn
-        # _check_environment()
-        _check_slurm()
-    end
-    _check_cpuid(cpuid)
-    return ThreadPinningCore.pinthread(cpuid; kwargs...)
-end
-
-function pinthreads(cpuids::AbstractVector{<:Integer};
-        warn::Bool = ThreadPinningCore.is_first_pin_attempt(),
-        kwargs...)
+function openblas_setaffinity_cpuids(cpuids::AbstractVector{<:Integer}; kwargs...)
     _check_cpuids(cpuids)
-    if warn
-        # _check_environment()
-        _check_slurm()
-    end
-    ThreadPinningCore.pinthreads(cpuids; kwargs...)
+    mask = Utility.cpuids2affinitymask(cpuids)
+    ThreadPinningCore.openblas_setaffinity(BitArray(mask); kwargs...)
     return
 end
 
-function openblas_pinthread(
-        cpuid::Integer; warn::Bool = ThreadPinningCore.is_first_pin_attempt(), kwargs...)
-    if warn
-        # _check_environment()
-        _check_slurm()
+for (_pinthread, _pinthreads, _nthreads) in (
+    (:pinthread, :pinthreads, :(Threads.nthreads)), (
+        :openblas_pinthread, :openblas_pinthreads, :(BLAS.get_num_threads)))
+    @eval begin
+        # core functions (pinning based on cpuids)
+        function $(_pinthread)(
+                cpuid::Integer; warn::Bool = ThreadPinningCore.is_first_pin_attempt(), kwargs...)
+            if warn
+                # _check_environment()
+                _check_slurm()
+            end
+            _check_cpuid(cpuid)
+            return ThreadPinningCore.$(_pinthread)(cpuid; kwargs...)
+        end
+
+        function $(_pinthreads)(cpuids::AbstractVector{<:Integer};
+                warn::Bool = ThreadPinningCore.is_first_pin_attempt(),
+                kwargs...)
+            _check_cpuids(cpuids)
+            if warn
+                # _check_environment()
+                _check_slurm()
+            end
+            ThreadPinningCore.$(_pinthreads)(cpuids; kwargs...)
+            return
+        end
+
+        # concatenation
+        function $(_pinthreads)(cpuids_vec::AbstractVector{T};
+                kwargs...) where {T <: AbstractVector{<:Integer}}
+            return $(_pinthreads)(reduce(vcat, cpuids_vec); kwargs...)
+        end
+        function $(_pinthreads)(cpuids_args::AbstractVector{<:Integer}...; kwargs...)
+            return $(_pinthreads)(reduce(vcat, cpuids_args); kwargs...)
+        end
+
+        # convenience symbols
+        $(_pinthreads)(symb::Symbol; kwargs...) = $(_pinthreads)(Val(symb); kwargs...)
+        function $(_pinthreads)(
+                ::Union{Val{:compact}, Val{:threads}, Val{:cputhreads}}; kwargs...)
+            $(_pinthreads)(SysInfo.node(; compact = true); kwargs...)
+        end
+        function $(_pinthreads)(::Union{Val{:cores}}; kwargs...)
+            $(_pinthreads)(SysInfo.node(; compact = false); kwargs...)
+        end
+        function $(_pinthreads)(::Val{:sockets}; compact = false, kwargs...)
+            $(_pinthreads)(SysInfo.sockets(; compact); kwargs...)
+        end
+        function $(_pinthreads)(
+                ::Union{Val{:numa}, Val{:numas}}; compact = false, kwargs...)
+            $(_pinthreads)(SysInfo.numas(; compact); kwargs...)
+        end
+        function $(_pinthreads)(::Val{:random}; kwargs...)
+            $(_pinthreads)(SysInfo.node(; shuffle = true); kwargs...)
+        end
+        function $(_pinthreads)(::Val{:firstn}; kwargs...)
+            $(_pinthreads)(sort(SysInfo.cpuids()); kwargs...)
+        end
+        function $(_pinthreads)(::Val{:affinitymask}; hyperthreads_last = true,
+                nthreads = $(_nthreads)(), warn = false, kwargs...)
+            mask = ThreadPinningCore.get_initial_affinity_mask()
+            isnothing(mask) && error("No (or non-unique) external affinity mask set.")
+            if hyperthreads_last
+                cpuids = Utility.affinitymask2cpuids(mask)
+            else
+                cpuids = Utility.affinitymask2cpuids(mask; compact = true)
+            end
+            $(_pinthreads)(cpuids; nthreads, warn, kwargs...)
+            return
+        end
     end
-    _check_cpuid(cpuid)
-    return ThreadPinningCore.openblas_pinthread(cpuid; kwargs...)
 end
 
-function openblas_pinthreads(cpuids::AbstractVector{<:Integer};
-        warn::Bool = ThreadPinningCore.is_first_pin_attempt(),
-        kwargs...)
-    _check_cpuids(cpuids)
-    if warn
-        # _check_environment()
-        _check_slurm()
-    end
-    ThreadPinningCore.openblas_pinthreads(cpuids; kwargs...)
-    return
-end
-
-# concatenation
-function pinthreads(cpuids_vec::AbstractVector{T};
-        kwargs...) where {T <: AbstractVector{<:Integer}}
-    return pinthreads(reduce(vcat, cpuids_vec); kwargs...)
-end
-function pinthreads(cpuids_args::AbstractVector{<:Integer}...; kwargs...)
-    return pinthreads(reduce(vcat, cpuids_args); kwargs...)
-end
-
-# convenience symbols
-pinthreads(symb::Symbol; kwargs...) = pinthreads(Val(symb); kwargs...)
-function pinthreads(::Union{Val{:compact}, Val{:threads}, Val{:cputhreads}}; kwargs...)
-    pinthreads(SysInfo.node(; compact = true); kwargs...)
-end
-function pinthreads(::Union{Val{:cores}}; kwargs...)
-    pinthreads(SysInfo.node(; compact = false); kwargs...)
-end
-function pinthreads(::Val{:sockets}; compact = false, kwargs...)
-    pinthreads(SysInfo.sockets(; compact); kwargs...)
-end
-function pinthreads(::Union{Val{:numa}, Val{:numas}}; compact = false, kwargs...)
-    pinthreads(SysInfo.numas(; compact); kwargs...)
-end
-function pinthreads(::Val{:random}; kwargs...)
-    pinthreads(SysInfo.node(; shuffle = true); kwargs...)
-end
-pinthreads(::Val{:firstn}; kwargs...) = pinthreads(sort(SysInfo.cpuids()); kwargs...)
+# doesn't really make much sense for BLAS
 function pinthreads(::Val{:current}; kwargs...)
     pinthreads(ThreadPinningCore.getcpuids(); kwargs...)
-end
-function pinthreads(::Val{:affinitymask}; hyperthreads_last = true,
-        nthreads = Threads.nthreads(), warn = false, kwargs...)
-    mask = ThreadPinningCore.get_initial_affinity_mask()
-    isnothing(mask) && error("No (or non-unique) external affinity mask set.")
-    if hyperthreads_last
-        cpuids = Utility.affinitymask2cpuids(mask)
-    else
-        cpuids = Utility.affinitymask2cpuids(mask; compact = true)
-    end
-    pinthreads(cpuids; nthreads, warn, kwargs...)
-    return
 end
 
 # Potentially throw warnings if the environment is such that thread pinning might not work.

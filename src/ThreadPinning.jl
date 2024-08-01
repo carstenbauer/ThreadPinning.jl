@@ -47,7 +47,8 @@ export pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
 export setaffinity, setaffinity_cpuids
 export pinthreads_likwidpin, likwidpin_domains, likwidpin_to_cpuids
 export pinthreads_mpi
-export openblas_setaffinity, openblas_pinthread, openblas_pinthreads,
+export openblas_setaffinity, openblas_setaffinity_cpuids,
+       openblas_pinthread, openblas_pinthreads,
        openblas_unpinthread, openblas_unpinthreads
 
 ## re-export
@@ -114,6 +115,7 @@ PrecompileTools.@compile_workload begin
                 printaffinity()
                 printaffinities()
                 visualize_affinity()
+                # TODO: openblas_*
             end
         end
     catch err

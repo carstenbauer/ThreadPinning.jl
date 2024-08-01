@@ -10,18 +10,6 @@ Threads.nthreads() ≥ 2 ||
 const firsttid = first(ThreadPinning.threadids(; threadpool = :default))
 const randtid = rand(ThreadPinning.threadids(; threadpool = :default))
 
-# get two valid cpu ids on the current system
-function get_two_cpuids()
-    all_cpuids = ThreadPinning.cpuids()
-    cpuid1 = getcpuid()
-    cpuid1_idx = findfirst(==(cpuid1), all_cpuids)
-    deleteat!(all_cpuids, cpuid1_idx)
-    # find another cpuid that is close to the one before
-    _, idx = findmin(x -> abs(x - cpuid1), all_cpuids)
-    cpuid2 = all_cpuids[idx]
-    return cpuid1, cpuid2
-end
-
 function pinning_tests()
     @testset "pinning: explicit" begin
         cpuid1, cpuid2 = get_two_cpuids()
