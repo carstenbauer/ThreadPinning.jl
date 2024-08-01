@@ -116,6 +116,11 @@ function openblas_tests()
         cpuid1, cpuid2 = get_two_cpuids()
         @test isnothing(openblas_setaffinity_cpuids([cpuid2, cpuid1]; threadid = randtid))
     end
+
+    @testset "openblas printaffinity/ies" begin
+        @test isnothing(openblas_printaffinities())
+        @test isnothing(openblas_printaffinity(; threadid = randtid))
+    end
 end
 
 @testset "HostSystem" begin

@@ -26,6 +26,12 @@ else
     with_pinthreads(f, args...; kwargs...) = f()
     pinthreads_likwidpin(args...; kwargs...) = nothing
     pinthreads_mpi(args...; kwargs...) = nothing
+    openblas_pinthreads(args...; kwargs...) = nothing
+    openblas_pinthread(args...; kwargs...) = nothing
+    openblas_unpinthreads(args...; kwargs...) = nothing
+    openblas_unpinthread(args...; kwargs...) = nothing
+    openblas_setaffinity(args...; kwargs...) = nothing
+    openblas_setaffinity_cpuids(args...; kwargs...) = nothing
 end
 
 # exports
@@ -115,7 +121,14 @@ PrecompileTools.@compile_workload begin
                 printaffinity()
                 printaffinities()
                 visualize_affinity()
-                # TODO: openblas_*
+                # openblas
+                openblas_pinthread(c; threadid = 1)
+                openblas_pinthreads([c])
+                openblas_pinthreads(:cores)
+                openblas_unpinthread(; threadid = 1)
+                openblas_unpinthreads()
+                openblas_printaffinity()
+                openblas_printaffinities()
             end
         end
     catch err
