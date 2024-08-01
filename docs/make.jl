@@ -18,7 +18,7 @@ makedocs(;
              "Examples" => [
                  "Pinning Julia Threads" => "examples/ex_pinning_julia_threads.md",
                  "External Affinity Mask" => "examples/ex_affinity.md",
-                #  "MPI and MPI + Threads" => "examples/ex_mpi.md",
+                 "MPI and MPI + Threads" => "examples/ex_mpi.md",
                 #  "Autochecking BLAS Thread Settings" => "examples/ex_blas.md",
              ],
             #  "Explanations" => [
@@ -35,7 +35,7 @@ makedocs(;
          ],
          # assets = ["assets/custom.css", "assets/custom.js"]
          repo = "https://github.com/carstenbauer/ThreadPinning.jl/blob/{commit}{path}#{line}",
-         format = Documenter.HTML(repolink="https://github.com/carstenbauer/ThreadPinning.jl"; collapselevel = 1))
+         format = Documenter.HTML(repolink="https://github.com/carstenbauer/ThreadPinning.jl")) # ; collapselevel = 1
 
 if ci
     @info "Deploying documentation to GitHub"
