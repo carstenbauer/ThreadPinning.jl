@@ -44,8 +44,6 @@ Dual-socket system where each CPU has 40 hardware threads (20 CPU-cores with 2-w
 
 <img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/examples/threadinfo_ht_long.png" width=900px>
 
-Check out the [documentation](https://carstenbauer.github.io/ThreadPinning.jl/stable) to learn how to use ThreadPinning.jl.
-
 ## Installation
 
 The package is registered. Hence, you can simply use
