@@ -1,4 +1,4 @@
-# Latency
+# MKL
 
 !!! warning
     This section isn't part of the official API. Things might change at any point without further notice.
@@ -6,13 +6,13 @@
 ## Index
 
 ```@index
-Pages   = ["latency.md"]
+Pages   = ["mkl.md"]
 Order   = [:function, :type]
 ```
 
-### References
+### MKL
 
 ```@autodocs
-Modules = [ThreadPinning]
-Pages   = ["latency.jl"]
+Modules = [ThreadPinning, ThreadPinning.MKL]
+Pages   = ["mkl.jl"]
 ```

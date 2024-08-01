@@ -15,26 +15,22 @@ makedocs(;
          # doctest = ci,
          pages = [
              "ThreadPinning" => "index.md",
-            #  "Examples" => [
-            #      "Pinning Julia Threads" => "examples/ex_pinning_julia_threads.md",
-            #      "Respect Process Affinity Mask" => "examples/ex_affinity.md",
-            #      "MPI and MPI + Threads" => "examples/ex_mpi.md",
-            #      "Autochecking BLAS Thread Settings" => "examples/ex_blas.md",
-            #      "Measuring Core-to-Core Latency" => "examples/ex_core2core_latency.md",
-            #  ],
+             "Examples" => [
+                 "Pinning Julia Threads" => "examples/ex_pinning_julia_threads.md",
+                 "External Affinity Mask" => "examples/ex_affinity.md",
+                #  "MPI and MPI + Threads" => "examples/ex_mpi.md",
+                #  "Autochecking BLAS Thread Settings" => "examples/ex_blas.md",
+             ],
             #  "Explanations" => [
             #      "Why Pin Julia Threads?" => "explanations/why.md",
             #      "Why only Linux?" => "explanations/linux.md",
             #      "Julia Threads + BLAS Threads" => "explanations/blas.md",
             #  ],
              "References" => [
-                 "API" => "refs/api.md",
-                 "BLAS/LAPACK" => "refs/blaslapack.md",
-                #  "Latency" => "refs/latency.md",
-                #  "LibX" => "refs/libX.md",
-                #  "Likwid-Pin" => "refs/likwidpin.md",
-                #  "Preferences" => "refs/prefs.md",
-                #  "Utility" => "refs/utility.md",
+                 "API - Pinning" => "refs/api_pinning.md",
+                 "API - Querying" => "refs/api_querying.md",
+                 "MKL" => "refs/mkl.md",
+                 "Utility" => "refs/utility.md",
              ],
          ],
          # assets = ["assets/custom.css", "assets/custom.js"]

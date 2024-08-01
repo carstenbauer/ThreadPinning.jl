@@ -5,6 +5,7 @@ import ThreadPinningCore
 import SysInfo
 using LinearAlgebra: BLAS
 
+"Turn the vector of CPU IDs into an affinity mask (a vector of ones and zeros)."
 function cpuids2affinitymask(cpuids::AbstractVector{<:Integer})
     mask = ThreadPinningCore.emptymask()
     for (i, c) in pairs(ThreadPinning.cpuids())
@@ -15,6 +16,7 @@ function cpuids2affinitymask(cpuids::AbstractVector{<:Integer})
     return mask
 end
 
+"Turn the affinity mask (a vector of ones and zeros) into a vector of CPU IDs."
 function affinitymask2cpuids(mask::Union{AbstractVector{<:Integer}, BitVector}; kwargs...)
     cpuids_all = ThreadPinning.cpuids(; kwargs...)
     return [cpuids_all[i] for (i, v) in enumerate(mask) if v == 1]

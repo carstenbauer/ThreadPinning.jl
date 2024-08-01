@@ -4,7 +4,7 @@ For ThreadPinning.jl to fully work, the operating system must support querying a
 
 ## Linux
 
-We use `libc`s [`sched_getcpu`](https://man7.org/linux/man-pages/man3/sched_getcpu.3.html) to query the ID of the CPU-Thread that is currently running a given Julia thread. For pinning, we use [`uv_thread_setaffinity`](https://github.com/clibs/uv/blob/master/docs/src/threading.rst) provided by `libuv`. For the corresponding Julia wrappers of these libraries, see [LibX](@ref).
+We use `libc`s [`sched_getcpu`](https://man7.org/linux/man-pages/man3/sched_getcpu.3.html) to query the ID of the CPU-Thread that is currently running a given Julia thread. For pinning, we use [`uv_thread_setaffinity`](https://github.com/clibs/uv/blob/master/docs/src/threading.rst) provided by `libuv`. For the corresponding Julia wrappers of these libraries, see SysInfo.jl and ThreadPinningCore.jl.
 
 ## Windows
 

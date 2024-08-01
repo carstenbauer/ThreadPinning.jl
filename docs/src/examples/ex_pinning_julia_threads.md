@@ -10,13 +10,13 @@ Pinning your threads is as simple as putting the following at the top of your Ju
 using ThreadPinning
 pinthreads(:cores)
 ```
-This will successively pin all Julia threads to CPU-cores in logical order, avoiding hyperthreads if possible. Of course, you can replace `:cores` by all the options supported by [`pinthreads`](@ref). Conceptually, there are three different formats to specify your desired thread-processor mapping:
+This will successively pin all Julia threads to CPU-cores in logical order, avoiding "hyperthreads" if possible. Of course, you can replace `:cores` by all the options supported by [`pinthreads`](@ref). Conceptually, there are three different formats to specify your desired thread-processor mapping:
 
-1) explicit lists of CPU IDs (e.g. `0:3` or `[0,12,4]`),
-2) predefined symbols (e.g. `:cores` or `:sockets`),
-3) logical specification of domains via helper functions (e.g. `node` and `socket`).
+1) predefined symbols (e.g. `:cores` or `:sockets`),
+2) logical specification of domains via [helper functions](@ref api_logical) (e.g. [`node`](@ref) and [`socket`](@ref)),
+3) explicit lists of CPU IDs, e.g. `0:3` or `[0,12,4]` (as the OS defines them).
 
-For example, instead of `pinthreads(:cores)` above, you could write `pinthreads(1:2:10)` or `pinthreads(socket(1,1:3), numa(2,2:5))`. Again, see [`pinthreads`](@ref) for more information.
+For example, instead of `pinthreads(:cores)` above, you could write `pinthreads(:sockets)`, `pinthreads(socket(1,1:3), numa(2,2:5))`, or `pinthreads(1:2:10)`. See [`pinthreads`](@ref) for more information.
 
 ### `threadinfo`
 To check and visualize the current pinning you can use [`threadinfo`](@ref) to get something like this.
@@ -62,33 +62,15 @@ julia> threadinfo(; color=false)
 Julia threads: 40
 ├ Occupied CPU-threads: 40
 └ Mapping (Thread => CPUID): 1 => 0, 2 => 1, 3 => 2, 4 => 3, 5 => 4, ...
-
-
-julia> pinthreads(:cputhreads)
-
-julia> threadinfo(; color=false)
-
-| 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
-  16,17,18,19,40,41,42,43,44,45,46,47,48,49,50,51,
-  52,53,54,55,56,57,58,59 |
-| _,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,
-  _,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,
-  _,_,_,_,_,_,_,_ |
-
-# = Julia thread, # = HT, # = Julia thread on HT, | = Socket seperator
-
-Julia threads: 40
-├ Occupied CPU-threads: 40
-└ Mapping (Thread => CPUID): 1 => 0, 2 => 40, 3 => 1, 4 => 41, 5 => 2, ...
 ```
-
-## Default pinning (for packages)
-
-If you're developing a package you may want to provide a reasonable default pinning. If you would naively use `pinthreads` for this, you would enforce a certain pinning irrespective of what the user might have specified manually. This is because `pinthreads` has the highest precedence. To lower the latter you can set `force=false` in your `pinthreads` call, e.g. `pinthreads(:cores; force=false)`. This way, a user can overwrite your default pinning (`:cores` in this example), e.g. by calling `pinthreads` manually before running your package code.
 
 ## Unpinning
 
 We provide functions [`unpinthread(threadid)`](@ref) and [`unpinthreads()`](@ref) to unpin a specific or all Julia threads, respectively. This is realized by setting the thread affinity mask to all ones. While technically not really unpinning threads, you might also want to consider using `pinthreads(:random)` for "fake unpinning" in benchmarks as it does randomize the thread placing but keeps it fixed to reduce measurement fluctuations.
+
+## Default pinning (for package authors)
+
+If you're developing a package you may want to provide a reasonable default pinning. If you would naively use `pinthreads` for this, you would enforce a certain pinning irrespective of what the user might have specified manually. This is because `pinthreads` has the highest precedence. To lower the latter you can set `force=false` in your `pinthreads` call, e.g. `pinthreads(:cores; force=false)`. This way, a user can overwrite your default pinning (`:cores` in this example), e.g. by calling `pinthreads` manually before running your package code.
 
 ## `likwid-pin`-compatible input
 
