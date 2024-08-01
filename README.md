@@ -9,9 +9,6 @@
 [ci-img]: https://github.com/carstenbauer/ThreadPinning.jl/actions/workflows/CI.yml/badge.svg?branch=main
 [ci-url]: https://github.com/carstenbauer/ThreadPinning.jl/actions/workflows/CI.yml?query=branch%3Amain
 
-[ci-pc2-img]: https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/badges/main/pipeline.svg?key_text=CI@PC2
-[ci-pc2-url]: https://git.uni-paderborn.de/pc2-ci/julia/ThreadPinning-jl/-/pipelines
-
 [cov-img]: https://codecov.io/gh/carstenbauer/ThreadPinning.jl/branch/main/graph/badge.svg?token=Ze61CbGoO5
 [cov-url]: https://codecov.io/gh/carstenbauer/ThreadPinning.jl
 
@@ -33,7 +30,7 @@
 
 | **Documentation**                                                               | **Build Status**                                                                                |  **Quality**                                                                                |
 |:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][ci-pc2-img]][ci-pc2-url] [![][cov-img]][cov-url] | ![][lifecycle-img] [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle) |
+| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][cov-img]][cov-url] | ![][lifecycle-img] [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle) |
 
 ## Video
 
@@ -82,7 +79,3 @@ Because
 ## Documentation
 
 For more information, please find the [documentation](https://carstenbauer.github.io/ThreadPinning.jl/stable) here.
-
-## Acknowledgements
-
-CI infrastructure is provided by the [Paderborn Center for Parallel Computing (PC²)](https://pc2.uni-paderborn.de/)
