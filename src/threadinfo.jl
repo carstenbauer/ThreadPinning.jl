@@ -15,7 +15,7 @@
         hyperthreads = SysInfo.hyperthreading_is_enabled(),
         efficiency = SysInfo.ncorekinds() > 1,
         masks = false,
-        coregaps = false,
+        coregaps = SysInfo.hyperthreading_is_enabled(),
         logical = false,
         color = true,
         blocksize = choose_blocksize()
@@ -71,7 +71,7 @@ function threadinfo(io = getstdout();
         hyperthreads = SysInfo.hyperthreading_is_enabled(),
         efficiency = SysInfo.ncorekinds() > 1,
         masks = false,
-        coregaps = false,
+        coregaps = SysInfo.hyperthreading_is_enabled(),
         logical = false,
         color = true,
         kwargs...)
