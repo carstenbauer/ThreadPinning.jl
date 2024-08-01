@@ -19,8 +19,7 @@ function mkl_fullpath(; force_update = false)
 end
 
 """
-Check whether Intel MKL is currently loaded via libblastrampoline (Julia >= 1.7)
-or is available in `Libdl.dllist()` (Julia 1.6).
+Check whether Intel MKL is currently loaded via libblastrampoline
 """
 function mkl_is_loaded()
     any(x -> startswith(x, "libmkl_rt"),

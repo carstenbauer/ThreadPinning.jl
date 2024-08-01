@@ -1,4 +1,4 @@
-# API - Querying
+# [API - Querying](@id api_querying)
 
 ## `threadinfo`
 

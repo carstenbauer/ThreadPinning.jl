@@ -58,8 +58,8 @@ export openblas_setaffinity, openblas_setaffinity_cpuids,
        openblas_unpinthread, openblas_unpinthreads
 
 ## re-export
-using StableTasks: @spawnat
-export @spawnat
+using StableTasks: @spawnat, @spawn, @fetch, @fetchfrom
+@public @spawnat, @spawn, @fetch, @fetchfrom
 
 using ThreadPinningCore: threadids
 @public threadids

@@ -29,8 +29,8 @@ makedocs(;
              "References" => [
                  "API - Pinning" => "refs/api_pinning.md",
                  "API - Querying" => "refs/api_querying.md",
-                 "MKL" => "refs/mkl.md",
-                 "Utility" => "refs/utility.md",
+                 "API - Other" => "refs/api_other.md",
+                 "Internals" => "refs/internals.md",
              ],
          ],
          # assets = ["assets/custom.css", "assets/custom.js"]
