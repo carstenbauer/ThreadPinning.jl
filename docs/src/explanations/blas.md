@@ -25,7 +25,7 @@ When you start Julia in multithreaded mode, i.e. `julia -tX` or `JULIA_NUM_THREA
 **Side comment:** It is particularly bad / confusing that OpenBLAS and MKL behave very differently for multithreaded Julia.
 
 !!! warning
-    Be aware that calling an MKL function (for the first time) can spoil the pinning of Julia threads! A concrete example is discussed [here](https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560). TLDR: You want to make sure that `MKL_DYNAMIC=false`. Apart from setting the environment variable you can also dynamically call [`ThreadPinning.mkl_set_dynamic(0)`](@ref). Note that, by default, ThreadPinning.jl will warn you if you call one of the pinning functions while `MKL_DYNAMIC=true`.
+    Be aware that calling an MKL function (for the first time) can spoil the pinning of Julia threads! A concrete example is discussed [here](https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560). TLDR: You want to make sure that `MKL_DYNAMIC=false`. Apart from setting the environment variable you can also dynamically call [`ThreadPinning.MKL.mkl_set_dynamic(0)`](@ref). Note that, by default, ThreadPinning.jl will warn you if you call one of the pinning functions while `MKL_DYNAMIC=true`.
 
 ## `threadinfo(; blas=true, hints=true)`
 

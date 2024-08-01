@@ -82,21 +82,9 @@ Julia threads: 40
 └ Mapping (Thread => CPUID): 1 => 0, 2 => 40, 3 => 1, 4 => 41, 5 => 2, ...
 ```
 
-## [Pinning via environment variables](@id envvars)
-
-Sometimes it can be useful to specify a desired thread-processor mapping before starting Julia, that is, without using `pinthreads` explicitly in your Julia code. A Julia-built-in example for this is [`JULIA_EXCLUSIVE=1`](https://docs.julialang.org/en/v1/manual/environment-variables/#JULIA_EXCLUSIVE). Similarly, ThreadPinning.jl offers pinning threads via environment variables. In this case, Julia Threads will get pinned during the initialization of the ThreadPinning package, i.e. when running `using ThreadPinning`. Note, though, that explicit `pinthreads` statements take precedence over these environment variables.
-
-Concretely, the supported environment variables are
-* `JULIA_PIN`: Can be set to any **symbol** supported by [`pinthreads`](@ref) (e.g. `JULIA_PIN=cores`). Capitalization doesn't matter.
-* `JULIA_LIKWID_PIN`: Can be set to any string supported by [`pinthreads_likwidpin`](@ref) (e.g. `JULIA_LIKWID_PIN=S0:1-3@S1:4,5,6`). Capitalization **does** matter.
-
-## [Pinning via preferences](@id prefs)
-
-To specify a certain pinning pattern more permanently, e.g., on a per-project basis, you can use [preferences](https://github.com/JuliaPackaging/Preferences.jl). ThreadPinning.jl provides the relevant functionality in the [`ThreadPinning.Prefs` module](@ref Preferences). Note that environment variables and explicit `pinthreads` statements take precedence over these preferences.
-
 ## Default pinning (for packages)
 
-If you're developing a package you may want to provide a reasonable default pinning. If you would naively use `pinthreads` for this, you would enforce a certain pinning irrespective of what the user might have specified manually. This is because `pinthreads` has the highest precedence. To lower the latter you can set `force=false` in your `pinthreads` call, e.g. `pinthreads(:cores; force=false)`. This way, a user can overwrite your default pinning (`:cores` in this example) by using [environment variables](@ref envvars), [preferences](@ref prefs), or calling `pinthreads` manually before running your package code.
+If you're developing a package you may want to provide a reasonable default pinning. If you would naively use `pinthreads` for this, you would enforce a certain pinning irrespective of what the user might have specified manually. This is because `pinthreads` has the highest precedence. To lower the latter you can set `force=false` in your `pinthreads` call, e.g. `pinthreads(:cores; force=false)`. This way, a user can overwrite your default pinning (`:cores` in this example), e.g. by calling `pinthreads` manually before running your package code.
 
 ## Unpinning
 

@@ -10,16 +10,9 @@ Pages   = ["blaslapack.md"]
 Order   = [:function, :type]
 ```
 
-### References - OpenBLAS
-
-```@autodocs
-Modules = [ThreadPinning]
-Pages   = ["openblas.jl"]
-```
-
 ### References - Intel MKL
 
 ```@autodocs
-Modules = [ThreadPinning]
+Modules = [ThreadPinning, ThreadPinning.MKL]
 Pages   = ["mkl.jl"]
 ```
