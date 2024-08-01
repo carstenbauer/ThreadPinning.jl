@@ -33,7 +33,7 @@ to add the package to your Julia environment.
 
 !!! note
     While you can install the package on all systems, **only Linux is fully supported.**
-    Especially the pinning functionalities don't work on other operating systems and all basic pinning calls (e.g. [`pinthreads(:cores)`](@ref pinthreads)) will turn into no-ops. [`threadinfo()`](@ref threadinfo), and other [querying functions](@ref api_querying), should work on all systems (although the output might be limited).
+    Especially the pinning functionality does not work on other operating systems and all basic pinning calls (e.g. [`pinthreads(:cores)`](@ref pinthreads)) will turn into no-ops. [`threadinfo()`](@ref threadinfo), and other [querying functions](@ref api_querying), should work on all systems (although the output might be limited).
 
 ## Terminology
 

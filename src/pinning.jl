@@ -239,6 +239,7 @@ import ThreadPinningCore
 import SysInfo
 import ..Utility
 import ..SLURM
+import ..MKL
 using LinearAlgebra: BLAS
 
 # direct forwards
@@ -296,7 +297,7 @@ for (_pinthread, _pinthreads, _nthreads) in (
         function $(_pinthread)(
                 cpuid::Integer; warn::Bool = ThreadPinningCore.is_first_pin_attempt(), kwargs...)
             if warn
-                # _check_environment()
+                _check_mkl()
                 _check_slurm()
             end
             _check_cpuid(cpuid)
@@ -308,7 +309,7 @@ for (_pinthread, _pinthreads, _nthreads) in (
                 kwargs...)
             _check_cpuids(cpuids)
             if warn
-                # _check_environment()
+                _check_mkl()
                 _check_slurm()
             end
             ThreadPinningCore.$(_pinthreads)(cpuids; kwargs...)
@@ -366,15 +367,14 @@ function pinthreads(::Val{:current}; kwargs...)
     pinthreads(ThreadPinningCore.getcpuids(); kwargs...)
 end
 
-# Potentially throw warnings if the environment is such that thread pinning might not work.
-# function _check_environment()
-#     if Base.Threads.nthreads() > 1 && mkl_is_loaded() && mkl_get_dynamic() == 1
-#         @warn("Found MKL_DYNAMIC == true. Be aware that calling an MKL function can "*
-#               "spoil the pinning of Julia threads! Use `ThreadPinning.mkl_set_dynamic(0)` "*
-#               "to be safe. See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
-#     end
-#     return
-# end
+function _check_mkl()
+    if Threads.nthreads() > 1 && MKL.mkl_is_loaded() && MKL.mkl_get_dynamic() == 1
+        @warn("Found MKL_DYNAMIC == true. Be aware that calling an MKL function can "*
+              "spoil the pinning of Julia threads! Use `ThreadPinning.mkl_set_dynamic(0)` "*
+              "to be safe. See https://discourse.julialang.org/t/julia-thread-affinity-not-persistent-when-calling-mkl-function/74560/3.")
+    end
+    return
+end
 
 function _check_slurm()
     if SLURM.isslurmjob() && !SLURM.hasfullnode()
