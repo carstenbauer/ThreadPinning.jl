@@ -130,6 +130,7 @@ function threadinfo(io = getstdout();
             if ismkl
                 threads_cpuids = Int[]
                 nthreads = BLAS.get_num_threads()
+                threadslabel = "MKL"
                 printstyled(
                     io, "Intel MKL detected. Won't be able to highlight the BLAS threads.\n\n";
                     kwargs_msg_red...)
