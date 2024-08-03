@@ -73,7 +73,7 @@ function threadinfo(io = getstdout(); blas = false, hints = false, color = true,
 
     # visualize current pinning
     println(io)
-    _visualize_affinity(; thread_cpuids, color, groupby, slurm, kwargs...)
+    _visualize_affinity(io; thread_cpuids, color, groupby, slurm, kwargs...)
 
     # extra information
     print(io, "Julia threads: ")
@@ -244,13 +244,13 @@ function _visualize_affinity(io = getstdout();
     end
     if groupby in (:sockets, :socket)
         printstyled(io, "|"; bold = true)
-        print(io, " = Socket seperator")
+        print(io, " = Socket separator")
     elseif groupby in (:numa, :NUMA)
         printstyled(io, "|"; bold = true)
-        print(io, " = NUMA seperator")
+        print(io, " = NUMA separator")
     elseif groupby in (:core, :cores)
         printstyled(io, "|"; bold = true)
-        print(io, " = Core seperator")
+        print(io, " = Core separator")
     end
     println(io, "\n")
     return nothing
