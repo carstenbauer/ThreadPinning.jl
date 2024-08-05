@@ -1,6 +1,6 @@
-# [Process Affinity Mask](@id exaffinitymask)
+# [External Affinity Mask](@id exaffinitymask)
 
-In scenarios where the Julia process has a specific affinity mask, e.g. when running under `taskset`, `numactl`, or (perhaps) SLURM, you may want to pin your Julia threads in accordance with this affinity mask. To that end, we provide [`pinthreads(:affinitymask)`](@ref), which pins Julia threads to non-masked CPU-threads (in order, hyperthreads are only used if necessary).
+In scenarios where the Julia process has a specific affinity mask, e.g. when running under `taskset`, `numactl`, or SLURM, you may want to pin your Julia threads in accordance with this affinity mask. To that end, we provide [`pinthreads(:affinitymask)`](@ref), which pins Julia threads to non-masked CPU-threads (in order, hyperthreads are only used if necessary).
 
 For the demonstration below, we consider the following Julia script:
 ```julia

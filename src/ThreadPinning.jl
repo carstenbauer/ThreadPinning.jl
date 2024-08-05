@@ -1,200 +1,138 @@
 module ThreadPinning
 
-# imports
-using Base.Threads: @threads, nthreads, threadid
-using Libdl: Libdl
-using LinearAlgebra: BLAS, rank
-using Random: Random
-using DelimitedFiles: readdlm
-using DocStringExtensions: SIGNATURES, TYPEDSIGNATURES
-using StableTasks: @spawnat
-
 const DEFAULT_IO = Ref{Union{IO, Nothing}}(nothing)
 getstdout() = something(DEFAULT_IO[], stdout)
 
 # includes
+include("public_macro.jl")
 include("utility.jl")
+include("faking.jl")
+include("slurm.jl")
+include("threadinfo.jl")
+include("querying.jl")
+include("mkl.jl")
 @static if Sys.islinux()
-    include("sysinfo.jl")
-    include("lscpu_examples.jl")
-    include("libs/libc.jl")
-    include("libs/libuv.jl")
-    include("libs/libpthread.jl")
-    include("querying.jl")
-    include("slurm.jl")
     include("pinning.jl")
-    include("pinning_mpi.jl")
-    include("setaffinity.jl")
+    include("mpi.jl")
     include("likwid-pin.jl")
-    include("mkl.jl")
-    include("openblas.jl")
-    include("threadinfo.jl")
-    include("latency.jl")
 else
+    # make core pinning functions no-ops
     pinthreads(args...; kwargs...) = nothing
     pinthread(args...; kwargs...) = nothing
+    unpinthreads(args...; kwargs...) = nothing
+    unpinthread(args...; kwargs...) = nothing
     setaffinity(args...; kwargs...) = nothing
+    setaffinity_cpuids(args...; kwargs...) = nothing
+    with_pinthreads(f, args...; kwargs...) = f()
     pinthreads_likwidpin(args...; kwargs...) = nothing
     pinthreads_mpi(args...; kwargs...) = nothing
-end
-include("preferences.jl")
-
-function _try_get_autoupdate()
-    try
-        x = Prefs.get_autoupdate()
-        if isnothing(x)
-            return true # default
-        else
-            return x
-        end
-    catch err
-        @warn("Couldn't parse autoupdate preference \"$x\" (not a boolean?). Falling "*
-        "back to default (true).")
-        return true # default
-    end
+    openblas_pinthreads(args...; kwargs...) = nothing
+    openblas_pinthread(args...; kwargs...) = nothing
+    openblas_unpinthreads(args...; kwargs...) = nothing
+    openblas_unpinthread(args...; kwargs...) = nothing
+    openblas_setaffinity(args...; kwargs...) = nothing
+    openblas_setaffinity_cpuids(args...; kwargs...) = nothing
 end
 
-const AUTOUPDATE = _try_get_autoupdate() # compile-time preference
+# exports
+## threadinfo
+export threadinfo
 
-function maybe_autopin()
-    JULIA_PIN = get(ENV, "JULIA_PIN", Prefs.get_pin())
-    JULIA_LIKWID_PIN = get(ENV, "JULIA_LIKWID_PIN", Prefs.get_likwidpin())
-    if !isnothing(JULIA_PIN)
-        @debug "Autopinning" JULIA_PIN
-        try
-            str = startswith(JULIA_PIN, ':') ? JULIA_PIN[2:end] : JULIA_PIN
-            pinthreads(Symbol(lowercase(str)))
-        catch err
-            error("Unsupported value for environment variable JULIA_PIN: ", JULIA_PIN)
-        end
-    elseif !isnothing(JULIA_LIKWID_PIN)
-        @debug "Autopinning" JULIA_LIKWID_PIN
-        try
-            pinthreads_likwidpin(JULIA_LIKWID_PIN)
-        catch err
-            error("Unsupported value for environment variable JULIA_PIN: ", JULIA_PIN)
-        end
-    end
-    return nothing
-end
+## querying
+export getcpuid, getcpuids, getaffinity, getnumanode, getnumanodes
+export core, numa, socket, node, cores, numas, sockets
+export printaffinity, printaffinities, visualize_affinity
+export ispinned, hyperthreading_is_enabled, ishyperthread, isefficiencycore
+export ncputhreads, ncores, nnuma, nsockets, ncorekinds, nsmt
+export openblas_getaffinity, openblas_getcpuid, openblas_getcpuids,
+       openblas_ispinned, openblas_printaffinity, openblas_printaffinities
+@public cpuids, id, cpuid
 
-# initialization
-function __init__()
-    @static if Sys.islinux()
-        set_initial_affinity_mask()
-        forget_pin_attempts()
-        if AUTOUPDATE
-            update_sysinfo!(; fromscratch = true)
-        end
-        maybe_autopin()
-    else
-        os_warning = Prefs.get_os_warning()
-        if isnothing(os_warning) || os_warning
-            @warn("Operating system not supported by ThreadPinning.jl."*
-                  " Functions like `pinthreads` will be no-ops!\n"*
-                  "(Hide this warning via `ThreadPinning.Prefs.set_os_warning(false)`.)")
-        end
-    end
-    return nothing
-end
+## pinning
+export pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
+export setaffinity, setaffinity_cpuids
+export pinthreads_likwidpin, likwidpin_domains, likwidpin_to_cpuids
+export pinthreads_mpi
+export openblas_setaffinity, openblas_setaffinity_cpuids,
+       openblas_pinthread, openblas_pinthreads,
+       openblas_unpinthread, openblas_unpinthreads
+
+## re-export
+using StableTasks: @spawnat, @spawn, @fetch, @fetchfrom
+@public @spawnat, @spawn, @fetch, @fetchfrom
+
+using ThreadPinningCore: threadids
+@public threadids
 
 # precompile
 import PrecompileTools
 PrecompileTools.@compile_workload begin
-    @static if Sys.islinux()
-        try
-            ThreadPinning.lscpu2sysinfo(LSCPU_STRING)
-            update_sysinfo!()
-            lscpu_string()
-            cs = cpuids_all()[1:4]
-            pinthread(cs[2]; warn = false)
-            pinthreads(cs; warn = false)
-            if all(==(1), diff(cs))
-                pinthreads(minimum(cs):maximum(cs); warn = false)
+    try
+        redirect_stdout(Base.DevNull()) do
+            threadinfo()
+            threadinfo(; slurm = true)
+            threadinfo(; groupby = :numa)
+            threadinfo(; compact = false)
+
+            @static if Sys.islinux()
+                c = getcpuid()
+                pinthread(c; warn = false)
+                pinthreads([c]; warn = false)
+                pinthreads(c:c; warn = false)
+                pinthreads(:compact; nthreads = 1, warn = false)
+                pinthreads(:cores; nthreads = 1, warn = false)
+                pinthreads(:random; nthreads = 1, warn = false)
+                pinthreads(:current; nthreads = 1, warn = false)
+                if nsockets() > 1
+                    pinthreads(:sockets; nthreads = 1, warn = false)
+                end
+                if nnuma() > 1
+                    pinthreads(:numa; nthreads = 1, warn = false)
+                end
+                setaffinity_cpuids([c])
+                getcpuid()
+                getcpuids()
+                getnumanode()
+                getnumanodes()
+                nsockets()
+                nnuma()
+                cpuids()
+                ncputhreads()
+                # ncputhreads_per_socket()
+                # ncputhreads_per_numa()
+                # ncputhreads_per_core()
+                # ncores_per_socket()
+                # ncores_per_numa()
+                ncores()
+                socket(1, 1:1)
+                socket(1, [1])
+                numa(1, 1:1)
+                numa(1, [1])
+                node(1:1)
+                node([1])
+                core(1, [1])
+                sockets()
+                numas()
+                ispinned()
+                ishyperthread(c)
+                hyperthreading_is_enabled()
+                unpinthread()
+                unpinthreads()
+                printaffinity()
+                printaffinities()
+                visualize_affinity()
+                # openblas
+                openblas_pinthread(c; threadid = 1)
+                openblas_pinthreads([c])
+                openblas_pinthreads(:cores)
+                openblas_unpinthread(; threadid = 1)
+                openblas_unpinthreads()
+                openblas_printaffinity()
+                openblas_printaffinities()
             end
-            pinthreads(:compact; nthreads = 1, warn = false)
-            pinthreads(:cores; nthreads = 1, warn = false)
-            pinthreads(:random; nthreads = 1, warn = false)
-            pinthreads(:current; nthreads = 1, warn = false)
-            if nsockets() > 1 &&
-               all(x -> length(x) == length(cpuids_per_socket()[1]), cpuids_per_socket())
-                pinthreads(:sockets; nthreads = 1, warn = false)
-            end
-            if nnuma() > 1 &&
-               all(x -> length(x) == length(cpuids_per_numa()[1]), cpuids_per_numa())
-                pinthreads(:numa; nthreads = 1, warn = false)
-            end
-            setaffinity(node(1:2))
-            getcpuid()
-            getcpuids()
-            getnumanode()
-            getnumanodes()
-            nsockets()
-            nnuma()
-            cpuids_all()
-            cpuids_per_socket()
-            cpuids_per_numa()
-            cpuids_per_node()
-            cpuids_per_core()
-            ncputhreads()
-            ncputhreads_per_socket()
-            ncputhreads_per_numa()
-            ncputhreads_per_core()
-            ncores()
-            ncores_per_socket()
-            ncores_per_numa()
-            socket(1, 1:1)
-            socket(1, [1])
-            numa(1, 1:1)
-            numa(1, [1])
-            node(1:1)
-            node([1])
-            core(1, [1])
-            sockets()
-            numas()
-        catch err
         end
+    catch err
     end
 end
 
-# exports
-export threadinfo,
-       pinthreads,
-       pinthreads_likwidpin,
-       pinthreads_mpi,
-       pinthread,
-       with_pinthreads,
-       setaffinity,
-       getcpuids,
-       getcpuid,
-       getnumanode,
-       getnumanodes,
-       unpinthreads,
-       unpinthread,
-       @tspawnat,
-       print_affinity_mask,
-       print_affinity_masks,
-       ncputhreads,
-       ncores,
-       nnuma,
-       nsockets,
-       ncputhreads_per_core,
-       ncputhreads_per_numa,
-       ncputhreads_per_socket,
-       ncores_per_numa,
-       ncores_per_socket,
-       hyperthreading_is_enabled,
-       ishyperthread,
-       cpuids_all,
-       cpuids_per_core,
-       cpuids_per_numa,
-       cpuids_per_socket,
-       cpuids_per_node,
-       node,
-       socket,
-       sockets,
-       numa,
-       numas,
-       core
-#    cores
 end

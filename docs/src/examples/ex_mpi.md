@@ -1,4 +1,4 @@
-# MPI
+# MPI and Hybrid
 
 ## SLURM
 
@@ -35,7 +35,7 @@ sleep(2*rank)
 println("Rank $rank:")
 println("\tHost: ", gethostname())
 println("\tCPUs: ", getcpuids())
-print_affinity_masks()
+printaffinities()
 ```
 
 Output (manually cleaned up a bit):
@@ -64,7 +64,7 @@ Rank 3:
 
 ### Hybrid: MPI + Threads
 
-If your MPI-parallel application is multithreaded (i.e. multiple Julia threads per MPI rank), you can use [`pinthreads(:affinitymask)`](@ref) to pin Julia threads of each MPI rank according to the affinity mask set by SLURM (according to the user-specified options). If you don't use `pinthreads(:affinitymask)`, the Julia threads are only bound to a range of CPU-threads, they can migrate, and they can also overlap (occupy the same CPU-thread). See [Process Affinity Mask](@ref exaffinitymask) for more information.
+If your MPI-parallel application is multithreaded (i.e. multiple Julia threads per MPI rank), you can use [`pinthreads(:affinitymask)`](@ref) to pin Julia threads of each MPI rank according to the affinity mask set by SLURM (according to the user-specified options). If you don't use `pinthreads(:affinitymask)`, the Julia threads are only bound to a range of CPU-threads, they can migrate, and they can also overlap (occupy the same CPU-thread). See [External Affinity Mask](@ref exaffinitymask) for more information.
 
 **Multinode example, 1 MPI rank per socket, 25 threads per rank:**
 
