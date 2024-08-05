@@ -175,7 +175,7 @@ function threadinfo(io = getstdout();
     println(io)
 
     # visualization
-    visualization(; sys,
+    visualization(io; sys,
         threadpool, threads_cpuids, color, groupby, slurm, compact,
         logical, efficiency, hyperthreads, threadslabel, coregaps, kwargs...)
 

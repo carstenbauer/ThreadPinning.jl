@@ -306,13 +306,18 @@ for (_pinthread, _pinthreads, _nthreads) in (
 
         function $(_pinthreads)(cpuids::AbstractVector{<:Integer};
                 warn::Bool = ThreadPinningCore.is_first_pin_attempt(),
+                force = true,
                 kwargs...)
             _check_cpuids(cpuids)
             if warn
                 _check_mkl()
                 _check_slurm()
             end
-            ThreadPinningCore.$(_pinthreads)(cpuids; kwargs...)
+            if !force && ThreadPinningCore.is_first_pin_attempt() &&
+               haskey(ENV, "JULIA_PIN")
+                return pinthreads(Symbol(ENV["JULIA_PIN"]); warn, force = true, kwargs...)
+            end
+            ThreadPinningCore.$(_pinthreads)(cpuids; force, kwargs...)
             return
         end
 

@@ -1,6 +1,7 @@
 include("common.jl")
 using Test
 using ThreadPinning
+using ThreadPinningCore: ThreadPinningCore
 using Base.Threads: nthreads
 using Random: shuffle, shuffle!
 
@@ -179,6 +180,34 @@ function pinning_tests()
         @test isnothing(setaffinity_cpuids([cpuid2, cpuid1]))
         @test isnothing(setaffinity_cpuids([cpuid2, cpuid1]; threadid = randtid))
     end
+
+    @testset "force = false" begin
+        cpuid1, cpuid2 = get_two_cpuids()
+        ThreadPinningCore.Internals.forget_pin_attempts()
+        pinthreads([cpuid1, cpuid2]; force = false) # first pin attempt
+        @test getcpuids()[1:2] == [cpuid1, cpuid2]
+
+        ThreadPinningCore.Internals.forget_pin_attempts()
+        pinthreads([cpuid1, cpuid2])
+        @test getcpuids()[1:2] == [cpuid1, cpuid2]
+        pinthreads([cpuid2, cpuid1]; force = false) # second pin attempt, should be no-op
+        @test getcpuids()[1:2] == [cpuid1, cpuid2]
+
+        # env var
+        ThreadPinningCore.Internals.forget_pin_attempts()
+        withenv("JULIA_PIN" => :cores) do
+            right_order = node(; compact = false) # :cores order
+            wrong_order = reverse(right_order)
+            pinthreads(wrong_order; force = false) # the env var should be respected
+            @test getcpuids()[1:2] == right_order[1:2]
+            @test getcpuids()[1:2] != wrong_order[1:2]
+
+            pinthreads(wrong_order; force=true)
+            pinthreads(right_order; force = false) # second attempt should be no-op
+            @test getcpuids()[1:2] != right_order[1:2]
+            @test getcpuids()[1:2] == wrong_order[1:2]
+        end
+    end
 end
 
 @testset "HostSystem" begin
@@ -197,32 +226,3 @@ end
     end
     println()
 end
-
-# @testset "Environment variables" begin
-#     julia = Base.julia_cmd()
-#     pkgdir = joinpath(@__DIR__, "..")
-
-#     function exec(s; nthreads = ncores())
-#         run(`$julia --project=$(pkgdir) -t $nthreads -e $s`).exitcode == 0
-#     end
-#     @testset "JULIA_PIN" begin
-#         withenv("JULIA_PIN" => "cputhreads") do
-#             @test exec(`'using ThreadPinning, Test;
-#                 @test getcpuids() == node(1:Threads.nthreads(); compact=true)'`)
-#         end
-#         withenv("JULIA_PIN" => "cores") do
-#             @test exec(`'using ThreadPinning, Test;
-#                 @test getcpuids() == node(1:Threads.nthreads(); compact=false)'`)
-#         end
-#     end
-#     @testset "JULIA_LIKWID_PIN" begin
-#         withenv("JULIA_LIKWID_PIN" => "N:0-$(ncores()-1)") do
-#             @test exec(`'using ThreadPinning, Test;
-#                 @test getcpuids() == node(1:Threads.nthreads(); compact=false)'`)
-#         end
-#         withenv("JULIA_LIKWID_PIN" => "E:N:$(ncores())") do
-#             @test exec(`'using ThreadPinning, Test;
-#                 @test getcpuids() == node(1:Threads.nthreads(); compact=true)'`)
-#         end
-#     end
-# end
