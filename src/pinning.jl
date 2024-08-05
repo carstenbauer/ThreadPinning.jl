@@ -38,7 +38,7 @@ On Julia >= 1.11, there is also experimental support for `:gc`.
 
 If `force=false`, threads will only get pinned if this is the very first pin attempt
 (otherwise the call is a no-op). This may be particularly useful for packages that merely
-want to specify an (overrulable) "default pinning".
+want to specify an "default pinning" that can be overwritten by the user.
 
 The option `warn` toggles general warnings, such as unwanted interference with BLAS thread
 settings.
@@ -289,6 +289,35 @@ function openblas_setaffinity_cpuids(cpuids::AbstractVector{<:Integer}; kwargs..
     return
 end
 
+function pinthreads(cpuids::AbstractVector{<:Integer};
+        warn::Bool = ThreadPinningCore.is_first_pin_attempt(),
+        force = true,
+        kwargs...)
+    _check_cpuids(cpuids)
+    if warn
+        _check_mkl()
+        _check_slurm()
+    end
+    if !force && ThreadPinningCore.is_first_pin_attempt() &&
+       haskey(ENV, "JULIA_PIN")
+        return pinthreads(Symbol(ENV["JULIA_PIN"]); warn, force = true, kwargs...)
+    end
+    ThreadPinningCore.pinthreads(cpuids; force, kwargs...)
+    return
+end
+
+function openblas_pinthreads(cpuids::AbstractVector{<:Integer};
+        warn::Bool = ThreadPinningCore.is_first_pin_attempt(),
+        kwargs...)
+    _check_cpuids(cpuids)
+    if warn
+        _check_mkl()
+        _check_slurm()
+    end
+    ThreadPinningCore.openblas_pinthreads(cpuids; kwargs...)
+    return
+end
+
 for (_pinthread, _pinthreads, _nthreads) in (
     (:pinthread, :pinthreads, :(Threads.nthreads)), (
         :openblas_pinthread, :openblas_pinthreads, :(BLAS.get_num_threads)))
@@ -302,23 +331,6 @@ for (_pinthread, _pinthreads, _nthreads) in (
             end
             _check_cpuid(cpuid)
             return ThreadPinningCore.$(_pinthread)(cpuid; kwargs...)
-        end
-
-        function $(_pinthreads)(cpuids::AbstractVector{<:Integer};
-                warn::Bool = ThreadPinningCore.is_first_pin_attempt(),
-                force = true,
-                kwargs...)
-            _check_cpuids(cpuids)
-            if warn
-                _check_mkl()
-                _check_slurm()
-            end
-            if !force && ThreadPinningCore.is_first_pin_attempt() &&
-               haskey(ENV, "JULIA_PIN")
-                return pinthreads(Symbol(ENV["JULIA_PIN"]); warn, force = true, kwargs...)
-            end
-            ThreadPinningCore.$(_pinthreads)(cpuids; force, kwargs...)
-            return
         end
 
         # concatenation

@@ -211,6 +211,8 @@ function pinning_tests()
 end
 
 @testset "HostSystem" begin
+    println("")
+    @warn("\nHostSystem\n")
     pinning_tests()
 end
 

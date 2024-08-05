@@ -96,4 +96,8 @@ As an alternative, you might also want to consider using `pinthreads(:random)` f
 
 ## Default pinning (for package authors)
 
-If you're developing a package you may want to provide a reasonable default pinning. If you would naively use `pinthreads` for this, you would enforce a certain pinning irrespective of what the user might have specified manually. This is because `pinthreads` has the highest precedence. To lower the latter you can set `force=false` in your `pinthreads` call, e.g. `pinthreads(:cores; force=false)`. This way, a user can overwrite your default pinning (`:cores` in this example), e.g. by calling `pinthreads` manually before running your package code.
+If you're developing a package you may want to provide a reasonable default pinning. If you would naively use `pinthreads` for this, you would enforce a certain pinning irrespective of what the user might have specified manually. To avoid this, you can set `force=false` in your `pinthreads` call, e.g. `pinthreads(:cores; force=false)`. This way, a user can overwrite your default pinning (`:cores` in this example), e.g. by calling `pinthreads` manually before running your package code.
+
+## `JULIA_PIN` environment variable
+
+In some scenarios, you may want to specify the desired pinning strategy through an environment variable rather than hardcoding it in the source code (e.g. as a strict `pinthreads(:cores)` call). This is possible if you set `JULIA_PIN` in conjuction with using `pinthreads(...; force=false)`. This way, the hardcoded is strategy is only used if `JULIA_PIN` is not set. Otherwise, the value of the environment variable takes precedence. Note that `JULIA_PIN` may be set to any symbol that is supported by `pinthreads`. For now, specifying the CPU IDs manually isn't supported (please open an issue or a PR if you need this).

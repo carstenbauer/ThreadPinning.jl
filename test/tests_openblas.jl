@@ -124,6 +124,8 @@ function openblas_tests()
 end
 
 @testset "HostSystem" begin
+    println("")
+    @warn("\nHostSystem\n")
     openblas_tests()
 end
 
