@@ -18,10 +18,9 @@ Check out my lightning talk that I gave as part of [JuliaCon 2023](https://julia
 
 ## Why pin threads?
 
-Because ...
-* [it can massively impact performance (especially on HPC clusters)](https://github.com/JuliaPerf/BandwidthBenchmark.jl#flopsscaling)
-* it makes performance benchmarks less noisy
-* [it is a prerequisite for hardware-performance monitoring](https://www.youtube.com/watch?v=l2fTNfEDPC0)
+* [It can massively impact performance (especially on HPC clusters).](https://github.com/JuliaPerf/BandwidthBenchmark.jl#flopsscaling)
+* It makes performance benchmarks less noisy.
+* [It is a prerequisite for hardware-performance monitoring.](https://www.youtube.com/watch?v=l2fTNfEDPC0)
 
 ## Installation
 
