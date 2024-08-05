@@ -1,22 +1,29 @@
-# [Julia Threads + BLAS Threads](@id blas_threads)
+# Pinning OpenBLAS Threads
 
-If one runs a multithreaded Julia code that, on each thread, performs linear algebra operations (BLAS/LAPACK calls) one can easily run into performance issues due to an oversubscription of cores by Julia and BLAS threads (see [Background](@ref blas_background) below for more information). Fortunately, ThreadPinning.jl provides some (basic) autochecking functionality that highlights potential problems and suggests improvements.
+Almost all of the pinning (and querying) functions have counterparts that are prefixed by `openblas_`. You can use these variants to control OpenBLAS threads in the same way as the regular Julia threads. Example: 
 
-Concretely, you can provide the keyword argument `blas=true` to [`threadinfo`](@ref). This will show some of your BLAS settings and will color-indicate whether they are likely to be ok (green) or suboptimal (red). If you also provide `hints=true`, ThreadPinning.jl will try to provide concrete notes and warnings that (hopefully) help you to tune your settings.
+```
+using ThreadPinning
+openblas_pinthreads(:cores)
+```
 
-## OpenBLAS
+As for visualization, you can use `threadinfo(; blas=true)` to visualize the placement of the OpenBLAS threads instead of Julia threads.
+
+!!! note
+    For technical reasons, we can't query the CPU-thread on which an OpenBLAS thread is running before the thread has been pinned. For this reason, `openblas_getcpuid`, and all functionality that relies on it, will only work after pinning. Otherwise, these calls will throw an error.
+    Note that printing the affinities of the OpenBLAS threads (`openblas_printaffinities`) always works.
 
 ![openblas](openblas.png)
 
-## Intel MKL
+## Beware: Interaction between Julia threads and BLAS threads
 
-![mkl](mkl.png)
+If one runs a multithreaded Julia code that, on each thread, performs linear algebra operations (BLAS/LAPACK calls) one can easily run into performance issues due to an oversubscription of cores by Julia and BLAS threads (see [Background information](@ref blas_background) below for more information). Fortunately, ThreadPinning.jl provides some (basic) autochecking functionality that highlights potential problems and suggests improvements. Concretely, you can provide the keyword argument `hints=true` to [`threadinfo`](@ref). In this case, we try to provide concrete notes and warnings that (hopefully) help you to tune your thread-related settings.
 
-## [Background](@id blas_background)
+### [Background information](@id blas_background)
 
 Relevant discourse threads, see [here](https://discourse.julialang.org/t/matrix-multiplication-is-slower-when-multithreading-in-julia/56227/12?u=carstenbauer) and [here](https://discourse.julialang.org/t/regarding-the-multithreaded-performance-of-openblas/75450/5?u=carstenbauer).
 
-### OpenBLAS
+#### OpenBLAS
 
 * If `OPENBLAS_NUM_THREADS=1`, OpenBLAS uses the calling Julia thread(s) to run BLAS computations, i.e. it "reuses" the Julia thread that runs a computation.
 
@@ -26,7 +33,7 @@ Relevant discourse threads, see [here](https://discourse.julialang.org/t/matrix-
 
 When you start Julia in multithreaded mode, i.e. `julia -tX` or `JULIA_NUM_THREADS=X`, it is generally recommended to set `OPENBLAS_NUM_THREADS=1` or, equivalently, `BLAS.set_num_threads(1)`. Given the behavior above, increasing the number of BLAS threads to `N>1` can very easily lead to worse performance, in particular when `N<<X`! Hence, if you want to or need to deviate from unity, make sure to "jump" from `OPENBLAS_NUM_THREADS=1` to `OPENBLAS_NUM_THREADS=# of cores` or similar.
 
-### Intel MKL
+#### Intel MKL
 
 * Given `MKL_NUM_THREADS=N`, MKL starts `N` BLAS threads **per** Julia thread that makes a BLAS call.
 

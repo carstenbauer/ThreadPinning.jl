@@ -17,9 +17,9 @@ makedocs(;
              "ThreadPinning" => "index.md",
              "Examples" => [
                  "Pinning Julia Threads" => "examples/ex_pinning_julia_threads.md",
+                 "Pinning BLAS Threads" => "examples/ex_blas.md",
                  "External Affinity Mask" => "examples/ex_affinity.md",
-                 "MPI and MPI + Threads" => "examples/ex_mpi.md",
-                 "Julia Threads + BLAS Threads" => "examples/ex_blas.md",
+                 "MPI and Hybrid" => "examples/ex_mpi.md",
              ],
             #  "Explanations" => [
             #      "Why Pin Julia Threads?" => "explanations/why.md",

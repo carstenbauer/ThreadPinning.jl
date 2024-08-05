@@ -1,4 +1,4 @@
-# MPI
+# MPI and Hybrid
 
 ## SLURM
 
