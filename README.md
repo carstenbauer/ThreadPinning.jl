@@ -40,7 +40,13 @@ Check out my lightning talk that I gave as part of [JuliaCon 2023](https://julia
 
 ## Quick Demo
 
-Dual-socket system where each CPU has 128 CPU-threads (64 CPU-cores with 2-way [SMT](https://en.wikipedia.org/wiki/Simultaneous_multithreading)).
+```julia-repl
+julia> using ThreadPinning
+
+julia> pinthreads(:cores)
+
+julia> threadinfo()
+```
 
 <img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/examples/threadinfo_pinned.png" width=900px>
 
