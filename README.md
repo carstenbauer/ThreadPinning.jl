@@ -45,7 +45,39 @@ julia> using ThreadPinning
 
 julia> pinthreads(:cores)
 
-julia> threadinfo()
+julia> threadinfo(; color=false)
+Hostname:       PerlmutterComputeNode
+CPU(s):         2 x AMD EPYC 7763 64-Core Processor
+CPU target:     znver3
+Cores:          128 (256 CPU-threads due to 2-way SMT)
+NUMA domains:   8 (16 cores each)
+
+Julia threads:  16
+
+CPU socket 1
+  0,_, 1,_, 2,_, 3,_, 4,_, 5,_, 6,_, 7,_, 
+  8,_, 9,_, 10,_, 11,_, 12,_, 13,_, 14,_, 15,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_
+
+CPU socket 2
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_, 
+  _,_, _,_, _,_, _,_, _,_, _,_, _,_, _,_
+
+
+# = Julia thread, # = Julia thread on HT, # = >1 Julia thread
+
+(Mapping: 1 => 0, 2 => 1, 3 => 2, 4 => 3, 5 => 4, ...)
 ```
 
 <img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/examples/threadinfo_pinned.png" width=900px>
