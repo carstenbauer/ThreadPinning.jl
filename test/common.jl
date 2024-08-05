@@ -12,6 +12,9 @@ function get_two_cpuids()
     all_cpuids = ThreadPinning.cpuids()
     cpuid1 = getcpuid()
     cpuid1_idx = findfirst(==(cpuid1), all_cpuids)
+    if isnothing(cpuid1_idx)
+        @show cpuid1, all_cpuids
+    end
     deleteat!(all_cpuids, cpuid1_idx)
     # find another cpuid that is close to the one before
     _, idx = findmin(x -> abs(x - cpuid1), all_cpuids)
