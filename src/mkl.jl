@@ -1,6 +1,6 @@
 module MKL
 
-using LinearAlgebra
+using LinearAlgebra: LinearAlgebra, BLAS
 
 const MKL_PATH = Ref{Union{Nothing, String}}(nothing)
 
