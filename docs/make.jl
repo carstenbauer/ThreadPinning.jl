@@ -21,11 +21,6 @@ makedocs(;
                  "External Affinity Mask" => "examples/ex_affinity.md",
                  "MPI and Hybrid" => "examples/ex_mpi.md",
              ],
-            #  "Explanations" => [
-            #      "Why Pin Julia Threads?" => "explanations/why.md",
-            #      "Why only Linux?" => "explanations/linux.md",
-            #      "Julia Threads + BLAS Threads" => "explanations/blas.md",
-            #  ],
              "References" => [
                  "API - Pinning" => "refs/api_pinning.md",
                  "API - Querying" => "refs/api_querying.md",
