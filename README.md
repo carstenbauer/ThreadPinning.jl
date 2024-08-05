@@ -40,9 +40,9 @@ Check out my lightning talk that I gave as part of [JuliaCon 2023](https://julia
 
 ## Quick Demo
 
-Dual-socket system where each CPU has 40 hardware threads (20 CPU-cores with 2-way [SMT](https://en.wikipedia.org/wiki/Simultaneous_multithreading)).
+Dual-socket system where each CPU has 128 CPU-threads (64 CPU-cores with 2-way [SMT](https://en.wikipedia.org/wiki/Simultaneous_multithreading)).
 
-<img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/examples/threadinfo_ht_long.png" width=900px>
+<img src="https://github.com/carstenbauer/ThreadPinning.jl/raw/main/docs/src/examples/threadinfo_pinned.png" width=900px>
 
 ## Installation
 
