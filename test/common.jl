@@ -7,13 +7,15 @@ end
 const IS_GITHUB_CI = haskey(ENV, "GITHUB_ACTIONS")
 @show IS_GITHUB_CI
 
+using ThreadPinningCore: ThreadPinningCore
+
 # get two valid cpu ids on the current system
 function get_two_cpuids()
     all_cpuids = ThreadPinning.cpuids()
     cpuid1 = getcpuid()
     cpuid1_idx = findfirst(==(cpuid1), all_cpuids)
     if isnothing(cpuid1_idx)
-        @show cpuid1, all_cpuids
+        @show cpuid1, all_cpuids, ThreadPinningCore.Internals.FAKE_ALLOWED_CPUIDS[]
     end
     deleteat!(all_cpuids, cpuid1_idx)
     # find another cpuid that is close to the one before
