@@ -14,11 +14,19 @@ StableTasks = "91464d47-22a1-43fe-8b7f-2d57ee82463f"
 SysInfo = "90a7ee08-a23f-48b9-9006-0e0e2a9e4608"
 ThreadPinningCore = "6f48bc29-05ce-4cc8-baad-4adcba581a18"
 
+[weakdeps]
+MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
+
+[extensions]
+MPIExt = "MPI"
+
 [compat]
 DelimitedFiles = "1"
 Libdl = "1"
 LinearAlgebra = "1"
 MKL = "0.4, 0.6"
+MPI = "0.20"
+MPIPreferences = "0.1"
 PrecompileTools = "1"
 Preferences = "1"
 Random = "1"
@@ -31,10 +39,12 @@ julia = "1.10"
 [extras]
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
+MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
+MPIPreferences = "3da0fdf6-3ccc-4f1b-acd9-58baa6c99267"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Test", "Random", "TestItemRunner", "Statistics", "MKL", "Logging"]
+test = ["Test", "Random", "TestItemRunner", "Statistics", "MKL", "Logging", "MPI", "MPIPreferences"]
