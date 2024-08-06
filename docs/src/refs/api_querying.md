@@ -58,7 +58,7 @@ openblas_printaffinities
 openblas_printaffinity
 ```
 
-## Querying - MPI
+## [Querying - MPI](@id api_mpi_querying)
 
 ```@docs
 mpi_getcpuids
