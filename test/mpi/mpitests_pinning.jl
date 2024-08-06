@@ -5,7 +5,7 @@ using Test
 function check_roundrobin(cpuids_ranks, f_cpuids, nf)
     idomain = 1
     for r in 0:(length(cpuids_ranks) - 1)
-        @show r, idomain, cpuids_ranks
+        # @show r, idomain, cpuids_ranks
         cpuids_domain = f_cpuids(idomain)
         cpuids_rank = cpuids_ranks[r]
         all(c -> c in cpuids_domain, cpuids_rank) || return false
@@ -19,7 +19,11 @@ comm = MPI.COMM_WORLD
 nranks = MPI.Comm_size(comm)
 rank = MPI.Comm_rank(comm)
 
-for (symb, f, nf) in ((:sockets, socket, nsockets), (:numa, numa, nnuma))
+for (symb, f, nf) in (
+    (:sockets, socket, nsockets), (:numa, numa, nnuma), (:cores, core, ncores))
+    if symb == :cores && Threads.nthreads() > ThreadPinning.nsmt()
+        continue
+    end
     @test isnothing(mpi_pinthreads(symb))
     cpuids_ranks = mpi_getcpuids()
     hostnames_ranks = mpi_gethostnames()
@@ -29,7 +33,6 @@ for (symb, f, nf) in ((:sockets, socket, nsockets), (:numa, numa, nnuma))
             # on each node we expect round-robin order
             ranks_onnode = collect(keys(filter(p -> p[2] == n, hostnames_ranks)))
             cpuids_ranks_onnode = filter(p -> p[1] in ranks_onnode, cpuids_ranks)
-            @show n, cpuids_ranks_onnode
             @test check_roundrobin(cpuids_ranks_onnode, f, nf)
         end
     end

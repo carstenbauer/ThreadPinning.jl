@@ -40,7 +40,12 @@ if rank == 0
     hostnames_ranks = Dict(
         0 => "node3", 5 => "node3", 6 => "node2", 3 => "node1",
         4 => "node2", 2 => "node1", 1 => "node3")
-    @test MPIExt.compute_localranks(hostnames_ranks) == [0, 1, 0, 1, 0, 2, 1]
+    mpi_topo = MPIExt.compute_mpi_topology(hostnames_ranks)
+    @test [r.rank for r in mpi_topo] == 0:6
+    @test [r.localrank for r in mpi_topo] == [0, 1, 0, 1, 0, 2, 1]
+    @test [r.node for r in mpi_topo] == [1, 1, 3, 3, 2, 1, 2]
+    @test [r.nodename for r in mpi_topo] ==
+          ["node3", "node3", "node1", "node1", "node2", "node3", "node2"]
 end
 localrank = mpi_getlocalrank()
 @test localrank isa Integer

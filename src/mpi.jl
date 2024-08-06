@@ -1,22 +1,18 @@
 """
     mpi_pinthreads(symbol; compact, kwargs...)
 
-Pin the thread(s) of MPI ranks in a round-robin fashion to specific domains
-(e.g. sockets or NUMA domains).
-Specifically, when calling this function on all MPI ranks, the latter will be distributed
-in a round-robin fashion among the specified domains such that their Julia threads
-are pinned to non-overlapping ranges of CPU-threads within the domain.
+Pin the Julia threads of MPI ranks in a round-robin fashion to specific domains
+(e.g. sockets). Supported domains (`symbol`) are `:sockets`, `:numa`, and `:cores`.
 
-For now, valid options for `symbol` are `:sockets` and `:numa`.
+When calling this function on all MPI ranks, the Julia threads of the latter will be
+distributed in a round-robin fashion among the specified domains and will be pinned to
+non-overlapping ranges of CPU-threads within the domains.
 
-Both single-node and multi-node usage are supported.
+A multi-node setup, where MPI ranks are hosted on different nodes, is supported.
 
 If `compact=false` (default), physical cores are occupied before hyperthreads. Otherwise,
 CPU-cores - with potentially multiple CPU-threads - are filled up one after another
 (compact pinning).
-
-**Note:**
-As per usual for MPI, `rank` starts at zero.
 
 *Example:*
 
@@ -48,3 +44,10 @@ Returns a node-local rank id (starts at zero). Nodes are identified based on the
 hostnames (`gethostname`). On each node, ranks are ordered based on their global rank id.
 """
 function mpi_getlocalrank end
+
+
+"""
+On rank 0, this function returns a vector of named tuples. Each named tuple represents a
+MPI rank and has keys `rank`, `localrank`, `node`, and `nodename`.
+"""
+function mpi_topology end
