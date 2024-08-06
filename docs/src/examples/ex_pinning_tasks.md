@@ -16,7 +16,7 @@ The primary purpose of ThreadPinning.jl is to allow you to pin Julia threads to 
 If you want to opt-out of Julia's dynamic task scheduling and want to "pin" Julia tasks to specific Julia threads, you will often need to use tools from external libraries (such as ThreadPinning.jl), as support for this in base Julia is sparse. The only official API for static scheduling of *sticky* tasks (i.e. tasks that stay on the Julia thread they've been spawned on) is [`Threads.@threads :static`](https://docs.julialang.org/en/v1/base/multi-threading/#Base.Threads.@threads). In code like
 
 ```julia
-Threads.@threads for i in 1:Threads.nthreads()
+Threads.@threads :static for i in 1:Threads.nthreads()
     do_something_on_thread(i)
 end
 ```
