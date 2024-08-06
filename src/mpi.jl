@@ -1,20 +1,19 @@
 """
-    mpi_pinthreads(symbol, rank, nranks; nthreads_per_rank, compact, kwargs...)
+    mpi_pinthreads(symbol; compact, kwargs...)
 
-Pin MPI ranks, that is, their respective Julia thread(s), to (subsets of) domains
-(e.g. sockets or memory domains). Specifically, when calling this function on all
-MPI ranks, the latter will be distributed in a round-robin fashion among the specified
-domains such that their Julia threads are pinned to non-overlapping ranges of CPU-threads
-within the domain.
+Pin the thread(s) of MPI ranks in a round-robin fashion to specific domains
+(e.g. sockets or NUMA domains).
+Specifically, when calling this function on all MPI ranks, the latter will be distributed
+in a round-robin fashion among the specified domains such that their Julia threads
+are pinned to non-overlapping ranges of CPU-threads within the domain.
 
-Valid options for `symbol` are `:sockets` and `:numa`.
+For now, valid options for `symbol` are `:sockets` and `:numa`.
+
+Both single-node and multi-node usage are supported.
 
 If `compact=false` (default), physical cores are occupied before hyperthreads. Otherwise,
 CPU-cores - with potentially multiple CPU-threads - are filled up one after another
 (compact pinning).
-
-The keyword argument `nthreads_per_rank` (default `Threads.nthreads()`) can be used to
-pin only a subset of the available Julia threads per MPI rank.
 
 **Note:**
 As per usual for MPI, `rank` starts at zero.
@@ -24,10 +23,8 @@ As per usual for MPI, `rank` starts at zero.
 ```
 using ThreadPinning
 using MPI
-comm = MPI.COMM_WORLD
-nranks = MPI.Comm_size(comm)
-rank = MPI.Comm_rank(comm)
-mpi_pinthreads(:sockets, rank, nranks)
+MPI.Init()
+mpi_pinthreads(:sockets)
 ```
 """
 function mpi_pinthreads end

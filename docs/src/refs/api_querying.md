@@ -57,3 +57,11 @@ openblas_ispinned
 openblas_printaffinities
 openblas_printaffinity
 ```
+
+## Querying - MPI
+
+```@docs
+mpi_getcpuids
+mpi_gethostnames
+mpi_getlocalrank
+```

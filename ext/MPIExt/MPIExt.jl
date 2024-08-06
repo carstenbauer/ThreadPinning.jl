@@ -3,10 +3,9 @@ module MPIExt
 import ThreadPinning: ThreadPinning
 using MPI: MPI
 
-function ThreadPinning.mpi_pinthreads(symb::Symbol, args...; comm = MPI.COMM_WORLD,
-        kwargs...)
-    rank = MPI.Comm_rank(comm)
-    ThreadPinning.pinthreads_hybrid(symb, rank + 1)
+function ThreadPinning.mpi_pinthreads(symb::Symbol; comm = MPI.COMM_WORLD,
+        compact = false)
+ # TODO
 end
 
 function ThreadPinning.mpi_getcpuids(; comm = MPI.COMM_WORLD, dest = 0)

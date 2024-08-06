@@ -2,7 +2,8 @@ using ThreadPinning
 using MPI
 
 testdir = joinpath(@__DIR__, "mpi/")
-excludefiles = ["mpitests_manual.jl"]
+# excludefiles = []
+excludefiles = ["mpitests_pinning.jl"]
 istest(f) = endswith(f, ".jl") && startswith(f, "mpitests_") && !in(f, excludefiles)
 testfiles = sort(filter(istest, readdir(testdir)))
 
