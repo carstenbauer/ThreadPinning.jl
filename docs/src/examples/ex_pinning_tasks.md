@@ -3,11 +3,11 @@
 ## Task-based multithreading
 It is important to note that Julia implements **task-based multithreading**: `M` dynamically created user tasks get scheduled onto `N` Julia threads. By default, task scheduling is dynamic and is handled by Julia's built-in scheduler. Similar to how the operating system's scheduler can freely move Julia threads between CPU threads, Julia's scheduler can move tasks between Julia threads. Consequently, before pinning, a user cannot reliably predict on which Julia thread a task will run and on which CPU thread a Julia thread will run (see the visualization below).
 
-<br>
+
 
 ![tasks_threads_cores](tasks_threads_cores.svg)
 
-<br>
+
 
 The primary purpose of ThreadPinning.jl is to allow you to pin Julia threads to CPU-threads. In this sense, it enables you to supersede the dynamic OS scheduler (right part in the image above). However, the dynamic scheduling of Julia tasks (left part in the image above) remains as is.
 
