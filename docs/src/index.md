@@ -5,11 +5,6 @@ Most notably, [ThreadPinning.jl](https://github.com/carstenbauer/ThreadPinning.j
 * to pin Julia threads to specific CPU-threads ("hardware threads") with [`pinthreads`](@ref pinthreads) and
 * to obtain a visual overview of the system topology with [`threadinfo`](@ref threadinfo).
 
-!!! note
-    Note that Julia implements **task-based multithreading**: `M` user tasks get scheduled onto `N` Julia threads.
-    While this package allows you to pin Julia threads to CPU-threads,  it is generally not
-    safe to assume that a computation (started with `Threads.@spawn` or `Threads.@threads`) will run on or stay on(!) a certain Julia thread (see [this discourse post](https://discourse.julialang.org/t/julia-1-7-says-it-can-switch-the-thread-your-task-is-on-how-often-does-that-happen-and-how-can-it-be-disabled/75373/4?u=carstenbauer) for more information). If you want this guarantee, you can use tools like `Threads.@threads :static` or [`ThreadPinning.@spawnat`](@ref api_stabletasks).
-
 ## What is this about? (10 minutes)
 
 Check out my lightning talk that I gave as part of [JuliaCon 2023](https://juliacon.org/2023/) at MIT.
