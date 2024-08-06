@@ -35,12 +35,11 @@ end
 # end
 
 function compute_mpi_topology(hostnames_ranks)
-    # three columns: rankid, nodeid, localid
-    # mpi_topo = Matrix{Int}(undef, length(hostnames_ranks), 3)
     mpi_topo = Vector{@NamedTuple{
         rank::Int64, localrank::Int64, node::Int64, nodename::String}}(
         undef, length(hostnames_ranks))
     nodes = unique(values(hostnames_ranks))
+    sort!(nodes)
     for (inode, node) in enumerate(nodes)
         ranks_onnode = collect(keys(filter(p -> p[2] == node, hostnames_ranks)))
         sort!(ranks_onnode) # on each node we sort by rank id
