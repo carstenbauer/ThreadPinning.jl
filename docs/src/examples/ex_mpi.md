@@ -118,4 +118,4 @@ Rank 3:
 
 In this section, we describe how you can pin the Julia threads of your MPI ranks manually, that is without any "help" from an external affinity mask (e.g. as set by SLURM, see above).
 
-TODO: [`pinthreads_mpi`](@ref)
+TODO: [`mpi_pinthreads`](@ref)

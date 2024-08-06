@@ -1,5 +1,5 @@
 """
-    pinthreads_mpi(symbol, rank, nranks; nthreads_per_rank, compact, kwargs...)
+    mpi_pinthreads(symbol, rank, nranks; nthreads_per_rank, compact, kwargs...)
 
 Pin MPI ranks, that is, their respective Julia thread(s), to (subsets of) domains
 (e.g. sockets or memory domains). Specifically, when calling this function on all
@@ -27,46 +27,27 @@ using MPI
 comm = MPI.COMM_WORLD
 nranks = MPI.Comm_size(comm)
 rank = MPI.Comm_rank(comm)
-pinthreads_mpi(:sockets, rank, nranks)
+mpi_pinthreads(:sockets, rank, nranks)
 ```
 """
-function pinthreads_mpi end
+function mpi_pinthreads end
 
-module MPI
+"""
+On rank 0, this function returns a `Dict{Int, Vector{Int}}` where the keys
+are the MPI rank ids and the values are the CPU IDs of the CPU-threads that are currently
+running the Julia threads of the MPI rank. Returns `nothing` on all other ranks.
+"""
+function mpi_getcpuids end
 
-import ThreadPinning: pinthreads_mpi
+"""
+On rank 0, this function returns a `Dict{Int, String}` where the keys
+are the MPI rank ids and the values are the hostnames of the nodes that are currently
+hosting the respective MPI ranks. Returns `nothing` on all other ranks.
+"""
+function mpi_gethostnames end
 
-using ThreadPinning: nsockets, nnuma, pinthreads
-
-function pinthreads_mpi(symb::Symbol, args...; kwargs...)
-    pinthreads_mpi(Val(symb), args...; kwargs...)
-end
-
-function pinthreads_mpi(::Val{:sockets}, rank::Integer, nranks::Integer;
-        nthreads_per_rank = Threads.nthreads(),
-        compact = false,
-        kwargs...)
-    idx_in_socket, socketidx = divrem(rank, nsockets()) .+ 1
-    idcs = ((idx_in_socket - 1) * nthreads_per_rank + 1):(idx_in_socket * nthreads_per_rank)
-    if maximum(idcs) >= length(socket(socketidx))
-        error("Too many Julia threads / MPI ranks per socket.")
-    end
-    cpuids = socket(socketidx, idcs; compact)
-    pinthreads(cpuids; nthreads = nthreads_per_rank, kwargs...)
-    return
-end
-function pinthreads_mpi(::Val{:numa}, rank::Integer, nranks::Integer;
-        nthreads_per_rank = Threads.nthreads(),
-        compact = false,
-        kwargs...)
-    idx_in_numa, numaidx = divrem(rank, nnuma()) .+ 1
-    idcs = ((idx_in_numa - 1) * nthreads_per_rank + 1):(idx_in_numa * nthreads_per_rank)
-    if maximum(idcs) >= length(numa(numaidx))
-        error("Too many Julia threads / MPI ranks per memory domain (NUMA).")
-    end
-    cpuids = numa(numaidx, idcs; compact)
-    pinthreads(cpuids; nthreads = nthreads_per_rank, kwargs...)
-    return
-end
-
-end # module
+"""
+Returns a node-local rank id (starts at zero). Nodes are identified based on their
+hostnames (`gethostname`). On each node, ranks are ordered based on their global rank id.
+"""
+function mpi_getlocalrank end

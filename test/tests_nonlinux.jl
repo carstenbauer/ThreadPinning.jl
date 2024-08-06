@@ -20,5 +20,5 @@ using ThreadPinning
         3 + 3
     end == 6
     @test isnothing(pinthreads_likwidpin("M1:0,2,4"))
-    @test isnothing(pinthreads_mpi(:sockets, 0, 3))
+    @test isnothing(mpi_pinthreads(:sockets, 0, 3))
 end

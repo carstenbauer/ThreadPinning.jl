@@ -25,7 +25,7 @@ openblas_setaffinity_cpuids
 ## Pinning - MPI
 
 ```@docs
-pinthreads_mpi
+mpi_pinthreads
 ```
 
 ## Pinning - LIKWID

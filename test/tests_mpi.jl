@@ -1,11 +1,33 @@
 using ThreadPinning
 using MPI
 
-const testdir = joinpath(@__DIR__, "mpi/")
+testdir = joinpath(@__DIR__, "mpi/")
+excludefiles = ["mpitests_manual.jl"]
+istest(f) = endswith(f, ".jl") && startswith(f, "mpitests_") && !in(f, excludefiles)
+testfiles = sort(filter(istest, readdir(testdir)))
 
-const maxnprocs = min(ncputhreads(), 4)
+np = min(ncputhreads(), 4)
+nt = min(floor(Int, ncputhreads() / np), nnuma())
+@info("MPI Tests", np, nt)
 
-for f in filter(startswith("mpi_"), readdir(testdir))
-    cmd(n=nprocs) = `$(mpiexec()) -n $n $(Base.julia_cmd()) --startup-file=no $(joinpath(testdir, f))`
-    run(cmd(maxnprocs))
+# Pure MPI (i.e. single Julia thread per MPI rank)
+@testset "$f" for f in testfiles
+    function cmd(n = np)
+        `$(mpiexec()) -n $np $(Base.julia_cmd()) --startup-file=no $(joinpath(testdir, f))`
+    end
+    withenv("JULIA_NUM_THREADS" => 1) do
+        run(cmd())
+        @test true
+    end
+end
+
+# Hybrid MPI (i.e. nt Julia threads per MPI rank)
+@testset "$f (MPI+Threads)" for f in testfiles
+    function cmd(n = np)
+        `$(mpiexec()) -n $np $(Base.julia_cmd()) --startup-file=no $(joinpath(testdir, f))`
+    end
+    withenv("JULIA_NUM_THREADS" => nt) do
+        run(cmd())
+        @test true
+    end
 end
