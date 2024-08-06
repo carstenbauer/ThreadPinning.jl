@@ -41,6 +41,7 @@ function compute_mpi_topology(hostnames_ranks)
     nodes = unique(values(hostnames_ranks))
     sort!(nodes)
     for (inode, node) in enumerate(nodes)
+        @show inode, node
         ranks_onnode = collect(keys(filter(p -> p[2] == node, hostnames_ranks)))
         sort!(ranks_onnode) # on each node we sort by rank id
         for (i, r) in enumerate(ranks_onnode)
