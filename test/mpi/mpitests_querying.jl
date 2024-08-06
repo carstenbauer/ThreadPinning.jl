@@ -43,7 +43,7 @@ if rank == 0
     mpi_topo = MPIExt.compute_mpi_topology(hostnames_ranks)
     @test [r.rank for r in mpi_topo] == 0:6
     @test [r.localrank for r in mpi_topo] == [0, 1, 0, 1, 0, 2, 1]
-    @test [r.node for r in mpi_topo] == [1, 1, 3, 3, 2, 1, 2]
+    @test [r.node for r in mpi_topo] == [1, 1, 2, 2, 3, 1, 3]
     @test [r.nodename for r in mpi_topo] ==
           ["node3", "node3", "node1", "node1", "node2", "node3", "node2"]
 end
