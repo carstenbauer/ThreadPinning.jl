@@ -25,7 +25,7 @@ else
     setaffinity_cpuids(args...; kwargs...) = nothing
     with_pinthreads(f, args...; kwargs...) = f()
     pinthreads_likwidpin(args...; kwargs...) = nothing
-    pinthreads_mpi(args...; kwargs...) = nothing
+    mpi_pinthreads(args...; kwargs...) = nothing
     openblas_pinthreads(args...; kwargs...) = nothing
     openblas_pinthread(args...; kwargs...) = nothing
     openblas_unpinthreads(args...; kwargs...) = nothing
@@ -52,7 +52,7 @@ export openblas_getaffinity, openblas_getcpuid, openblas_getcpuids,
 export pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
 export setaffinity, setaffinity_cpuids
 export pinthreads_likwidpin, likwidpin_domains, likwidpin_to_cpuids
-export pinthreads_mpi
+export mpi_pinthreads, mpi_getcpuids, mpi_gethostnames, mpi_getlocalrank
 export openblas_setaffinity, openblas_setaffinity_cpuids,
        openblas_pinthread, openblas_pinthreads,
        openblas_unpinthread, openblas_unpinthreads

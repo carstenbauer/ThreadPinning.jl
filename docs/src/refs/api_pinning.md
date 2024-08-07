@@ -22,10 +22,10 @@ openblas_setaffinity
 openblas_setaffinity_cpuids
 ```
 
-## Pinning - MPI
+## [Pinning - MPI](@id api_mpi_pinning)
 
 ```@docs
-pinthreads_mpi
+mpi_pinthreads
 ```
 
 ## Pinning - LIKWID

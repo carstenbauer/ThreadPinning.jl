@@ -1,72 +1,53 @@
 """
-    pinthreads_mpi(symbol, rank, nranks; nthreads_per_rank, compact, kwargs...)
+    mpi_pinthreads(symbol; compact, kwargs...)
 
-Pin MPI ranks, that is, their respective Julia thread(s), to (subsets of) domains
-(e.g. sockets or memory domains). Specifically, when calling this function on all
-MPI ranks, the latter will be distributed in a round-robin fashion among the specified
-domains such that their Julia threads are pinned to non-overlapping ranges of CPU-threads
-within the domain.
+Pin the Julia threads of MPI ranks in a round-robin fashion to specific domains
+(e.g. sockets). Supported domains (`symbol`) are `:sockets`, `:numa`, and `:cores`.
 
-Valid options for `symbol` are `:sockets` and `:numa`.
+When calling this function on all MPI ranks, the Julia threads of the latter will be
+distributed in a round-robin fashion among the specified domains and will be pinned to
+non-overlapping ranges of CPU-threads within the domains.
+
+A multi-node setup, where MPI ranks are hosted on different nodes, is supported.
 
 If `compact=false` (default), physical cores are occupied before hyperthreads. Otherwise,
 CPU-cores - with potentially multiple CPU-threads - are filled up one after another
 (compact pinning).
-
-The keyword argument `nthreads_per_rank` (default `Threads.nthreads()`) can be used to
-pin only a subset of the available Julia threads per MPI rank.
-
-**Note:**
-As per usual for MPI, `rank` starts at zero.
 
 *Example:*
 
 ```
 using ThreadPinning
 using MPI
-comm = MPI.COMM_WORLD
-nranks = MPI.Comm_size(comm)
-rank = MPI.Comm_rank(comm)
-pinthreads_mpi(:sockets, rank, nranks)
+MPI.Init()
+mpi_pinthreads(:sockets)
 ```
 """
-function pinthreads_mpi end
+function mpi_pinthreads end
 
-module MPI
+"""
+On rank 0, this function returns a `Dict{Int, Vector{Int}}` where the keys
+are the MPI rank ids and the values are the CPU IDs of the CPU-threads that are currently
+running the Julia threads of the MPI rank. Returns `nothing` on all other ranks.
+"""
+function mpi_getcpuids end
 
-import ThreadPinning: pinthreads_mpi
+"""
+On rank 0, this function returns a `Dict{Int, String}` where the keys
+are the MPI rank ids and the values are the hostnames of the nodes that are currently
+hosting the respective MPI ranks. Returns `nothing` on all other ranks.
+"""
+function mpi_gethostnames end
 
-using ThreadPinning: nsockets, nnuma, pinthreads
+"""
+Returns a node-local rank id (starts at zero). Nodes are identified based on their
+hostnames (`gethostname`). On each node, ranks are ordered based on their global rank id.
+"""
+function mpi_getlocalrank end
 
-function pinthreads_mpi(symb::Symbol, args...; kwargs...)
-    pinthreads_mpi(Val(symb), args...; kwargs...)
-end
 
-function pinthreads_mpi(::Val{:sockets}, rank::Integer, nranks::Integer;
-        nthreads_per_rank = Threads.nthreads(),
-        compact = false,
-        kwargs...)
-    idx_in_socket, socketidx = divrem(rank, nsockets()) .+ 1
-    idcs = ((idx_in_socket - 1) * nthreads_per_rank + 1):(idx_in_socket * nthreads_per_rank)
-    if maximum(idcs) >= length(socket(socketidx))
-        error("Too many Julia threads / MPI ranks per socket.")
-    end
-    cpuids = socket(socketidx, idcs; compact)
-    pinthreads(cpuids; nthreads = nthreads_per_rank, kwargs...)
-    return
-end
-function pinthreads_mpi(::Val{:numa}, rank::Integer, nranks::Integer;
-        nthreads_per_rank = Threads.nthreads(),
-        compact = false,
-        kwargs...)
-    idx_in_numa, numaidx = divrem(rank, nnuma()) .+ 1
-    idcs = ((idx_in_numa - 1) * nthreads_per_rank + 1):(idx_in_numa * nthreads_per_rank)
-    if maximum(idcs) >= length(numa(numaidx))
-        error("Too many Julia threads / MPI ranks per memory domain (NUMA).")
-    end
-    cpuids = numa(numaidx, idcs; compact)
-    pinthreads(cpuids; nthreads = nthreads_per_rank, kwargs...)
-    return
-end
-
-end # module
+"""
+On rank 0, this function returns a vector of named tuples. Each named tuple represents a
+MPI rank and has keys `rank`, `localrank`, `node`, and `nodename`.
+"""
+function mpi_topology end

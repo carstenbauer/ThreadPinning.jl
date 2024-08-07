@@ -37,5 +37,6 @@ end
 @testitem "intel mkl" begin
     Sys.islinux() && include("tests_mkl.jl")
 end
-
-# TODO: pinthreads_mpi
+@testitem "mpi" begin
+    Sys.islinux() && include("tests_mpi.jl")
+end

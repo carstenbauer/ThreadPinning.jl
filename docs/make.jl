@@ -19,8 +19,8 @@ makedocs(;
                  "Pinning Julia Threads" => "examples/ex_pinning_julia_threads.md",
                  "Pinning Julia Tasks" => "examples/ex_pinning_tasks.md",
                  "Pinning BLAS Threads" => "examples/ex_blas.md",
+                 "MPI + Threads" => "examples/ex_mpi.md",
                  "External Affinity Mask" => "examples/ex_affinity.md",
-                 "MPI and Hybrid" => "examples/ex_mpi.md",
              ],
              "References" => [
                  "API - Pinning" => "refs/api_pinning.md",
