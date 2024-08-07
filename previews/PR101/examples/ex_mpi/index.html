@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>MPI + Threads · ThreadPinning.jl</title><meta name="title" content="MPI + Threads · ThreadPinning.jl"/><meta property="og:title" content="MPI + Threads · ThreadPinning.jl"/><meta property="twitter:title" content="MPI + Threads · ThreadPinning.jl"/><meta name="description" content="Documentation for ThreadPinning.jl."/><meta property="og:description" content="Documentation for ThreadPinning.jl."/><meta property="twitter:description" content="Documentation for ThreadPinning.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.png" alt="ThreadPinning.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">ThreadPinning.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">ThreadPinning</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../ex_pinning_julia_threads/">Pinning Julia Threads</a></li><li><a class="tocitem" href="../ex_pinning_tasks/">Pinning Julia Tasks</a></li><li><a class="tocitem" href="../ex_blas/">Pinning BLAS Threads</a></li><li class="is-active"><a class="tocitem" href>MPI + Threads</a><ul class="internal"><li><a class="tocitem" href="#Example-code"><span>Example code</span></a></li><li><a class="tocitem" href="#Pure-MPI"><span>Pure MPI</span></a></li><li><a class="tocitem" href="#Hybrid-MPI-Threads-(single-node)"><span>Hybrid MPI + Threads (single node)</span></a></li><li><a class="tocitem" href="#Hybrid-MPI-Threads-(multiple-nodes)"><span>Hybrid MPI + Threads (multiple nodes)</span></a></li></ul></li><li><a class="tocitem" href="../ex_affinity/">External Affinity Mask</a></li></ul></li><li><span class="tocitem">References</span><ul><li><a class="tocitem" href="../../refs/api_pinning/">API - Pinning</a></li><li><a class="tocitem" href="../../refs/api_querying/">API - Querying</a></li><li><a class="tocitem" href="../../refs/api_other/">API - Other</a></li><li><a class="tocitem" href="../../refs/internals/">Internals</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>MPI + Threads</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>MPI + Threads</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/carstenbauer/ThreadPinning.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/carstenbauer/ThreadPinning.jl/blob/main/docs/src/examples/ex_mpi.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="MPI-Threads"><a class="docs-heading-anchor" href="#MPI-Threads">MPI + Threads</a><a id="MPI-Threads-1"></a><a class="docs-heading-anchor-permalink" href="#MPI-Threads" title="Permalink"></a></h1><p>ThreadPinning.jl has dedicated support for pinning Julia threads of MPI ranks in MPI applications, see <a href="../../refs/api_querying/#api_mpi_querying">Querying - MPI</a> and <a href="../../refs/api_pinning/#api_mpi_pinning">Pinning - MPI</a>. Note that you can use these tools irrespective of whether your MPI applications is pure (i.e. each MPI rank runs a single Julia thread) or hybrid (i.e. each MPI ranks runs multiple Julia threads). We demonstrate this with a simple example below.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>If your MPI application runs under SLURM (or a similar job scheduler), you may want to consider using the pinning options of SLURM to control the placement of the MPI ranks on the nodes, potentially in conjuction with <code>pinthreads(:affinitymask)</code>. See <a href="../ex_affinity/#exaffinitymask">External Affinity Mask</a> for more information.</p></div></div><h2 id="Example-code"><a class="docs-heading-anchor" href="#Example-code">Example code</a><a id="Example-code-1"></a><a class="docs-heading-anchor-permalink" href="#Example-code" title="Permalink"></a></h2><pre><code class="language-julia hljs">using ThreadPinning
+using MPI
+
+MPI.Init()
+rank = MPI.Comm_rank(MPI.COMM_WORLD)
+nthreads = Threads.nthreads()
+
+# print system overview
+if rank == 0
+    for inuma in 1:nnuma()
+        println(&quot;NUMA node $(inuma): &quot;, numa(inuma))
+    end
+    println(&quot;\n&quot;)
+end
+
+# print where julia threads are running (before pinning)
+hostnames = mpi_gethostnames()
+cpuids_before = mpi_getcpuids()
+if rank == 0
+    println(&quot;BEFORE: Where are the Julia threads of the MPI ranks running?&quot;)
+    for r in 0:length(hostnames)-1
+        println(&quot;\trank $r is running $(nthreads) Julia threads on the CPU-threads &quot;, cpuids_before[r], &quot; of node &quot;, hostnames[r])
+    end
+    println(&quot;\n&quot;)
+end
+
+# on each node, pin threads of local MPI ranks to NUMA domains in a round-robin fashion
+mpi_pinthreads(:numa)
+
+# print where julia threads are running (after pinning)
+cpuids_after = mpi_getcpuids()
+if rank == 0
+    println(&quot;AFTER: Where are the Julia threads of the MPI ranks running?&quot;)
+    for r in 0:length(hostnames)-1
+        println(&quot;\trank $r is running $(nthreads) Julia threads on the CPU-threads &quot;, cpuids_after[r], &quot; of node &quot;, hostnames[r])
+    end
+end</code></pre><h2 id="Pure-MPI"><a class="docs-heading-anchor" href="#Pure-MPI">Pure MPI</a><a id="Pure-MPI-1"></a><a class="docs-heading-anchor-permalink" href="#Pure-MPI" title="Permalink"></a></h2><p><strong>Details:</strong> 4 MPI ranks, no multithreading, on a single node.</p><pre><code class="language-julia hljs">NUMA node 1: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143]
+NUMA node 2: [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159]
+NUMA node 3: [32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175]
+NUMA node 4: [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191]
+NUMA node 5: [64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207]
+NUMA node 6: [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223]
+NUMA node 7: [96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239]
+NUMA node 8: [112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255]
+
+
+BEFORE: Where are the Julia threads of the MPI ranks running?
+	rank 0 is running 1 Julia threads on the CPU-threads [123] of node nid004219
+	rank 1 is running 1 Julia threads on the CPU-threads [24] of node nid004219
+	rank 2 is running 1 Julia threads on the CPU-threads [11] of node nid004219
+	rank 3 is running 1 Julia threads on the CPU-threads [192] of node nid004219
+
+
+AFTER: Where are the Julia threads of the MPI ranks running?
+	rank 0 is running 1 Julia threads on the CPU-threads [0] of node nid004219
+	rank 1 is running 1 Julia threads on the CPU-threads [16] of node nid004219
+	rank 2 is running 1 Julia threads on the CPU-threads [32] of node nid004219
+	rank 3 is running 1 Julia threads on the CPU-threads [48] of node nid004219</code></pre><h2 id="Hybrid-MPI-Threads-(single-node)"><a class="docs-heading-anchor" href="#Hybrid-MPI-Threads-(single-node)">Hybrid MPI + Threads (single node)</a><a id="Hybrid-MPI-Threads-(single-node)-1"></a><a class="docs-heading-anchor-permalink" href="#Hybrid-MPI-Threads-(single-node)" title="Permalink"></a></h2><p><strong>Details:</strong> 4 MPI ranks, each running two Julia threads, on a single node.</p><pre><code class="language-julia hljs">NUMA node 1: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143]
+NUMA node 2: [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159]
+NUMA node 3: [32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175]
+NUMA node 4: [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191]
+NUMA node 5: [64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207]
+NUMA node 6: [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223]
+NUMA node 7: [96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239]
+NUMA node 8: [112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255]
+
+
+BEFORE: Where are the Julia threads of the MPI ranks running?
+	rank 0 is running 2 Julia threads on the CPU-threads [127, 161] of node nid004219
+	rank 1 is running 2 Julia threads on the CPU-threads [96, 72] of node nid004219
+	rank 2 is running 2 Julia threads on the CPU-threads [105, 255] of node nid004219
+	rank 3 is running 2 Julia threads on the CPU-threads [192, 196] of node nid004219
+
+
+AFTER: Where are the Julia threads of the MPI ranks running?
+	rank 0 is running 2 Julia threads on the CPU-threads [0, 1] of node nid004219
+	rank 1 is running 2 Julia threads on the CPU-threads [16, 17] of node nid004219
+	rank 2 is running 2 Julia threads on the CPU-threads [32, 33] of node nid004219
+	rank 3 is running 2 Julia threads on the CPU-threads [48, 49] of node nid004219</code></pre><h2 id="Hybrid-MPI-Threads-(multiple-nodes)"><a class="docs-heading-anchor" href="#Hybrid-MPI-Threads-(multiple-nodes)">Hybrid MPI + Threads (multiple nodes)</a><a id="Hybrid-MPI-Threads-(multiple-nodes)-1"></a><a class="docs-heading-anchor-permalink" href="#Hybrid-MPI-Threads-(multiple-nodes)" title="Permalink"></a></h2><p><strong>Details:</strong> 16 MPI ranks, each running two Julia threads, distributed across 4 nodes (4 MPI ranks per node).</p><pre><code class="language-julia hljs">NUMA node 1: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143]
+NUMA node 2: [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159]
+NUMA node 3: [32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175]
+NUMA node 4: [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191]
+NUMA node 5: [64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207]
+NUMA node 6: [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223]
+NUMA node 7: [96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239]
+NUMA node 8: [112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255]
+
+
+BEFORE: Where are the Julia threads of the MPI ranks running?
+	rank 0 is running 2 Julia threads on the CPU-threads [127, 253] of node nid004406
+	rank 1 is running 2 Julia threads on the CPU-threads [113, 182] of node nid004406
+	rank 2 is running 2 Julia threads on the CPU-threads [109, 138] of node nid004406
+	rank 3 is running 2 Julia threads on the CPU-threads [26, 115] of node nid004406
+	rank 4 is running 2 Julia threads on the CPU-threads [4, 146] of node nid005218
+	rank 5 is running 2 Julia threads on the CPU-threads [101, 236] of node nid005218
+	rank 6 is running 2 Julia threads on the CPU-threads [42, 255] of node nid005218
+	rank 7 is running 2 Julia threads on the CPU-threads [8, 90] of node nid005218
+	rank 8 is running 2 Julia threads on the CPU-threads [80, 237] of node nid005908
+	rank 9 is running 2 Julia threads on the CPU-threads [23, 198] of node nid005908
+	rank 10 is running 2 Julia threads on the CPU-threads [5, 47] of node nid005908
+	rank 11 is running 2 Julia threads on the CPU-threads [54, 26] of node nid005908
+	rank 12 is running 2 Julia threads on the CPU-threads [42, 143] of node nid005915
+	rank 13 is running 2 Julia threads on the CPU-threads [8, 120] of node nid005915
+	rank 14 is running 2 Julia threads on the CPU-threads [238, 217] of node nid005915
+	rank 15 is running 2 Julia threads on the CPU-threads [27, 159] of node nid005915
+
+
+AFTER: Where are the Julia threads of the MPI ranks running?
+	rank 0 is running 2 Julia threads on the CPU-threads [0, 1] of node nid004406
+	rank 1 is running 2 Julia threads on the CPU-threads [16, 17] of node nid004406
+	rank 2 is running 2 Julia threads on the CPU-threads [32, 33] of node nid004406
+	rank 3 is running 2 Julia threads on the CPU-threads [48, 49] of node nid004406
+	rank 4 is running 2 Julia threads on the CPU-threads [0, 1] of node nid005218
+	rank 5 is running 2 Julia threads on the CPU-threads [16, 17] of node nid005218
+	rank 6 is running 2 Julia threads on the CPU-threads [32, 33] of node nid005218
+	rank 7 is running 2 Julia threads on the CPU-threads [48, 49] of node nid005218
+	rank 8 is running 2 Julia threads on the CPU-threads [0, 1] of node nid005908
+	rank 9 is running 2 Julia threads on the CPU-threads [16, 17] of node nid005908
+	rank 10 is running 2 Julia threads on the CPU-threads [32, 33] of node nid005908
+	rank 11 is running 2 Julia threads on the CPU-threads [48, 49] of node nid005908
+	rank 12 is running 2 Julia threads on the CPU-threads [0, 1] of node nid005915
+	rank 13 is running 2 Julia threads on the CPU-threads [16, 17] of node nid005915
+	rank 14 is running 2 Julia threads on the CPU-threads [32, 33] of node nid005915
+	rank 15 is running 2 Julia threads on the CPU-threads [48, 49] of node nid005915</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../ex_blas/">« Pinning BLAS Threads</a><a class="docs-footer-nextpage" href="../ex_affinity/">External Affinity Mask »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.5.0 on <span class="colophon-date" title="Wednesday 7 August 2024 11:54">Wednesday 7 August 2024</span>. Using Julia version 1.10.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
