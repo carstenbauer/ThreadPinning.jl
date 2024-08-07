@@ -66,3 +66,11 @@ mpi_getcpuids
 mpi_gethostnames
 mpi_getlocalrank
 ```
+
+## [Querying - Distributed](@id api_distributed_querying)
+
+```@docs
+distributed_getcpuids
+distributed_gethostnames
+distributed_getispinned
+```
