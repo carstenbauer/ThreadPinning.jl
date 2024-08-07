@@ -14,6 +14,7 @@ include("mkl.jl")
 @static if Sys.islinux()
     include("pinning.jl")
     include("mpi.jl")
+    include("distributed.jl")
     include("likwid-pin.jl")
 else
     # make core pinning functions no-ops
@@ -26,6 +27,7 @@ else
     with_pinthreads(f, args...; kwargs...) = f()
     pinthreads_likwidpin(args...; kwargs...) = nothing
     mpi_pinthreads(args...; kwargs...) = nothing
+    distributed_pinthreads(args...; kwargs...) = nothing
     openblas_pinthreads(args...; kwargs...) = nothing
     openblas_pinthread(args...; kwargs...) = nothing
     openblas_unpinthreads(args...; kwargs...) = nothing
@@ -39,7 +41,7 @@ end
 export threadinfo
 
 ## querying
-export getcpuid, getcpuids, getaffinity, getnumanode, getnumanodes
+export getcpuid, getcpuids, getaffinity, getnumanode, getnumanodes, getispinned
 export core, numa, socket, node, cores, numas, sockets
 export printaffinity, printaffinities, visualize_affinity
 export ispinned, hyperthreading_is_enabled, ishyperthread, isefficiencycore
@@ -53,6 +55,8 @@ export pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
 export setaffinity, setaffinity_cpuids
 export pinthreads_likwidpin, likwidpin_domains, likwidpin_to_cpuids
 export mpi_pinthreads, mpi_getcpuids, mpi_gethostnames, mpi_getlocalrank
+export distributed_pinthreads, distributed_getcpuids, distributed_gethostnames,
+       distributed_getispinned, distributed_unpinthreads
 export openblas_setaffinity, openblas_setaffinity_cpuids,
        openblas_pinthread, openblas_pinthreads,
        openblas_unpinthread, openblas_unpinthreads

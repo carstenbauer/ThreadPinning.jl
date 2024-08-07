@@ -16,12 +16,15 @@ ThreadPinningCore = "6f48bc29-05ce-4cc8-baad-4adcba581a18"
 
 [weakdeps]
 MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [extensions]
 MPIExt = "MPI"
+DistributedExt = "Distributed"
 
 [compat]
 DelimitedFiles = "1"
+Distributed = "1"
 Libdl = "1"
 LinearAlgebra = "1"
 MKL = "0.4, 0.6"
@@ -37,6 +40,7 @@ ThreadPinningCore = "0.4.5"
 julia = "1.10"
 
 [extras]
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
 MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
@@ -47,4 +51,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Test", "Random", "TestItemRunner", "Statistics", "MKL", "Logging", "MPI", "MPIPreferences"]
+test = ["Test", "Random", "TestItemRunner", "Statistics", "MKL", "Logging", "MPI", "MPIPreferences", "Distributed"]

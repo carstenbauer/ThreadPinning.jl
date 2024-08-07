@@ -12,6 +12,7 @@ threadinfo
 getcpuids
 getcpuid
 ispinned
+getispinned
 getaffinity
 printaffinity
 printaffinities
