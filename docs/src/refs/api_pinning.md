@@ -28,7 +28,7 @@ openblas_setaffinity_cpuids
 mpi_pinthreads
 ```
 
-## [Pinning - Distributed](@id api_distributed_pinning)
+## [Pinning - Distributed.jl](@id api_distributed_pinning)
 
 ```@docs
 distributed_pinthreads

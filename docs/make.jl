@@ -20,6 +20,7 @@ makedocs(;
                  "Pinning Julia Tasks" => "examples/ex_pinning_tasks.md",
                  "Pinning BLAS Threads" => "examples/ex_blas.md",
                  "MPI + Threads" => "examples/ex_mpi.md",
+                 "Distributed.jl + Threads" => "examples/ex_distributed.md",
                  "External Affinity Mask" => "examples/ex_affinity.md",
              ],
              "References" => [

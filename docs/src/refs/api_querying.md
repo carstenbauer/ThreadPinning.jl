@@ -67,7 +67,7 @@ mpi_gethostnames
 mpi_getlocalrank
 ```
 
-## [Querying - Distributed](@id api_distributed_querying)
+## [Querying - Distributed.jl](@id api_distributed_querying)
 
 ```@docs
 distributed_getcpuids
