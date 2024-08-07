@@ -18,7 +18,7 @@ This will successively pin all Julia threads to CPU-cores in logical order, avoi
 
 For example, instead of `pinthreads(:cores)` above, you could write `pinthreads(:sockets)`, `pinthreads(socket(1,1:3), numa(2,2:5))`, or `pinthreads(1:2:10)`. See [`pinthreads`](@ref) for more information.
 
-### `threadinfo`
+### [`threadinfo`](@id threadinfo_example)
 To check and visualize the current placement of threads you can use [`threadinfo`](@ref).
 
 ![threadinfo_unpinned.png](threadinfo_unpinned.png)
