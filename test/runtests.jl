@@ -40,3 +40,6 @@ end
 @testitem "mpi" begin
     Sys.islinux() && include("tests_mpi.jl")
 end
+@testitem "distributed" begin
+    Sys.islinux() && include("tests_distributed.jl")
+end

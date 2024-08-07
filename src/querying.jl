@@ -54,6 +54,16 @@ Julia threads that belong to a specific thread pool.
 function getnumanodes end
 
 """
+    getispinned(; threadpool = :default)
+
+Returns the results of `ispinned` for all Julia threads.
+
+The keyword argument `threadpool` (default: `:default`) may be used to specify a specific
+thread pool.
+"""
+function getispinned end
+
+"""
 Returns the CPU IDs that belong to core `i` (logical index, starts at 1).
 Set `shuffle=true` to randomize.
 
@@ -259,7 +269,7 @@ function openblas_printaffinities end
 
 module Querying
 
-import ThreadPinning: getcpuid, getcpuids, getnumanode, getnumanodes
+import ThreadPinning: getcpuid, getcpuids, getnumanode, getnumanodes, getispinned
 import ThreadPinning: printaffinity, printaffinities, getaffinity, visualize_affinity
 import ThreadPinning: ispinned, ishyperthread, hyperthreading_is_enabled, isefficiencycore
 import ThreadPinning: ncputhreads, ncores, nnuma, nsockets, ncorekinds, nsmt
@@ -308,6 +318,11 @@ openblas_getcpuids(; kwargs...) = ThreadPinningCore.openblas_getcpuids(; kwargs.
 openblas_ispinned(; kwargs...) = ThreadPinningCore.openblas_ispinned(; kwargs...)
 
 # no (direct) forwarding
+function getispinned(; threadpool = :default)
+    tids = ThreadPinningCore.threadids(; threadpool)
+    return [ispinned(; threadid = t) for t in tids]
+end
+
 function printaffinity(; threadid = Threads.threadid(), io = getstdout(), kwargs...)
     mask = ThreadPinningCore.getaffinity(; threadid)
     str = _affinity_to_string(mask; kwargs...)

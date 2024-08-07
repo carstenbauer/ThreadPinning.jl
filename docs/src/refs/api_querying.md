@@ -12,6 +12,7 @@ threadinfo
 getcpuids
 getcpuid
 ispinned
+getispinned
 getaffinity
 printaffinity
 printaffinities
@@ -64,4 +65,12 @@ openblas_printaffinity
 mpi_getcpuids
 mpi_gethostnames
 mpi_getlocalrank
+```
+
+## [Querying - Distributed.jl](@id api_distributed_querying)
+
+```@docs
+distributed_getcpuids
+distributed_gethostnames
+distributed_getispinned
 ```
