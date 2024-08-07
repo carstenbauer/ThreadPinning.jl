@@ -1,4 +1,4 @@
-# MPI + Threads
+# [MPI + Threads](@id mpi_threads)
 
 ThreadPinning.jl has dedicated support for pinning Julia threads of MPI ranks in MPI applications, see [Querying - MPI](@ref api_mpi_querying) and [Pinning - MPI](@ref api_mpi_pinning). Note that you can use these tools irrespective of whether your MPI applications is pure (i.e. each MPI rank runs a single Julia thread) or hybrid (i.e. each MPI ranks runs multiple Julia threads). We demonstrate this with a simple example below.
 

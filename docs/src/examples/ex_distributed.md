@@ -1,4 +1,4 @@
-# Distributed.jl + Threads
+# [Distributed.jl + Threads](@id distributed_threads)
 
 ThreadPinning.jl has dedicated support for pinning Julia threads of Julia workers (Distributed.jl) in multi-processing applications, see [Querying - Distributed.jl](@ref api_distributed_querying) and [Pinning - Distributed.jl](@ref api_distributed_pinning). Note that you can use these tools irrespective of whether your parallel application is pure (i.e. each Julia workers runs a single Julia thread) or hybrid (i.e. each Julia worker runs multiple Julia threads).
 
