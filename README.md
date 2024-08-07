@@ -32,6 +32,13 @@
 |:-------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
 | [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![][ci-img]][ci-url] [![][cov-img]][cov-url] | ![][lifecycle-img] [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle) |
 
+Most notably, [ThreadPinning.jl](https://github.com/carstenbauer/ThreadPinning.jl/) allows you
+
+* to pin Julia threads to specific CPU-threads ("hardware threads") with [`pinthreads`](https://carstenbauer.github.io/ThreadPinning.jl/stable/refs/api_pinning/#ThreadPinning.pinthreads) and
+* to obtain a visual overview of the system topology with [`threadinfo`](https://carstenbauer.github.io/ThreadPinning.jl/stable/refs/api_querying/#ThreadPinning.threadinfo).
+
+There is dedicated support for pinning Julia threads in distributed Julia applications that use MPI.jl or Distributed.jl.
+
 ## What is this about? (10 minutes)
 
 Check out my lightning talk that I gave as part of [JuliaCon 2023](https://juliacon.org/2023/) at MIT.
