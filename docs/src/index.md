@@ -3,7 +3,7 @@
 Most notably, [ThreadPinning.jl](https://github.com/carstenbauer/ThreadPinning.jl/) allows you
 
 * to pin Julia threads to specific CPU-threads ("hardware threads") with [`pinthreads`](@ref pinthreads) and
-* to obtain a visual overview of the system topology with [`threadinfo`](@ref threadinfo).
+* to obtain a visual overview of the system topology with [`threadinfo`](@ref threadinfo_example).
 
 There is support for pinning Julia threads in hybrid Julia codes ([MPI + Threads](@ref mpi_threads) or [Distributed.jl + Threads](@ref distributed_threads)).
 
