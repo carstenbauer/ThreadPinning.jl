@@ -29,7 +29,7 @@ function ThreadPinning.distributed_gethostnames(; include_master = false)
 end
 
 function ThreadPinning.distributed_getispinned(; include_master = false)
-    res = Dict{Int, Any}()
+    res = Dict{Int, Vector{Bool}}()
     for w in getworkerpids(; include_master)
         res[w] = Distributed.@fetchfrom w ThreadPinning.getispinned()
     end
@@ -63,7 +63,6 @@ end
 # pinning
 function ThreadPinning.distributed_pinthreads(symb::Symbol;
         compact = false,
-        nthreads_per_proc = Threads.nthreads(),
         include_master = false,
         kwargs...)
     domain_symbol2functions(symb) # to check input arg as early as possible
@@ -71,14 +70,14 @@ function ThreadPinning.distributed_pinthreads(symb::Symbol;
     @sync for worker in dist_topo
         Distributed.remotecall(
             () -> ThreadPinning._distributed_pinyourself(
-                symb, dist_topo; nthreads_per_proc, compact, kwargs...),
+                symb, dist_topo; compact, kwargs...),
             worker.pid)
     end
     return
 end
 
-function ThreadPinning._distributed_pinyourself(
-        symb, dist_topo; nthreads_per_proc, compact, kwargs...)
+function ThreadPinning._distributed_pinyourself(symb, dist_topo; compact, kwargs...)
+    # println("_distributed_pinyourself START")
     idx = findfirst(w -> w.pid == Distributed.myid(), dist_topo)
     if isnothing(idx)
         error("Couldn't find myself (worker pid $(Distributed.myid())) in distributed topology.")
@@ -86,9 +85,10 @@ function ThreadPinning._distributed_pinyourself(
     localid = dist_topo[idx].localid
     domain, ndomain = domain_symbol2functions(symb)
     # compute cpuids
-    cpuids = cpuids_of_localid(localid, domain, ndomain; nthreads_per_proc, compact)
+    cpuids = cpuids_of_localid(localid, domain, ndomain; compact)
     # actual pinning
-    ThreadPinning.pinthreads(cpuids; nthreads = nthreads_per_proc, kwargs...)
+    ThreadPinning.pinthreads(cpuids; kwargs...)
+    # println("_distributed_pinyourself STOP")
     return
 end
 
@@ -108,8 +108,9 @@ function domain_symbol2functions(symb)
     return domain, ndomain
 end
 
-function cpuids_of_localid(
-        localrank, domain, ndomain; nthreads_per_proc = Threads.nthreads(), compact = false)
+function cpuids_of_localid(localrank, domain, ndomain;
+        nthreads_per_proc = Threads.nthreads(),
+        compact = false)
     i_in_domain, idomain = divrem(localrank, ndomain()) .+ 1
     idcs = ((i_in_domain - 1) * nthreads_per_proc + 1):(i_in_domain * nthreads_per_proc)
     if maximum(idcs) > length(domain(idomain))
