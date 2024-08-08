@@ -5,8 +5,14 @@ import ThreadPinningCore
 
 const ISFAKING = Ref(false)
 
+"Are we currently in fake mode?"
 isfaking() = ISFAKING[]
 
+"""
+    start(system_name)
+
+Start faking being on the given system.
+"""
 function start(name::AbstractString; kwargs...)
     isfaking() && stop() # to be safe
     ts = SysInfo.TestSystems.load(name)
@@ -16,6 +22,11 @@ function start(name::AbstractString; kwargs...)
     return
 end
 
+"""
+    stop()
+
+Stop faking.
+"""
 function stop()
     SysInfo.TestSystems.reset()
     ThreadPinningCore.Internals.disable_faking()
@@ -23,6 +34,18 @@ function stop()
     return
 end
 
+"""
+    with(f, system_name)
+
+Fake running `f` on the given system.
+
+**Example**
+```julia
+with("PerlmutterComputeNode") do
+    threadinfo()
+end
+```
+"""
 function with(f::F, name::AbstractString) where {F}
     start(name)
     try
