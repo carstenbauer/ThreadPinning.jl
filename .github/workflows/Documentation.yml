@@ -4,14 +4,9 @@ on:
   push:
     branches:
       - main
-    tags: '*'
-    paths:
-      - 'docs/**'
-      - 'src/**'
+    tags: ['*']
   pull_request:
-    paths:
-      - 'docs/**'
-      - 'src/**'
+  workflow_dispatch:
 
 concurrency:
   # Skip intermediate builds: always.
