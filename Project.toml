@@ -1,7 +1,7 @@
 name = "ThreadPinning"
 uuid = "811555cd-349b-4f26-b7bc-1f208b848042"
-authors = ["Carsten Bauer <crstnbr@gmail.com> and contributors"]
 version = "1.0.2"
+authors = ["Carsten Bauer <crstnbr@gmail.com> and contributors"]
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
@@ -35,7 +35,7 @@ Preferences = "1"
 Random = "1"
 StableTasks = "0.1.2"
 SysInfo = "0.3"
-TestItemRunner = "0.2"
+TestItemRunner = "0.2, 1"
 ThreadPinningCore = "0.4.5"
 julia = "1.10"
 
