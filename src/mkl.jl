@@ -1,6 +1,7 @@
 module MKL
 
 using LinearAlgebra: LinearAlgebra, BLAS
+using Libdl
 
 const MKL_PATH = Ref{Union{Nothing, String}}(nothing)
 
@@ -41,13 +42,19 @@ end
     mkl_get_dynamic()
 Wrapper around the MKL function [`mkl_get_dynamic`](https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-fortran/top/support-functions/threading-control/mkl-get-dynamic.html).
 """
-mkl_get_dynamic() = ccall((:mkl_get_dynamic, find_mkl()), Cint, ())
+function mkl_get_dynamic()
+    sym = Libdl.dlsym(Libdl.dlopen(mkl_fullpath()), :mkl_get_dynamic)
+    ccall(sym, Cint, ())
+end
 
 """
     mkl_set_dynamic(flag::Integer)
 
 Wrapper around the MKL function [`mkl_set_dynamic`](https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/support-functions/threading-control/mkl-set-dynamic.html).
 """
-mkl_set_dynamic(flag::Integer) = ccall((:MKL_Set_Dynamic, find_mkl()), Cvoid, (Cint,), flag)
+function mkl_set_dynamic(flag::Integer)
+    sym = Libdl.dlsym(Libdl.dlopen(mkl_fullpath()), :MKL_Set_Dynamic)
+    ccall(sym, Cvoid, (Cint,), flag)
+end
 
 end # module
