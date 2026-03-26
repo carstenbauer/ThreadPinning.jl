@@ -1,8 +1,10 @@
 module MKL
 
 using LinearAlgebra: LinearAlgebra, BLAS
+using Libdl: Libdl
 
 const MKL_PATH = Ref{Union{Nothing, String}}(nothing)
+const MKL_HANDLE = Ref{Ptr{Cvoid}}(C_NULL)
 
 """
 Returns the full path to the `libmkl_rt` library if the latter is loaded. Will try to
@@ -14,8 +16,16 @@ function mkl_fullpath(; force_update = false)
     if isnothing(MKL_PATH[]) || force_update
         mklpath = _find_mkl()
         MKL_PATH[] = mklpath
+        MKL_HANDLE[] = C_NULL # invalidate cached handle
     end
     return MKL_PATH[]
+end
+
+function _mkl_handle()
+    if MKL_HANDLE[] == C_NULL
+        MKL_HANDLE[] = Libdl.dlopen(mkl_fullpath())
+    end
+    return MKL_HANDLE[]
 end
 
 """
@@ -41,7 +51,7 @@ end
     mkl_get_dynamic()
 Wrapper around the MKL function [`mkl_get_dynamic`](https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-fortran/top/support-functions/threading-control/mkl-get-dynamic.html).
 """
-mkl_get_dynamic() = @ccall mkl_fullpath().mkl_get_dynamic()::Cint
+mkl_get_dynamic() = ccall(Libdl.dlsym(_mkl_handle(), :mkl_get_dynamic), Cint, ())
 
 """
     mkl_set_dynamic(flag::Integer)
@@ -49,7 +59,7 @@ mkl_get_dynamic() = @ccall mkl_fullpath().mkl_get_dynamic()::Cint
 Wrapper around the MKL function [`mkl_set_dynamic`](https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/support-functions/threading-control/mkl-set-dynamic.html).
 """
 function mkl_set_dynamic(flag::Integer)
-    @ccall mkl_fullpath().MKL_Set_Dynamic(flag::Cint)::Cvoid
+    ccall(Libdl.dlsym(_mkl_handle(), :MKL_Set_Dynamic), Cvoid, (Cint,), flag)
 end
 
 end # module
