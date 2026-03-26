@@ -10,6 +10,8 @@ unpinthreads
 unpinthread
 setaffinity
 setaffinity_cpuids
+setaffinities
+setaffinities_cpuids
 ```
 
 ## Pinning - OpenBLAS
