@@ -13,10 +13,21 @@ locate the library and, if successfull, will cache the result. Throws an error o
 To force an update of the cache, provide `force_update=true`.
 """
 function mkl_fullpath(; force_update = false)
-    if isnothing(MKL_PATH[]) || force_update
+    if isnothing(MKL_PATH[])
+        # First-time lookup: just cache the path
         mklpath = _find_mkl()
         MKL_PATH[] = mklpath
-        MKL_HANDLE[] = C_NULL # invalidate cached handle
+    elseif force_update
+        # Force a re-discovery of the path
+        mklpath = _find_mkl()
+        if MKL_PATH[] != mklpath
+            # Path changed: close any existing handle and invalidate cache
+            if MKL_HANDLE[] != C_NULL
+                Libdl.dlclose(MKL_HANDLE[])
+            end
+            MKL_HANDLE[] = C_NULL
+            MKL_PATH[] = mklpath
+        end
     end
     return MKL_PATH[]
 end
