@@ -187,20 +187,24 @@ function pinning_tests()
 
         @testset "setaffinities (vector of masks)" begin
             cpuid1, cpuid2 = get_two_cpuids()
-            mask1 = ThreadPinning.Utility.cpuids2affinitymask([cpuid1])
-            mask2 = ThreadPinning.Utility.cpuids2affinitymask([cpuid2])
-            masks = [isodd(i) ? mask1 : mask2 for i in 1:nt]
+            # Use pinthreads to establish a known state, then capture the real
+            # OS-level masks via getaffinity (avoids cpuids2affinitymask which
+            # maps by list position and breaks for non-contiguous CPU IDs like FUGAKU)
+            pinthreads([isodd(i) ? cpuid1 : cpuid2 for i in 1:nt]; warn = false)
+            masks = [getaffinity(; threadid = tid) for tid in tids]
+            expected_cpuids = getcpuids()
+            pinthreads(:random; warn = false)
             @test isnothing(setaffinities(masks))
             if !ThreadPinning.Faking.isfaking()
-                for (i, threadid) in pairs(tids)
-                    @test getcpuid(; threadid) == (isodd(i) ? cpuid1 : cpuid2)
-                end
+                @test getcpuids() == expected_cpuids
             end
         end
 
         @testset "setaffinities (single mask broadcast)" begin
             cpuid1, _ = get_two_cpuids()
-            mask = ThreadPinning.Utility.cpuids2affinitymask([cpuid1])
+            pinthreads(fill(cpuid1, nt); warn = false)
+            mask = getaffinity(; threadid = firsttid)
+            pinthreads(:random; warn = false)
             @test isnothing(setaffinities(mask))
             if !ThreadPinning.Faking.isfaking()
                 @test all(i -> getcpuid(; threadid = i) == cpuid1, tids)
