@@ -169,9 +169,11 @@ function setaffinity end
 """
 Set the affinity of multiple Julia threads to the given CPU-threads.
 
-`cpuids_vec` should be a vector of CPU ID vectors (one per Julia thread).
+`cpuids_vec` should be a vector of CPU ID vectors (one per Julia thread), or a single
+CPU ID vector to set all threads to the same affinity.
 
 *Examples:*
+* `setaffinities_cpuids(numa(1))` # set all threads' affinity to the first NUMA domain
 * `setaffinities_cpuids([socket(1), socket(2)])` # set first thread's affinity to socket 1, second to socket 2
 * `setaffinities_cpuids([numa(1), numa(2)])` # set affinities across NUMA domains
 """
@@ -182,8 +184,8 @@ function setaffinities_cpuids end
 
 Set the affinity of multiple Julia threads based on the given masks.
 
-`masks` should be a vector of affinity masks (one per Julia thread), where each mask is a
-vector of ones and zeros.
+`masks` should be a vector of affinity masks (one per Julia thread), or a single mask to
+set all threads to the same affinity. Each mask is a vector of ones and zeros.
 """
 function setaffinities end
 
@@ -314,6 +316,11 @@ function setaffinities(masks; threadpool::Symbol = :default)
     return
 end
 
+function setaffinities(mask::AbstractVector{<:Integer}; threadpool::Symbol = :default, kwargs...)
+    tids = ThreadPinningCore.threadids(; threadpool)
+    setaffinities([mask for _ in tids]; threadpool, kwargs...)
+end
+
 function setaffinities_cpuids(cpuids_vec::AbstractVector{<:AbstractVector{<:Integer}};
         threadpool::Symbol = :default)
     tids = ThreadPinningCore.threadids(; threadpool)
@@ -325,6 +332,11 @@ function setaffinities_cpuids(cpuids_vec::AbstractVector{<:AbstractVector{<:Inte
         setaffinity_cpuids(cpuids_vec[i]; threadid)
     end
     return
+end
+
+function setaffinities_cpuids(cpuids::AbstractVector{<:Integer}; threadpool::Symbol = :default, kwargs...)
+    tids = ThreadPinningCore.threadids(; threadpool)
+    setaffinities_cpuids([cpuids for _ in tids]; threadpool, kwargs...)
 end
 
 function openblas_setaffinity_cpuids(cpuids::AbstractVector{<:Integer}; kwargs...)

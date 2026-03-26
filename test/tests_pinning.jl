@@ -181,6 +181,49 @@ function pinning_tests()
         @test isnothing(setaffinity_cpuids([cpuid2, cpuid1]; threadid = randtid))
     end
 
+    @testset "setaffinities" begin
+        tids = ThreadPinning.threadids(; threadpool = :default)
+        nt = length(tids)
+
+        @testset "setaffinities (vector of masks)" begin
+            masks = [getaffinity(; threadid = i) for i in tids]
+            @test isnothing(setaffinities(masks))
+            @test [getaffinity(; threadid = i) for i in tids] == masks
+        end
+
+        @testset "setaffinities (single mask broadcast)" begin
+            mask = getaffinity(; threadid = firsttid)
+            @test isnothing(setaffinities(mask))
+            @test all(i -> getaffinity(; threadid = i) == mask, tids)
+        end
+
+        @testset "setaffinities_cpuids (vector of cpuid vectors)" begin
+            cpuid1, cpuid2 = get_two_cpuids()
+            cpuids_vec = fill([cpuid1], nt)
+            cpuids_vec[2] = [cpuid2]
+            @test isnothing(setaffinities_cpuids(cpuids_vec))
+        end
+
+        @testset "setaffinities_cpuids (single cpuid vector broadcast)" begin
+            cpuid1, _ = get_two_cpuids()
+            cpuids = [cpuid1]
+            @test isnothing(setaffinities_cpuids(cpuids))
+            mask = ThreadPinning.Utility.cpuids2affinitymask(cpuids)
+            @test all(i -> getaffinity(; threadid = i) == mask, tids)
+        end
+
+        @testset "setaffinities error: wrong number of masks" begin
+            masks = [getaffinity(; threadid = i) for i in tids]
+            @test_throws ArgumentError setaffinities(masks[1:end-1])
+        end
+
+        @testset "setaffinities_cpuids error: wrong number of cpuid vectors" begin
+            cpuid1, _ = get_two_cpuids()
+            cpuids_vec = fill([cpuid1], nt)
+            @test_throws ArgumentError setaffinities_cpuids(cpuids_vec[1:end-1])
+        end
+    end
+
     @testset "force = false" begin
         cpuid1, cpuid2 = get_two_cpuids()
         ThreadPinningCore.Internals.forget_pin_attempts()
