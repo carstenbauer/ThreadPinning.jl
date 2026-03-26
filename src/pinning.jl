@@ -152,10 +152,10 @@ function unpinthreads end
 Set the affinity of a Julia thread to the given CPU-threads.
 
 *Examples:*
-* `setaffinity(socket(1))` # set the affinity to the first socket
-* `setaffinity(numa(2))` # set the affinity to the second NUMA domain
-* `setaffinity(socket(1, 1:3))` # set the affinity to the first three cores in the first NUMA domain
-* `setaffinity([1,3,5])` # set the affinity to the CPU-threads with the IDs 1, 3, and 5.
+* `setaffinity_cpuids(socket(1))` # set the affinity to the first socket
+* `setaffinity_cpuids(numa(2))` # set the affinity to the second NUMA domain
+* `setaffinity_cpuids(socket(1, 1:3))` # set the affinity to the first three cores in the first NUMA domain
+* `setaffinity_cpuids([1,3,5])` # set the affinity to the CPU-threads with the IDs 1, 3, and 5.
 """
 function setaffinity_cpuids end
 
@@ -165,6 +165,29 @@ function setaffinity_cpuids end
 Set the affinity of a Julia thread based on the given mask (a vector of ones and zeros).
 """
 function setaffinity end
+
+"""
+Set the affinity of multiple Julia threads to the given CPU-threads.
+
+`cpuids_vec` should be a vector of CPU ID vectors (one per Julia thread), or a single
+CPU ID vector to set all threads to the same affinity.
+
+*Examples:*
+* `setaffinities_cpuids(numa(1))` # set all threads' affinity to the first NUMA domain
+* `setaffinities_cpuids([socket(1), socket(2)])` # set first thread's affinity to socket 1, second to socket 2
+* `setaffinities_cpuids([numa(1), numa(2)])` # set affinities across NUMA domains
+"""
+function setaffinities_cpuids end
+
+"""
+    setaffinities(masks; threadpool = :default)
+
+Set the affinity of multiple Julia threads based on the given masks.
+
+`masks` should be a vector of affinity masks (one per Julia thread), or a single mask to
+set all threads to the same affinity. Each mask is a vector of ones and zeros.
+"""
+function setaffinities end
 
 # OpenBLAS
 """
@@ -230,7 +253,7 @@ function openblas_unpinthreads end
 module Pinning
 
 import ThreadPinning: pinthread, pinthreads, with_pinthreads, unpinthread, unpinthreads
-import ThreadPinning: setaffinity, setaffinity_cpuids
+import ThreadPinning: setaffinity, setaffinity_cpuids, setaffinities, setaffinities_cpuids
 import ThreadPinning: openblas_setaffinity, openblas_setaffinity_cpuids,
                       openblas_pinthread, openblas_pinthreads,
                       openblas_unpinthread, openblas_unpinthreads
@@ -280,6 +303,41 @@ function setaffinity_cpuids(cpuids::AbstractVector{<:Integer}; kwargs...)
     mask = Utility.cpuids2affinitymask(cpuids)
     ThreadPinningCore.setaffinity(mask; kwargs...)
     return
+end
+
+function setaffinities(masks::AbstractVector{<:AbstractVector{<:Integer}};
+        threadpool::Symbol = :default)
+    tids = ThreadPinningCore.threadids(; threadpool)
+    length(masks) == length(tids) ||
+        throw(ArgumentError("Number of masks ($(length(masks))) must match the number of " *
+                            "threads ($(length(tids))) in the `$(threadpool)` threadpool."))
+    for (i, threadid) in pairs(tids)
+        setaffinity(copy(masks[i]); threadid)
+    end
+    return
+end
+
+function setaffinities(mask::AbstractVector{<:Integer}; threadpool::Symbol = :default, kwargs...)
+    tids = ThreadPinningCore.threadids(; threadpool)
+    setaffinities([mask for _ in tids]; threadpool, kwargs...)
+end
+
+function setaffinities_cpuids(cpuids_vec::AbstractVector{<:AbstractVector{<:Integer}};
+        threadpool::Symbol = :default)
+    tids = ThreadPinningCore.threadids(; threadpool)
+    length(cpuids_vec) == length(tids) ||
+        throw(ArgumentError("Number of CPU ID vectors ($(length(cpuids_vec))) must match " *
+                            "the number of threads ($(length(tids))) in the " *
+                            "`$(threadpool)` threadpool."))
+    for (i, threadid) in pairs(tids)
+        setaffinity_cpuids(cpuids_vec[i]; threadid)
+    end
+    return
+end
+
+function setaffinities_cpuids(cpuids::AbstractVector{<:Integer}; threadpool::Symbol = :default, kwargs...)
+    tids = ThreadPinningCore.threadids(; threadpool)
+    setaffinities_cpuids([cpuids for _ in tids]; threadpool, kwargs...)
 end
 
 function openblas_setaffinity_cpuids(cpuids::AbstractVector{<:Integer}; kwargs...)
