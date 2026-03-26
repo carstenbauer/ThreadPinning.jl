@@ -1,6 +1,10 @@
 ThreadPinning.jl Changelog
 =========================
 
+Version 1.1
+-------------
+- ![Feature][badge-feature] Added `setaffinities` and `setaffinities_cpuids` as multi-thread analogs of `setaffinity` and `setaffinity_cpuids`, respectively. They allow setting the affinity of all Julia threads at once, similar to how `pinthreads` relates to `pinthread`. A single mask/cpuid vector can be passed to broadcast the same affinity to all threads (e.g. `setaffinities_cpuids(numa(1))`).
+
 Version 1.0
 -------------
 - ![Feature][badge-feature] OpenBLAS: Almost all pinning and querying functions now have `openblas_*` analogs that provide (almost) all of the same features as for regular Julia threads. Example: `openblas_pinthreads(:cores)` now works. You can also visualize the placement of OpenBLAS threads via `threadinfo(; blas=true)`. These functions are now also part of the official API (and SemVer).
