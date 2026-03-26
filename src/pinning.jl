@@ -305,7 +305,8 @@ function setaffinity_cpuids(cpuids::AbstractVector{<:Integer}; kwargs...)
     return
 end
 
-function setaffinities(masks; threadpool::Symbol = :default)
+function setaffinities(masks::AbstractVector{<:AbstractVector{<:Integer}};
+        threadpool::Symbol = :default)
     tids = ThreadPinningCore.threadids(; threadpool)
     length(masks) == length(tids) ||
         throw(ArgumentError("Number of masks ($(length(masks))) must match the number of " *
