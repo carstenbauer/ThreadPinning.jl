@@ -186,13 +186,21 @@ function pinning_tests()
         nt = length(tids)
 
         @testset "setaffinities (vector of masks)" begin
-            masks = [getaffinity(; threadid = i) for i in tids]
+            cpuid1, cpuid2 = get_two_cpuids()
+            mask1 = ThreadPinning.Utility.cpuids2affinitymask([cpuid1])
+            mask2 = ThreadPinning.Utility.cpuids2affinitymask([cpuid2])
+            masks = [isodd(i) ? mask1 : mask2 for i in 1:nt]
             @test isnothing(setaffinities(masks))
+            for (i, threadid) in pairs(tids)
+                @test getcpuid(; threadid) == (isodd(i) ? cpuid1 : cpuid2)
+            end
         end
 
         @testset "setaffinities (single mask broadcast)" begin
-            mask = getaffinity(; threadid = firsttid)
+            cpuid1, _ = get_two_cpuids()
+            mask = ThreadPinning.Utility.cpuids2affinitymask([cpuid1])
             @test isnothing(setaffinities(mask))
+            @test all(i -> getcpuid(; threadid = i) == cpuid1, tids)
         end
 
         @testset "setaffinities_cpuids (vector of cpuid vectors)" begin
@@ -200,12 +208,14 @@ function pinning_tests()
             cpuids_vec = fill([cpuid1], nt)
             cpuids_vec[2] = [cpuid2]
             @test isnothing(setaffinities_cpuids(cpuids_vec))
+            @test getcpuid(; threadid = tids[1]) == cpuid1
+            @test getcpuid(; threadid = tids[2]) == cpuid2
         end
 
         @testset "setaffinities_cpuids (single cpuid vector broadcast)" begin
             cpuid1, _ = get_two_cpuids()
-            cpuids = [cpuid1]
-            @test isnothing(setaffinities_cpuids(cpuids))
+            @test isnothing(setaffinities_cpuids([cpuid1]))
+            @test all(i -> getcpuid(; threadid = i) == cpuid1, tids)
         end
 
         @testset "setaffinities error: wrong number of masks" begin
