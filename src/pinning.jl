@@ -311,7 +311,7 @@ function setaffinities(masks; threadpool::Symbol = :default)
         throw(ArgumentError("Number of masks ($(length(masks))) must match the number of " *
                             "threads ($(length(tids))) in the `$(threadpool)` threadpool."))
     for (i, threadid) in pairs(tids)
-        setaffinity(masks[i]; threadid)
+        setaffinity(copy(masks[i]); threadid)
     end
     return
 end
