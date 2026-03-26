@@ -187,22 +187,15 @@ function pinning_tests()
 
         @testset "setaffinities (vector of masks)" begin
             cpuid1, cpuid2 = get_two_cpuids()
-            # Pin first, then capture real OS-level masks via getaffinity.
-            # Avoids cpuids2affinitymask which maps by list position and breaks
-            # for non-contiguous CPU IDs (e.g. FUGAKU: 0,1,12,...,59).
             pinthreads([isodd(i) ? cpuid1 : cpuid2 for i in 1:nt]; warn = false)
             masks = [getaffinity(; threadid = tid) for tid in tids]
             expected_cpuids = getcpuids()
             pinthreads(:random; warn = false)
             @test isnothing(setaffinities(masks))
-            # getaffinity is not faked: verify masks were actually applied
             for (j, tid) in pairs(tids)
                 @test getaffinity(; threadid = tid) == masks[j]
             end
-            # getcpuid is faked: exact CPU check only on real system
-            if !ThreadPinning.Faking.isfaking()
-                @test getcpuids() == expected_cpuids
-            end
+            @test getcpuids() == expected_cpuids
         end
 
         @testset "setaffinities (single mask broadcast)" begin
@@ -212,9 +205,7 @@ function pinning_tests()
             pinthreads(:random; warn = false)
             @test isnothing(setaffinities(mask))
             @test all(tid -> getaffinity(; threadid = tid) == mask, tids)
-            if !ThreadPinning.Faking.isfaking()
-                @test all(i -> getcpuid(; threadid = i) == cpuid1, tids)
-            end
+            @test all(i -> getcpuid(; threadid = i) == cpuid1, tids)
         end
 
         @testset "setaffinities_cpuids (vector of cpuid vectors)" begin
@@ -222,8 +213,10 @@ function pinning_tests()
             cpuids_vec = fill([cpuid1], nt)
             cpuids_vec[2] = [cpuid2]
             @test isnothing(setaffinities_cpuids(cpuids_vec))
-            # ispinned uses real OS: all threads should be pinned to a single CPU
             @test all(tid -> ispinned(; threadid = tid), tids)
+            # Under faking, cpuids2affinitymask maps by list position, so
+            # getcpuid may not match the requested cpuid on systems with
+            # non-contiguous CPU IDs (e.g. FUGAKU). Verify cpuids on host only.
             if !ThreadPinning.Faking.isfaking()
                 @test getcpuid(; threadid = tids[1]) == cpuid1
                 @test getcpuid(; threadid = tids[2]) == cpuid2
@@ -234,6 +227,7 @@ function pinning_tests()
             cpuid1, _ = get_two_cpuids()
             @test isnothing(setaffinities_cpuids([cpuid1]))
             @test all(tid -> ispinned(; threadid = tid), tids)
+            # Same caveat as above: cpuids2affinitymask position mismatch under faking.
             if !ThreadPinning.Faking.isfaking()
                 @test all(i -> getcpuid(; threadid = i) == cpuid1, tids)
             end
